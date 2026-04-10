@@ -40,5 +40,5 @@ async function loadPageModule(pathname) {
   try {
     const mod = await import(`/static/js/pages/${slug}.js?v=${window.APP_VER || '1'}`);
     if (mod?.mount) await mod.mount();
-  } catch { /* 모듈 없으면 정상 */ }
+  } catch (e) { console.warn(`[page ${slug}]`, e); }
 }
