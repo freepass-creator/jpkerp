@@ -37,3 +37,14 @@
 
 .panel-body { flex: 1; min-height: 0; overflow: auto; }
 .panel-body.is-pad { padding: var(--panel-body-pad); }
+
+/* 대시보드 카드 */
+.dash-card {
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  padding: 14px 16px;
+  transition: background var(--t-fast);
+}
+.dash-card[onclick] { cursor: pointer; }
+.dash-card[onclick]:hover { background: var(--c-bg-hover); }

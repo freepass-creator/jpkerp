@@ -12,6 +12,7 @@ export const ASSET_SCHEMA = [
   { col: 'car_model',    label: '모델명',     section: '차량', gridShow: true },
   { col: 'detail_model', label: '세부모델',   section: '차량' },
   { col: 'car_year',     label: '연식',       section: '차량', type: 'number', gridShow: true, num: true },
+  { col: 'asset_status', label: '상태',      section: '차량', type: 'select', options: ['가동중','상품대기','상품화중','정비중','매각예정','폐차'], gridShow: true },
 
   // ── 스펙 ──
   { col: 'trim',         label: '트림',       section: '스펙' },
