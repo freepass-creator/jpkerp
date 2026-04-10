@@ -1,0 +1,39 @@
+/* panel.css — Notion-style 패널 (보더 없이 구분선만) */
+
+.panel {
+  background: var(--c-bg);
+  display: flex; flex-direction: column;
+  min-width: 0; min-height: 0;
+  overflow: hidden;
+}
+
+.panel-head {
+  height: var(--panel-head-h);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--panel-head-px);
+  border-bottom: 1px solid var(--c-border);
+  gap: var(--sp-3);
+}
+.panel-head--wrap {
+  height: auto;
+  min-height: var(--panel-head-h);
+  flex-wrap: wrap;
+  padding: var(--sp-2) var(--panel-head-px);
+}
+
+.panel-title { font-size: var(--font-size-md); font-weight: var(--fw-bold); color: var(--c-text); }
+.panel-subtitle { font-size: var(--font-size-sm); color: var(--c-text-muted); margin-left: var(--sp-3); }
+.panel-actions { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+
+.panel-foot {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: var(--sp-2);
+  padding: 0 var(--panel-head-px);
+  height: var(--panel-head-h);
+  border-top: 1px solid var(--c-border);
+}
+
+.panel-body { flex: 1; min-height: 0; overflow: auto; }
+.panel-body.is-pad { padding: var(--panel-body-pad); }

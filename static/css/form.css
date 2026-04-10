@@ -1,0 +1,44 @@
+/* form.css — 폼 섹션/그리드/필드 */
+
+.form-section {
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  border-bottom: 1px solid var(--c-border);
+}
+.form-section:last-child { border-bottom: none; }
+
+.form-section-title {
+  font-size: var(--section-font);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+  margin-bottom: var(--sp-4);
+  display: flex; align-items: center; gap: var(--sp-2);
+}
+.form-section-title svg {
+  width: var(--section-icon);
+  height: var(--section-icon);
+  color: var(--c-text-sub);
+  flex-shrink: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3) var(--sp-4);
+}
+
+.field {
+  display: flex; flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.field label {
+  font-size: var(--font-size-sm);
+  color: var(--c-text-sub);
+}
+.field.is-required label::after {
+  content: ' *';
+  color: var(--c-danger);
+}
+.field input,
+.field select,
+.field textarea { width: 100%; }

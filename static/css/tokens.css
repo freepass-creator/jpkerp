@@ -1,0 +1,90 @@
+/* ═══════════════════════════════════════════════════════════════
+   tokens.css — Notion-style 디자인 토큰
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 색상 (Notion 톤) ── */
+  --c-bg:          #ffffff;
+  --c-bg-sub:      #fbfbfa;
+  --c-bg-hover:    #f1f1ef;
+  --c-bg-active:   #e8e8e5;
+
+  --c-border:        #e3e2de;
+  --c-border-strong: #d3d1cb;
+
+  --c-text:        #37352f;
+  --c-text-sub:    #6b6b6b;
+  --c-text-muted:  #9b9a97;
+
+  --c-primary:     #2383e2;
+  --c-primary-h:   #1b6ec2;
+  --c-primary-bg:  #e8f0fe;
+
+  --c-success:     #0f7b0f;
+  --c-success-bg:  #dbeddb;
+  --c-warn:        #d9730d;
+  --c-warn-bg:     #fdecc8;
+  --c-danger:      #e03e3e;
+  --c-danger-bg:   #fbe4e4;
+  --c-info:        #2383e2;
+  --c-info-bg:     #e8f0fe;
+
+  /* ── 폰트 ── */
+  --font-sans:   'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-size:    12px;
+  --font-size-sm: 12px;
+  --font-size-md: 12px;
+  --font-size-lg: 12px;
+  --fw:           400;
+  --fw-medium:    500;
+  --fw-bold:      600;
+  --fw-heavy:     700;
+
+  /* ── 간격 ── */
+  --sp-1: 4px;
+  --sp-2: 6px;
+  --sp-3: 8px;
+  --sp-4: 12px;
+  --sp-5: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* ── 컨트롤 ── */
+  --ctrl-h:        32px;
+  --ctrl-r:        0;
+  --ctrl-px:       6px;
+  --ctrl-border:   var(--c-border-strong);
+  --ctrl-border-w: 1px;
+  --ctrl-font:     var(--font-size);
+  --ctrl-icon:     14px;
+
+  /* ── 패널 ── */
+  --panel-head-h:   52px;
+  --panel-head-px:  16px;
+  --panel-body-pad: 20px;
+  --panel-r:        0;
+  /* 모든 라운드 0 */
+  --panel-shadow:   none;
+
+  /* ── 섹션 타이틀 ── */
+  --section-icon: 16px;
+  --section-font: var(--font-size-md);
+
+  /* ── 그리드 ── */
+  --grid-row-h:    28px;
+  --grid-head-h:   28px;
+  --grid-cell-px:  4px;
+
+  /* ── 사이드바 ── */
+  --sidebar-w:    240px;
+  --sidebar-bg:   #fbfbfa;
+
+  /* ── z-index ── */
+  --z-overlay: 1000;
+  --z-toast:   2000;
+  --z-modal:   3000;
+
+  /* ── 트랜지션 ── */
+  --t-fast:   100ms;
+  --t-normal: 200ms;
+}

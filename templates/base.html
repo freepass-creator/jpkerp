@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title or 'JPK ERP' }}</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/controls.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/grid.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/util.css') }}?v={{ v }}">
+  <!-- AG Grid -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32/styles/ag-theme-alpine.css">
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32/dist/ag-grid-community.min.noStyle.js"></script>
+</head>
+<body>
+  {% block body %}{% endblock %}
+  <script>window.APP_VER = '{{ v }}';</script>
+  <script type="module" src="{{ url_for('static', filename='js/app.js') }}?v={{ v }}"></script>
+</body>
+</html>

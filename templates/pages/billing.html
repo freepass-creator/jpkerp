@@ -1,0 +1,17 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <span class="panel-title">수납관리</span>
+      <span class="panel-subtitle" id="billingInfo"></span>
+    </div>
+    <div class="panel-actions">
+      {{ btn('filter', '필터', id='billingFilter') }}
+      {{ btn('download', 'CSV', id='billingExport') }}
+    </div>
+  </div>
+  <div class="panel-body" id="billingHost" style="overflow:auto;padding:0"></div>
+</section>
+{% endblock %}

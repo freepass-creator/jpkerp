@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JPK ERP — 로그인</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/controls.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; background:var(--c-bg-sub); }
+    .login-box { width:320px; padding:32px; background:var(--c-bg); border-radius:8px; box-shadow:0 4px 24px rgba(0,0,0,0.08); }
+    .login-box h1 { font-size:var(--font-size-lg); font-weight:var(--fw-heavy); margin-bottom:20px; text-align:center; }
+    .login-box .field { margin-bottom:12px; }
+    .login-box .btn { width:100%; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <form class="login-box" id="loginForm">
+    <h1>JPK ERP</h1>
+    <div class="field"><label>이메일</label><input type="email" id="loginEmail" required></div>
+    <div class="field"><label>비밀번호</label><input type="password" id="loginPassword" required></div>
+    <button type="submit" class="btn btn-primary">로그인</button>
+    <div id="loginMsg" style="font-size:var(--font-size-sm);color:var(--c-text-muted);text-align:center;min-height:18px;margin-top:8px"></div>
+  </form>
+  <script type="module">
+    import { auth } from './static/js/firebase/config.js';
+    import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = document.getElementById('loginMsg');
+      try {
+        msg.textContent = '로그인 중...';
+        await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
+        location.href = '/';
+      } catch (err) { msg.textContent = '로그인 실패: ' + err.message; }
+    });
+  </script>
+</body>
+</html>

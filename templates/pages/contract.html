@@ -1,0 +1,30 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block workspace_layout %}layout-66{% endblock %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div><span class="panel-title">계약관리</span></div>
+  </div>
+  <div class="panel-body" id="entryFormHost" style="overflow-y:auto;padding:var(--sp-5)"></div>
+  <div class="panel-foot">
+    {{ btn('x', '취소', id='entryCancel', hidden=true) }}
+    {{ btn('plus', '임시 등록', cls='btn-primary', id='entryStage') }}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <span class="panel-title">등록 검토</span>
+      <span class="panel-subtitle" id="stageCount">아직 등록할 항목이 없습니다</span>
+    </div>
+    <div class="panel-actions">
+      {{ btn('upload', '업로드', id='entryUpload') }}
+      {{ btn('trash', '비우기', id='stageClear') }}
+      {{ btn('check', '전체 반영', cls='btn-primary', id='stageCommitAll') }}
+    </div>
+  </div>
+  <div class="panel-body" id="stageHost" style="overflow:auto;padding:0"></div>
+</section>
+{% endblock %}

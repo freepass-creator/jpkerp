@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% from '_macros/ui.html' import btn_icon %}
+{% block body %}
+<div class="shell" id="shell">
+  <aside class="sidebar">
+    <nav class="sidebar-menu" id="sidebarMenu"></nav>
+    <div class="sidebar-bottom">
+      <button class="sidebar-link" id="cpTrigger" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span class="sidebar-link-label">검색</span>
+        <kbd class="sidebar-kbd">Ctrl+K</kbd>
+      </button>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      {% block topbar_extra %}{% endblock %}
+    </header>
+    <section class="workspace {% block workspace_layout %}layout-1{% endblock %}">
+      {% block workspace %}{% endblock %}
+    </section>
+  </main>
+</div>
+<div class="toast-host" id="toastHost"></div>
+<div class="cp-host" id="cpHost" hidden>
+  <div class="cp-panel">
+    <input type="text" class="cp-input" id="cpInput" placeholder="차량번호 / 고객명 검색...">
+    <div class="cp-results" id="cpResults"></div>
+  </div>
+</div>
+{% endblock %}

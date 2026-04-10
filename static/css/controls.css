@@ -1,0 +1,89 @@
+/* controls.css — Notion-style 버튼 · 입력 통일 규격 */
+
+/* ── 버튼 ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 5px;
+  height: var(--ctrl-h);
+  padding: 0 var(--ctrl-px);
+  border: var(--ctrl-border-w) solid transparent;
+  border-radius: var(--ctrl-r);
+  background: transparent;
+  color: var(--c-text-sub);
+  font-size: var(--ctrl-font);
+  font-weight: var(--fw-medium);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.btn:hover { background: var(--c-bg-hover); color: var(--c-text); }
+.btn:active { background: var(--c-bg-active); }
+.btn svg { width: var(--ctrl-icon); height: var(--ctrl-icon); flex-shrink: 0; }
+
+.btn-primary {
+  background: var(--c-primary);
+  color: #fff;
+  border-color: var(--c-primary);
+}
+.btn-primary:hover { background: var(--c-primary-h); color: #fff; }
+
+.btn-outline {
+  border-color: var(--c-border-strong);
+  background: var(--c-bg);
+  color: var(--c-text);
+}
+.btn-outline:hover { background: var(--c-bg-hover); }
+
+.btn-icon { width: var(--ctrl-h); height: var(--ctrl-h); padding: 0; }
+
+.btn-danger { color: var(--c-danger); }
+.btn-danger:hover { background: var(--c-danger-bg); }
+
+.btn.is-active { background: var(--c-bg-active); color: var(--c-text); font-weight: var(--fw-bold); }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+/* ── 입력 · 셀렉트 ── */
+.ctrl,
+.panel-actions input,
+.panel-actions select,
+.field input,
+.field select,
+.field textarea {
+  height: var(--ctrl-h);
+  padding: 0 var(--ctrl-px);
+  border: var(--ctrl-border-w) solid var(--c-border);
+  border-radius: var(--ctrl-r);
+  background: var(--c-bg);
+  font-size: var(--ctrl-font);
+  font-family: inherit;
+  color: var(--c-text);
+  outline: none;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.ctrl:hover, .field input:hover, .field select:hover, .field textarea:hover,
+.panel-actions input:hover, .panel-actions select:hover {
+  border-color: var(--c-border-strong);
+}
+
+.ctrl:focus, .field input:focus, .field select:focus, .field textarea:focus,
+.panel-actions input:focus, .panel-actions select:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px var(--c-primary-bg);
+}
+
+.field textarea {
+  height: auto;
+  min-height: 60px;
+  padding: var(--sp-3) var(--ctrl-px);
+  resize: vertical;
+}
+
+.field input[readonly], .field input[disabled], .field select[disabled] {
+  background: var(--c-bg-sub);
+  color: var(--c-text-muted);
+  cursor: default;
+}

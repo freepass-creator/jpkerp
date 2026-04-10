@@ -1,0 +1,75 @@
+/* grid.css — AG Grid 커스텀 */
+
+.ag-theme-alpine {
+  --ag-font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ag-font-size: 12px;
+  --ag-row-height: 28px;
+  --ag-header-height: 28px;
+  --ag-cell-horizontal-padding: 6px;
+  --ag-border-color: var(--c-border);
+  --ag-header-background-color: var(--c-bg-sub);
+  --ag-header-foreground-color: var(--c-text-sub);
+  --ag-row-hover-color: var(--c-bg-hover);
+  --ag-selected-row-background-color: #e8f0fe;
+  --ag-background-color: var(--c-bg);
+  --ag-foreground-color: var(--c-text);
+  --ag-border-radius: 0;
+  --ag-input-focus-border-color: var(--c-border-strong);
+  --ag-range-selection-border-color: var(--c-border-strong);
+  --ag-range-selection-background-color: var(--c-bg-hover);
+  --ag-selected-row-background-color: var(--c-bg-hover);
+  --ag-cell-editing-border: solid 1px var(--c-border-strong);
+  --ag-input-border-color: var(--c-border);
+  border: none !important;
+}
+
+/* 외곽 보더 완전 제거 */
+.ag-theme-alpine .ag-root-wrapper { border: none !important; }
+.ag-theme-alpine .ag-root { border: none !important; }
+.ag-theme-alpine .ag-body-viewport { border: none !important; }
+.ag-theme-alpine .ag-header { border-bottom: 1px solid var(--c-border) !important; }
+
+/* 세로줄 강제 */
+.ag-theme-alpine .ag-cell {
+  border-right: 1px solid var(--c-border) !important;
+}
+.ag-theme-alpine .ag-header-cell {
+  border-right: 1px solid var(--c-border) !important;
+}
+
+/* 폰트 강제 */
+.ag-theme-alpine .ag-root-wrapper,
+.ag-theme-alpine .ag-header-cell-label,
+.ag-theme-alpine .ag-cell {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 12px !important;
+}
+.ag-theme-alpine .ag-header-cell-label {
+  font-weight: 500 !important;
+}
+
+/* 셀 포커스/선택 파란색 제거 */
+.ag-theme-alpine .ag-cell-focus,
+.ag-theme-alpine .ag-cell-range-selected,
+.ag-theme-alpine .ag-cell-range-single-cell {
+  border-color: var(--c-border-strong) !important;
+  background: var(--c-bg-hover) !important;
+}
+.ag-theme-alpine .ag-ltr .ag-cell-focus:not(.ag-cell-range-selected) {
+  border: 1px solid var(--c-border-strong) !important;
+}
+.ag-theme-alpine .ag-row-selected {
+  background: var(--c-bg-hover) !important;
+}
+.ag-theme-alpine .ag-cell-inline-editing {
+  border-color: var(--c-border-strong) !important;
+  box-shadow: none !important;
+}
+
+/* 컬럼 리사이즈 핸들 숨김 (드래그는 작동) */
+.ag-theme-alpine .ag-header-cell-resize {
+  opacity: 0;
+}
+.ag-theme-alpine .ag-header-cell-resize:hover {
+  opacity: 0.3;
+}

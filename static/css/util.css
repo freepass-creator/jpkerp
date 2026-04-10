@@ -1,0 +1,92 @@
+/* util.css — Notion-style badge/toast/command palette */
+
+.badge {
+  display: inline-flex; align-items: center;
+  height: 20px;
+  padding: 0 var(--sp-2);
+  border-radius: 3px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--fw-medium);
+}
+.badge-success { background: var(--c-success-bg); color: var(--c-success); }
+.badge-warn    { background: var(--c-warn-bg);    color: var(--c-warn); }
+.badge-danger  { background: var(--c-danger-bg);  color: var(--c-danger); }
+.badge-info    { background: var(--c-info-bg);    color: var(--c-info); }
+.badge-mute    { background: var(--c-bg-active);  color: var(--c-text-sub); }
+
+.toast-host {
+  position: fixed; bottom: var(--sp-5); right: var(--sp-5);
+  display: flex; flex-direction: column-reverse; gap: var(--sp-2);
+  z-index: var(--z-toast);
+  pointer-events: none;
+}
+.toast {
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--ctrl-r);
+  background: var(--c-text);
+  color: var(--c-bg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--fw-medium);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: opacity var(--t-normal);
+}
+.toast.is-hide { opacity: 0; }
+.toast-success { background: var(--c-success); }
+.toast-error   { background: var(--c-danger); }
+.toast-warn    { background: var(--c-warn); }
+
+/* ── 컨텍스트 메뉴 ── */
+.ctx-menu {
+  position: fixed;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 160px;
+  padding: 4px 0;
+  z-index: var(--z-modal);
+  font-size: var(--font-size);
+}
+.ctx-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  cursor: pointer;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+.ctx-menu-item:hover { background: var(--c-bg-hover); }
+.ctx-menu-item.is-disabled { color: var(--c-text-muted); pointer-events: none; }
+.ctx-menu-item.is-danger { color: var(--c-danger); }
+.ctx-menu-item.is-danger:hover { background: var(--c-danger-bg); }
+.ctx-menu-sep { height: 1px; background: var(--c-border); margin: 4px 0; }
+
+.cp-host {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.25);
+  align-items: flex-start; justify-content: center;
+  padding-top: 20vh;
+  z-index: var(--z-modal);
+  display: flex;
+}
+.cp-host[hidden] { display: none; }
+.cp-panel {
+  width: 520px; max-width: 90vw;
+  background: var(--c-bg);
+  border-radius: 0;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+.cp-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--sp-5);
+  border: none;
+  font-size: var(--font-size-md);
+  outline: none;
+  background: transparent;
+}
+.cp-results {
+  max-height: 320px;
+  overflow-y: auto;
+  border-top: 1px solid var(--c-border);
+}

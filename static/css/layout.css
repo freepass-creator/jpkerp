@@ -1,0 +1,156 @@
+/* layout.css — Notion-style shell */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── 사이드바 ── */
+.sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--c-border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-menu {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: var(--sp-3);
+}
+
+.sidebar-link {
+  display: flex; align-items: center;
+  gap: var(--sp-3);
+  height: 36px;
+  padding: 0 var(--sp-3);
+  margin-bottom: 2px;
+  color: var(--c-text-sub);
+  font-size: var(--font-size);
+  font-weight: var(--fw);
+  border: none; background: none; width: 100%;
+  border-radius: 0;
+  text-align: left; cursor: pointer;
+  transition: background var(--t-fast);
+}
+.sidebar-link:hover { background: var(--c-bg-hover); color: var(--c-text); }
+.sidebar-link.is-active { background: var(--c-bg-hover); color: var(--c-text); font-weight: var(--fw-medium); }
+.sidebar-link svg { width: var(--ctrl-icon); height: var(--ctrl-icon); flex-shrink: 0; color: var(--c-text-muted); }
+.sidebar-link-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.sidebar-bottom {
+  border-top: 1px solid var(--c-border);
+  padding: var(--sp-3);
+}
+.sidebar-kbd {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  background: var(--c-bg-hover);
+  padding: 1px 4px;
+  margin-left: auto;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--c-border);
+  margin: var(--sp-3);
+}
+
+/* ── 탑바 ── */
+.topbar {
+  height: var(--panel-head-h);
+  display: flex; align-items: center;
+  padding: 0 var(--panel-head-px);
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-bg);
+  gap: var(--sp-3);
+  position: relative;
+}
+.topbar-title {
+  flex: 1;
+  font-size: var(--font-size-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+}
+.topbar-page-actions {
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin-left: auto;
+}
+.topbar-page-actions:empty { display: none; }
+.topbar-actions { display: flex; align-items: center; gap: var(--sp-2); margin-left: var(--sp-3); }
+
+/* 검색창 */
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--ctrl-h);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--c-border);
+  background: var(--c-bg);
+  width: 240px;
+  transition: border-color var(--t-fast);
+}
+.search-box:focus-within { border-color: var(--c-border-strong); }
+.search-box svg { color: var(--c-text-muted); flex-shrink: 0; }
+.search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  color: var(--c-text);
+  width: 100%;
+  height: 100%;
+}
+.search-box input::placeholder { color: var(--c-text-muted); }
+
+.topbar-status {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: var(--font-size);
+  color: var(--c-text-muted);
+  pointer-events: none;
+}
+
+.main { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── 워크스페이스 ── */
+.workspace {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+}
+.workspace.layout-1 { flex-direction: column; }
+.workspace.layout-66 > :first-child { flex: 6; min-width: 0; }
+.workspace.layout-66 > :last-child  { flex: 4; min-width: 0; }
+
+/* ── 패널 리사이즈 ── */
+.panel-resize-handle {
+  width: 1px;
+  cursor: col-resize;
+  flex-shrink: 0;
+  background: var(--c-border);
+  position: relative;
+}
+.panel-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -4px; right: -4px;
+}
+.panel-resize-grip { display: none; }
+body.is-resizing { cursor: col-resize; user-select: none; }
+body.is-resizing * { pointer-events: none; }
+body.is-resizing .panel-resize-handle { pointer-events: auto; }
+
+/* ── 빈 상태 ── */
+.empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: var(--sp-3);
+  height: 100%;
+  color: var(--c-text-muted);
+  font-size: var(--font-size);
+}
