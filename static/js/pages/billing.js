@@ -266,16 +266,17 @@ function showDetail(contractCode) {
 
   const typeColors = { '청구': 'var(--c-text)', '추가청구': '#d97706', '할인': '#2383e2', '납부': 'var(--c-success)' };
   const detailColDefs = [
-    { headerName: '회차', field: 'seq', width: 60,
+    { headerName: '회차', field: 'seq', width: 55,
+      valueFormatter: (p) => p.value || '',
       cellStyle: (p) => p.data._isHeader ? { fontWeight: 600 } : {} },
-    { headerName: '청구일', field: 'due_date', width: 80,
+    { headerName: '청구일', field: 'due_date', width: 85,
       valueFormatter: (p) => fmtDate(p.value),
-      cellStyle: { color: 'var(--c-text-muted)' } },
+      cellStyle: { color: 'var(--c-text-muted)' }, suppressSizeToFit: true },
     { headerName: '구분', field: 'type', width: 75,
       cellStyle: (p) => ({ fontWeight: 500, color: typeColors[p.value] || 'var(--c-text)' }) },
     { headerName: '내용', field: 'label', width: 140 },
-    { headerName: '일자', field: 'pay_date', width: 80,
-      valueFormatter: (p) => fmtDate(p.value) },
+    { headerName: '일자', field: 'pay_date', width: 85,
+      valueFormatter: (p) => fmtDate(p.value), suppressSizeToFit: true },
     { headerName: '방법', field: 'method', width: 80 },
     { headerName: '청구/조정', field: 'charge', width: 100, type: 'numericColumn',
       valueFormatter: (p) => p.value != null ? (p.value >= 0 ? '+' + fmt(p.value) : fmt(p.value)) : '',

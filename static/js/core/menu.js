@@ -10,6 +10,8 @@ export const MENU = [
   { href: '/contract', label: '계약관리',   icon: 'contract' },
   { href: '/customer', label: '고객관리',   icon: 'users' },
   { href: '/billing',  label: '수납관리',   icon: 'fund' },
+  { href: '/fund',     label: '입출금등록', icon: 'fund' },
+  { href: '/ledger',   label: '입출금내역', icon: 'fund' },
   { divider: true },
   { href: '/settings', label: '설정',       icon: 'settings' },
 ];

@@ -29,9 +29,11 @@
 .ag-theme-alpine .ag-body-viewport { border: none !important; }
 .ag-theme-alpine .ag-header { border-bottom: 1px solid var(--c-border) !important; }
 
-/* 세로줄 강제 */
+/* 세로줄 강제 + 텍스트 잘림 방지 */
 .ag-theme-alpine .ag-cell {
   border-right: 1px solid var(--c-border) !important;
+  text-overflow: clip !important;
+  overflow: visible !important;
 }
 .ag-theme-alpine .ag-header-cell {
   border-right: 1px solid var(--c-border) !important;

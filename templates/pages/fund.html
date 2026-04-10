@@ -1,0 +1,40 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block topbar_extra %}
+  <div style="display:flex;gap:4px">
+    <button class="btn fund-tab is-active" data-tab="bank">계좌</button>
+    <button class="btn fund-tab" data-tab="autodebit">자동이체</button>
+    <button class="btn fund-tab" data-tab="card">카드</button>
+  </div>
+  <span class="topbar-status" id="fundInfo">입출금등록</span>
+{% endblock %}
+{% block workspace %}
+<div id="fundHost" style="width:100%;height:100%;display:flex;flex-direction:column">
+  <!-- Step 1: 업로드 -->
+  <div id="fundStep1" style="padding:24px;display:flex;flex-direction:column;gap:16px;max-width:720px;margin:0 auto;width:100%">
+    <div id="fundGuide" style="font-size:11px;color:var(--c-text-muted);line-height:1.6;background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:4px;padding:10px 12px"></div>
+    <div style="display:flex;gap:8px">
+      <select id="fundBank" class="btn" style="padding:2px 8px">
+        <option value="shinhan">신한은행</option>
+      </select>
+      <input type="text" id="fundAccountNo" class="btn" placeholder="계좌번호 (예: 110-123-456789)" style="padding:4px 10px;flex:1">
+    </div>
+    <label id="fundDrop" style="border:2px dashed var(--c-border-strong);border-radius:8px;padding:32px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--c-text-muted)">
+      <input type="file" id="fundFile" accept=".csv,text/csv" hidden>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div>CSV 파일을 끌어다 놓거나 클릭</div>
+    </label>
+  </div>
+  <!-- Step 2: 미리보기 + 적용 -->
+  <div id="fundStep2" hidden style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="flex-shrink:0;padding:8px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--c-border)">
+      <span id="fundPreviewInfo" style="font-size:12px;color:var(--c-text-sub)"></span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn" id="fundReset">초기화</button>
+        <button class="btn btn-primary" id="fundConfirm">적용</button>
+      </div>
+    </div>
+    <div id="fundGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+  </div>
+</div>
+{% endblock %}

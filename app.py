@@ -17,6 +17,8 @@ ROUTES = [
     ('/contract',  'pages/contract.html',  '계약관리',   'contract'),
     ('/customer',  'pages/customer.html',  '고객관리',   'customer'),
     ('/billing',   'pages/billing.html',   '수납관리',   'billing'),
+    ('/fund',      'pages/fund.html',      '입출금등록', 'fund'),
+    ('/ledger',    'pages/ledger.html',    '입출금내역', 'ledger'),
     ('/settings',  'pages/settings.html',  '설정',       'settings'),
 ]
 
