@@ -17,6 +17,7 @@ const DEFAULT_TYPES = [
   { key: 'delivery',    label: '출고(인도)', icon: '🚗', sub: '차량 인도',   direction: 'out' },
   { key: 'return',      label: '반납(회수)', icon: '🔙', sub: '차량 회수',   direction: 'in' },
   { key: 'transfer',    label: '이동',       icon: '🔄', sub: '차량 이동/배차', direction: 'out' },
+  { key: 'key',         label: '키관리',     icon: '🔑', sub: '키 수령/반납/분실', direction: 'out' },
 ];
 
 const ORDER_KEY = 'jpk.op.order';
@@ -110,6 +111,14 @@ function renderForm() {
         <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 엔진오일 교환"></div>
         <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>업체/장소</label><input type="text" name="vendor"></div>
+        ${currentType === 'accident' ? `
+        <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
+        <div class="field"><label>보험접수번호</label><input type="text" name="insurance_no" placeholder="접수번호"></div>
+        ` : ''}
+        ${currentType === 'key' ? `
+        <div class="field"><label>구분</label><select name="key_action"><option value="수령">수령</option><option value="반납">반납</option><option value="분실">분실</option><option value="복제">복제</option></select></div>
+        <div class="field"><label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
+        ` : ''}
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>
