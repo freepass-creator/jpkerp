@@ -16,17 +16,21 @@ const fmtDate = (s) => {
 
 const TYPES = [
   { key: 'all',         label: '전체',       icon: '📋' },
-  { key: 'maintenance', label: '정비',       icon: '🔧' },
-  { key: 'accident',    label: '사고',       icon: '💥' },
-  { key: 'penalty',     label: '과태료',     icon: '🚫' },
   { key: 'delivery',    label: '출고(인도)', icon: '🚗' },
   { key: 'return',      label: '반납(회수)', icon: '🔙' },
   { key: 'transfer',    label: '이동',       icon: '🔄' },
+  { key: 'maintenance', label: '정비',       icon: '🔧' },
+  { key: 'wash',        label: '세차',       icon: '🧼' },
+  { key: 'inspect',     label: '차량점검',   icon: '📋' },
+  { key: 'accident',    label: '사고',       icon: '💥' },
+  { key: 'penalty',     label: '과태료',     icon: '🚫' },
   { key: 'key',         label: '키관리',     icon: '🔑' },
   { key: 'contact',     label: '고객응대',   icon: '📞' },
+  { key: 'fuel',        label: '주유/충전',  icon: '⛽' },
+  { key: 'insurance',   label: '보험',       icon: '🛡' },
 ];
 
-const OP_TYPES = ['maintenance', 'accident', 'penalty', 'delivery', 'return', 'transfer', 'key', 'contact'];
+const OP_TYPES = ['delivery', 'return', 'transfer', 'maintenance', 'wash', 'inspect', 'accident', 'penalty', 'key', 'contact', 'fuel', 'insurance'];
 
 let allEvents = [];
 let activeType = 'all';

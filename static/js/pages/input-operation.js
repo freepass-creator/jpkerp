@@ -41,14 +41,18 @@ function saveTitle(type, title) {
 }
 
 const DEFAULT_TYPES = [
-  { key: 'maintenance', label: '정비',     icon: '🔧', sub: '차량 정비/소모품 교환', direction: 'out' },
-  { key: 'accident',    label: '사고',     icon: '💥',  sub: '사고 발생/처리 기록', direction: 'out' },
-  { key: 'penalty',     label: '과태료',   icon: '🚫', sub: '교통 과태료/위반', direction: 'out' },
-  { key: 'delivery',    label: '출고(인도)', icon: '🚗', sub: '차량 인도',   direction: 'out' },
-  { key: 'return',      label: '반납(회수)', icon: '🔙', sub: '차량 회수',   direction: 'in' },
-  { key: 'transfer',    label: '이동',       icon: '🔄', sub: '차량 이동/배차', direction: 'out' },
-  { key: 'key',         label: '키관리',     icon: '🔑', sub: '키 수령/반납/분실', direction: 'out' },
-  { key: 'contact',     label: '고객응대',   icon: '📞', sub: '통화/상담/컴플레인', direction: 'out' },
+  { key: 'delivery',    label: '출고(인도)', icon: '🚗', sub: '차량 인도',           direction: 'out' },
+  { key: 'return',      label: '반납(회수)', icon: '🔙', sub: '차량 회수',           direction: 'in' },
+  { key: 'transfer',    label: '이동',       icon: '🔄', sub: '차량 이동/배차',      direction: 'out' },
+  { key: 'maintenance', label: '정비',       icon: '🔧', sub: '정비/소모품 교환',    direction: 'out' },
+  { key: 'wash',        label: '세차',       icon: '🧼', sub: '세차/실내크리닝',     direction: 'out' },
+  { key: 'inspect',     label: '차량점검',   icon: '📋', sub: '출고전/반납후 점검',  direction: 'out' },
+  { key: 'accident',    label: '사고',       icon: '💥', sub: '사고 발생/처리',      direction: 'out' },
+  { key: 'penalty',     label: '과태료',     icon: '🚫', sub: '교통 과태료/위반',    direction: 'out' },
+  { key: 'key',         label: '키관리',     icon: '🔑', sub: '키 수령/반납/분실',   direction: 'out' },
+  { key: 'contact',     label: '고객응대',   icon: '📞', sub: '통화/상담/컴플레인',  direction: 'out' },
+  { key: 'fuel',        label: '주유/충전',  icon: '⛽', sub: '유류비 기록',         direction: 'out' },
+  { key: 'insurance',   label: '보험',       icon: '🛡', sub: '보험접수/갱신/청구',  direction: 'out' },
 ];
 
 const ORDER_KEY = 'jpk.op.order';
@@ -351,6 +355,95 @@ function renderForm() {
       </div>
     </div>`;
 
+  } else if (currentType === 'wash') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">세차 정보</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 외부세차+실내크리닝"></div>
+        ${sel('wash_type', '세차유형', ['외부세차','실내크리닝','외부+실내','광택','기타'])}
+        <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>세차업체</label><input type="text" name="vendor" placeholder="세차장명"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'inspect') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">차량 점검</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 출고전 점검"></div>
+        ${sel('inspect_type', '점검유형', ['출고전점검','반납후점검','정기점검','임시점검'])}
+        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">외관 점검</div>
+      <div class="form-grid">
+        ${sel('exterior', '외관상태', ['양호','경미흠집','손상있음'])}
+        ${sel('interior', '실내상태', ['양호','보통','청소필요'])}
+        ${sel('tire_status', '타이어', ['양호','교체필요','편마모'])}
+        ${sel('light_status', '등화장치', ['정상','이상있음'])}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">비품 확인</div>
+      <div class="form-grid">
+        ${chk('equip_navi', '네비')}
+        ${chk('equip_blackbox', '블랙박스')}
+        ${chk('equip_hipass', '하이패스')}
+        ${chk('equip_charger', '충전케이블')}
+        ${chk('equip_triangle', '삼각대')}
+        ${chk('equip_fire', '소화기')}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>특이사항</label><textarea name="note" rows="2" placeholder="점검 결과 기록"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'fuel') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">주유/충전 정보</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 주유 50L"></div>
+        ${sel('fuel_type', '유종', ['휘발유','경유','LPG','전기충전'])}
+        <div class="field"><label>리터/kWh</label><input type="text" name="fuel_amount" inputmode="numeric" placeholder="리터 또는 kWh"></div>
+        <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>주유소</label><input type="text" name="vendor" placeholder="주유소명"></div>
+        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'insurance') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">보험 정보</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 자동차보험 갱신"></div>
+        ${sel('insurance_type', '구분', ['신규가입','갱신','보험청구','해지'])}
+        <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
+        <div class="field"><label>증권번호</label><input type="text" name="insurance_no" placeholder="증권번호"></div>
+        <div class="field"><label>보험시작일</label><input type="date" name="insurance_start"></div>
+        <div class="field"><label>보험만료일</label><input type="date" name="insurance_end"></div>
+        <div class="field"><label>보험료</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>`;
+
   } else if (currentType === 'contact') {
     sections = `
     <div class="form-section">
@@ -527,6 +620,9 @@ async function submitForm() {
       'equip_navi', 'equip_blackbox', 'equip_hipass', 'equip_charger', 'equip_triangle', 'equip_fire',
       'extra_mileage', 'extra_fuel', 'extra_damage',
       'from_location', 'to_location', 'transfer_reason',
+      'wash_type', 'inspect_type', 'tire_status', 'light_status',
+      'fuel_type', 'fuel_amount',
+      'insurance_type', 'insurance_start', 'insurance_end',
       'key_action', 'key_type', 'key_info',
       'customer_name', 'customer_phone', 'contact_type', 'contact_result', 'handler',
     ];
