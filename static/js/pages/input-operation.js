@@ -10,12 +10,27 @@ import { showToast } from '../core/toast.js';
 
 const $ = (s) => document.querySelector(s);
 
-const TYPES = [
+const DEFAULT_TYPES = [
   { key: 'maintenance', label: '정비',     icon: '🔧', sub: '차량 정비/소모품 교환', direction: 'out' },
   { key: 'accident',    label: '사고',     icon: '⚠',  sub: '사고 발생/처리 기록', direction: 'out' },
   { key: 'penalty',     label: '과태료',   icon: '🚫', sub: '교통 과태료/위반', direction: 'out' },
   { key: 'delivery',    label: '출고/반납', icon: '🚗', sub: '차량 인도/회수', direction: 'in' },
 ];
+
+const ORDER_KEY = 'jpk.op.order';
+function loadTypes() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ORDER_KEY));
+    if (saved?.length) {
+      return saved.map(k => DEFAULT_TYPES.find(t => t.key === k)).filter(Boolean);
+    }
+  } catch {}
+  return [...DEFAULT_TYPES];
+}
+function saveOrder(types) {
+  localStorage.setItem(ORDER_KEY, JSON.stringify(types.map(t => t.key)));
+}
+let TYPES = loadTypes();
 
 let assets = [];
 let currentType = null;
@@ -23,21 +38,59 @@ let currentType = null;
 function renderList() {
   const host = $('#opList');
   host.innerHTML = TYPES.map(t => `
-    <a class="sidebar-link op-type${currentType === t.key ? ' is-active' : ''}" data-type="${t.key}" href="#">
-      <span style="font-size:16px">${t.icon}</span>
+    <div class="sidebar-link op-type${currentType === t.key ? ' is-active' : ''}" data-type="${t.key}" draggable="true" style="cursor:grab">
+      <span style="font-size:16px;flex-shrink:0">${t.icon}</span>
       <span class="sidebar-link-label">
         <div style="font-weight:500">${t.label}</div>
         <div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">${t.sub}</div>
       </span>
-    </a>
+      <span style="color:var(--c-text-muted);font-size:10px;cursor:grab">⠿</span>
+    </div>
   `).join('');
 
+  // 클릭
   host.querySelectorAll('.op-type').forEach(el => {
     el.addEventListener('click', (e) => {
-      e.preventDefault();
+      if (e.target.closest('[draggable]') && e.detail === 0) return;
       currentType = el.dataset.type;
       renderList();
       renderForm();
+    });
+  });
+
+  // 드래그 정렬
+  let dragEl = null;
+  host.querySelectorAll('.op-type').forEach(el => {
+    el.addEventListener('dragstart', (e) => {
+      dragEl = el;
+      el.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.style.opacity = '';
+      dragEl = null;
+    });
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      el.style.borderTop = '2px solid var(--c-primary)';
+    });
+    el.addEventListener('dragleave', () => {
+      el.style.borderTop = '';
+    });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.style.borderTop = '';
+      if (!dragEl || dragEl === el) return;
+      const fromKey = dragEl.dataset.type;
+      const toKey = el.dataset.type;
+      const fromIdx = TYPES.findIndex(t => t.key === fromKey);
+      const toIdx = TYPES.findIndex(t => t.key === toKey);
+      if (fromIdx < 0 || toIdx < 0) return;
+      const [moved] = TYPES.splice(fromIdx, 1);
+      TYPES.splice(toIdx, 0, moved);
+      saveOrder(TYPES);
+      renderList();
     });
   });
 }
