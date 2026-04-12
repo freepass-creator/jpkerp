@@ -139,7 +139,7 @@ function renderForm() {
   const host = $('#opFormHost');
   const carList = `<datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">${a.car_model || ''}</option>`).join('')}</datalist>`;
   const chk = (name, label) => `<div class="field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="${name}" value="Y"> ${label}</label></div>`;
-  const sel = (name, label, opts) => `<div class="field"><label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}">${o}</span>`).join('')}</div></div>`;
+  const sel = (name, label, opts) => `<div class="field"></label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}">${o}</span>`).join('')}</div></div>`;
 
   // 유형별 폼 생성
   let sections = '';
@@ -149,15 +149,15 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">정비 정보</div>
       <div class="form-grid">
-        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>정비내용</label><input type="text" name="title" placeholder="예: 엔진오일 교환"></div>
+        <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>정비내용</label><input type="text" name="title" placeholder="예: 엔진오일 교환"></div>
         ${sel('maint_type', '정비유형', ['정기점검','소모품교체','수리','판금/도색','타이어','기타'])}
-        <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>정비업체</label><input type="text" name="vendor" placeholder="카센터명"></div>
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
-        <div class="field"><label>다음정비예정</label><input type="date" name="next_maint_date"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field"></label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>정비업체</label><input type="text" name="vendor" placeholder="카센터명"></div>
+        <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field"></label>다음정비예정</label><input type="date" name="next_maint_date"></div>
+        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -166,26 +166,26 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">사고 정보</div>
       <div class="form-grid">
-        <div class="field is-required"><label>사고일시</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>사고내용</label><input type="text" name="title" placeholder="예: 후방추돌"></div>
+        <div class="field is-required"></label>사고일시</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>사고내용</label><input type="text" name="title" placeholder="예: 후방추돌"></div>
         ${sel('accident_type', '사고유형', ['자차','대물','대인','자차+대물','자차+대인'])}
-        <div class="field"><label>사고장소</label><input type="text" name="vendor" placeholder="사고 발생 위치"></div>
-        <div class="field"><label>과실비율</label><input type="text" name="fault_ratio" placeholder="예: 100:0, 70:30"></div>
-        <div class="field"><label>상대방</label><input type="text" name="accident_other" placeholder="상대방 이름/차량"></div>
-        <div class="field"><label>상대방연락처</label><input type="text" name="accident_other_phone" placeholder="010-0000-0000"></div>
+        <div class="field"></label>사고장소</label><input type="text" name="vendor" placeholder="사고 발생 위치"></div>
+        <div class="field"></label>과실비율</label><input type="text" name="fault_ratio" placeholder="예: 100:0, 70:30"></div>
+        <div class="field"></label>상대방</label><input type="text" name="accident_other" placeholder="상대방 이름/차량"></div>
+        <div class="field"></label>상대방연락처</label><input type="text" name="accident_other_phone" placeholder="010-0000-0000"></div>
       </div>
     </div>
     <div class="form-section">
       <div class="form-section-title">보험 처리</div>
       <div class="form-grid">
-        <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
-        <div class="field"><label>보험접수번호</label><input type="text" name="insurance_no" placeholder="접수번호"></div>
-        <div class="field"><label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>수리업체</label><input type="text" name="repair_shop" placeholder="수리 맡긴 곳"></div>
-        <div class="field"><label>수리기간(예상)</label><input type="text" name="repair_days" placeholder="일"></div>
+        <div class="field"></label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
+        <div class="field"></label>보험접수번호</label><input type="text" name="insurance_no" placeholder="접수번호"></div>
+        <div class="field"></label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>수리업체</label><input type="text" name="repair_shop" placeholder="수리 맡긴 곳"></div>
+        <div class="field"></label>수리기간(예상)</label><input type="text" name="repair_days" placeholder="일"></div>
         ${sel('rental_car', '대차여부', ['미정','대차 제공','대차 없음'])}
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -194,17 +194,17 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">과태료 정보</div>
       <div class="form-grid">
-        <div class="field is-required"><label>위반일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>위반내용</label><input type="text" name="title" placeholder="예: 주정차위반, 속도위반"></div>
+        <div class="field is-required"></label>위반일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>위반내용</label><input type="text" name="title" placeholder="예: 주정차위반, 속도위반"></div>
         ${sel('penalty_type', '위반유형', ['주정차위반','속도위반','신호위반','버스전용','기타'])}
-        <div class="field"><label>과태료금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>위반장소</label><input type="text" name="vendor" placeholder="위반 위치"></div>
-        <div class="field"><label>납부기한</label><input type="date" name="due_date"></div>
+        <div class="field"></label>과태료금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>위반장소</label><input type="text" name="vendor" placeholder="위반 위치"></div>
+        <div class="field"></label>납부기한</label><input type="date" name="due_date"></div>
         ${sel('payer', '부담자', ['고객부담','회사부담'])}
-        <div class="field"><label>고객명</label><input type="text" name="customer_name" placeholder="해당 고객"></div>
+        <div class="field"></label>고객명</label><input type="text" name="customer_name" placeholder="해당 고객"></div>
         ${sel('paid_status', '납부여부', ['미납','납부완료'])}
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -213,18 +213,18 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">출고 기본</div>
       <div class="form-grid">
-        <div class="field is-required"><label>출고일</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 홍길동 출고"></div>
-        <div class="field"><label>인도장소</label><input type="text" name="delivery_location" placeholder="사무실/고객방문/탁송"></div>
-        <div class="field"><label>인수자명</label><input type="text" name="receiver_name"></div>
-        <div class="field"><label>인수자연락처</label><input type="text" name="receiver_phone" placeholder="010-0000-0000"></div>
+        <div class="field is-required"></label>출고일</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 홍길동 출고"></div>
+        <div class="field"></label>인도장소</label><input type="text" name="delivery_location" placeholder="사무실/고객방문/탁송"></div>
+        <div class="field"></label>인수자명</label><input type="text" name="receiver_name"></div>
+        <div class="field"></label>인수자연락처</label><input type="text" name="receiver_phone" placeholder="010-0000-0000"></div>
       </div>
     </div>
     <div class="form-section">
       <div class="form-section-title">차량 상태</div>
       <div class="form-grid">
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
         ${sel('exterior', '외관상태', ['양호','경미흠집','손상있음'])}
         ${sel('interior', '실내상태', ['양호','보통','청소필요'])}
@@ -233,9 +233,9 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">키 인도</div>
       <div class="form-grid">
-        <div class="field"><label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
-        <div class="field"><label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
-        <div class="field"><label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
+        <div class="field"></label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
+        <div class="field"></label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
+        <div class="field"></label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
       </div>
     </div>
     <div class="form-section">
@@ -259,7 +259,7 @@ function renderForm() {
     </div>
     <div class="form-section">
       <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><label>특이사항</label><textarea name="note" rows="2" placeholder="기스 위치, 고객 요청사항 등"></textarea></div>
+        <div class="field" style="grid-column:1/-1"></label>특이사항</label><textarea name="note" rows="2" placeholder="기스 위치, 고객 요청사항 등"></textarea></div>
       </div>
     </div>`;
 
@@ -268,16 +268,16 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">반납 기본</div>
       <div class="form-grid">
-        <div class="field is-required"><label>반납일</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 홍길동 반납"></div>
-        <div class="field"><label>반납장소</label><input type="text" name="return_location" placeholder="사무실/고객방문/탁송"></div>
+        <div class="field is-required"></label>반납일</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 홍길동 반납"></div>
+        <div class="field"></label>반납장소</label><input type="text" name="return_location" placeholder="사무실/고객방문/탁송"></div>
       </div>
     </div>
     <div class="form-section">
       <div class="form-section-title">차량 상태</div>
       <div class="form-grid">
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
         ${sel('car_condition', '차량상태', ['양호','경미손상','수리필요','사고차'])}
         ${sel('wash_status', '세차상태', ['깨끗','보통','세차필요'])}
@@ -288,9 +288,9 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">키 회수</div>
       <div class="form-grid">
-        <div class="field"><label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
-        <div class="field"><label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
-        <div class="field"><label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
+        <div class="field"></label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
+        <div class="field"></label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
+        <div class="field"></label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
       </div>
     </div>
     <div class="form-section">
@@ -307,15 +307,15 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">추가청구</div>
       <div class="form-grid">
-        <div class="field"><label>과주행 추가금</label><input type="text" name="extra_mileage" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>연료부족 추가금</label><input type="text" name="extra_fuel" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>손상수리 추가금</label><input type="text" name="extra_damage" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>과주행 추가금</label><input type="text" name="extra_mileage" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>연료부족 추가금</label><input type="text" name="extra_fuel" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>손상수리 추가금</label><input type="text" name="extra_damage" inputmode="numeric" placeholder="0"></div>
         ${sel('next_plan', '다음예정', ['재출고','정비입고','상품화','매각'])}
       </div>
     </div>
     <div class="form-section">
       <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><label>특이사항</label><textarea name="note" rows="2" placeholder="손상부위, 추가청구 사유 등"></textarea></div>
+        <div class="field" style="grid-column:1/-1"></label>특이사항</label><textarea name="note" rows="2" placeholder="손상부위, 추가청구 사유 등"></textarea></div>
       </div>
     </div>`;
 
@@ -324,15 +324,15 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">이동 정보</div>
       <div class="form-grid">
-        <div class="field is-required"><label>이동일</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 김포→인천 배차"></div>
-        <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="출발 위치"></div>
-        <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="도착 위치"></div>
+        <div class="field is-required"></label>이동일</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 김포→인천 배차"></div>
+        <div class="field"></label>출발지</label><input type="text" name="from_location" placeholder="출발 위치"></div>
+        <div class="field"></label>도착지</label><input type="text" name="to_location" placeholder="도착 위치"></div>
         ${sel('transfer_reason', '이동사유', ['배차','정비입고','탁송','기타'])}
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
-        <div class="field"><label>비용</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field"></label>비용</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -341,13 +341,13 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">키 관리</div>
       <div class="form-grid">
-        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 메인키 수령"></div>
+        <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 메인키 수령"></div>
         ${sel('key_action', '구분', ['수령','반납','분실','복제'])}
         ${sel('key_type', '키종류', ['메인키','보조키','카드키','기타'])}
-        <div class="field"><label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field"></label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
+        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -356,15 +356,15 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">고객 응대</div>
       <div class="form-grid">
-        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 대여료 문의"></div>
-        <div class="field"><label>고객명</label><input type="text" name="customer_name"></div>
-        <div class="field"><label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
+        <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 대여료 문의"></div>
+        <div class="field"></label>고객명</label><input type="text" name="customer_name"></div>
+        <div class="field"></label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
         ${sel('contact_type', '유형', ['일반문의','컴플레인','계약문의','정비요청','사고접수','반납협의','연장문의','기타'])}
         ${sel('contact_result', '처리결과', ['처리완료','진행중','보류','에스컬레이션'])}
-        <div class="field"><label>담당자</label><input type="text" name="handler" placeholder="처리 담당자"></div>
-        <div class="field" style="grid-column:1/-1"><label>통화내용</label><textarea name="note" rows="3" placeholder="상담 내용 기록"></textarea></div>
+        <div class="field"></label>담당자</label><input type="text" name="handler" placeholder="처리 담당자"></div>
+        <div class="field" style="grid-column:1/-1"></label>통화내용</label><textarea name="note" rows="3" placeholder="상담 내용 기록"></textarea></div>
       </div>
     </div>`;
 
@@ -372,22 +372,22 @@ function renderForm() {
     sections = `
     <div class="form-section">
       <div class="form-grid">
-        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title"></div>
-        <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>업체/장소</label><input type="text" name="vendor"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"></label>제목</label><input type="text" name="title"></div>
+        <div class="field"></label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>업체/장소</label><input type="text" name="vendor"></div>
+        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
   }
 
   host.innerHTML = sections;
         ${currentType === 'accident' ? `
-        <div class="field"><label>사고유형</label><select name="accident_type"><option value="자차">자차</option><option value="대물">대물</option><option value="대인">대인</option><option value="자차+대물">자차+대물</option></select></div>
-        <div class="field"><label>상대방</label><input type="text" name="accident_other" placeholder="상대방 정보"></div>
-        <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
-        <div class="field"><label>보험접수번호</label><input type="text" name="insurance_no" placeholder="접수번호"></div>
+        <div class="field"></label>사고유형</label><select name="accident_type"><option value="자차">자차</option><option value="대물">대물</option><option value="대인">대인</option><option value="자차+대물">자차+대물</option></select></div>
+        <div class="field"></label>상대방</label><input type="text" name="accident_other" placeholder="상대방 정보"></div>
+        <div class="field"></label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
+        <div class="field"></label>보험접수번호</label><input type="text" name="insurance_no" placeholder="접수번호"></div>
         ` : ''}
         ${currentType === 'delivery' ? `
       </div>
@@ -395,19 +395,19 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">인도 정보</div>
       <div class="form-grid">
-        <div class="field"><label>인도장소</label><input type="text" name="delivery_location" placeholder="사무실/고객방문/탁송"></div>
-        <div class="field"><label>인수자명</label><input type="text" name="receiver_name" placeholder="인수자 이름"></div>
-        <div class="field"><label>인수자연락처</label><input type="text" name="receiver_phone" placeholder="010-0000-0000"></div>
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field"></label>인도장소</label><input type="text" name="delivery_location" placeholder="사무실/고객방문/탁송"></div>
+        <div class="field"></label>인수자명</label><input type="text" name="receiver_name" placeholder="인수자 이름"></div>
+        <div class="field"></label>인수자연락처</label><input type="text" name="receiver_phone" placeholder="010-0000-0000"></div>
+        <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
       </div>
     </div>
     <div class="form-section">
       <div class="form-section-title">키 인도</div>
       <div class="form-grid">
-        <div class="field"><label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
-        <div class="field"><label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
-        <div class="field"><label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
+        <div class="field"></label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
+        <div class="field"></label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
+        <div class="field"></label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
       </div>
     </div>
     <div class="form-section">
@@ -435,8 +435,8 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">반납 정보</div>
       <div class="form-grid">
-        <div class="field"><label>반납장소</label><input type="text" name="return_location" placeholder="사무실/고객방문/탁송"></div>
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field"></label>반납장소</label><input type="text" name="return_location" placeholder="사무실/고객방문/탁송"></div>
+        <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
         ${sel('car_condition', '차량상태', ['양호','경미손상','수리필요','사고차'])}
         ${sel('wash_status', '세차상태', ['깨끗','보통','세차필요'])}
@@ -446,30 +446,30 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">키 회수</div>
       <div class="form-grid">
-        <div class="field"><label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
-        <div class="field"><label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
-        <div class="field"><label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
+        <div class="field"></label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
+        <div class="field"></label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
+        <div class="field"></label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
       </div>
     </div>
     <div class="form-section">
       <div class="form-section-title">추가청구</div>
       <div class="form-grid">
-        <div class="field"><label>과주행 추가금</label><input type="text" name="extra_mileage" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>연료부족 추가금</label><input type="text" name="extra_fuel" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>손상수리 추가금</label><input type="text" name="extra_damage" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>과주행 추가금</label><input type="text" name="extra_mileage" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>연료부족 추가금</label><input type="text" name="extra_fuel" inputmode="numeric" placeholder="0"></div>
+        <div class="field"></label>손상수리 추가금</label><input type="text" name="extra_damage" inputmode="numeric" placeholder="0"></div>
       </div>
         ` : ''}
         ${currentType === 'key' ? `
         ${sel('key_action', '구분', ['수령','반납','분실','복제'])}
         ${sel('key_type', '키종류', ['메인키','보조키','카드키','기타'])}
-        <div class="field"><label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
+        <div class="field"></label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
         ` : ''}
         ${currentType === 'contact' ? `
-        <div class="field"><label>고객명</label><input type="text" name="customer_name" placeholder="고객명"></div>
-        <div class="field"><label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
-        <div class="field"><label>유형</label><select name="contact_type"><option value="일반문의">일반문의</option><option value="컴플레인">컴플레인</option><option value="계약문의">계약문의</option><option value="정비요청">정비요청</option><option value="사고접수">사고접수</option><option value="반납협의">반납협의</option><option value="기타">기타</option></select></div>
+        <div class="field"></label>고객명</label><input type="text" name="customer_name" placeholder="고객명"></div>
+        <div class="field"></label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
+        <div class="field"></label>유형</label><select name="contact_type"><option value="일반문의">일반문의</option><option value="컴플레인">컴플레인</option><option value="계약문의">계약문의</option><option value="정비요청">정비요청</option><option value="사고접수">사고접수</option><option value="반납협의">반납협의</option><option value="기타">기타</option></select></div>
         ` : ''}
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>
   `;
