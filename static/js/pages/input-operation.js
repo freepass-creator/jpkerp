@@ -41,18 +41,19 @@ function saveTitle(type, title) {
 }
 
 const DEFAULT_TYPES = [
-  { key: 'delivery',    label: '출고(인도)', icon: '🚗', sub: '차량 인도',           direction: 'out' },
-  { key: 'return',      label: '반납(회수)', icon: '🔙', sub: '차량 회수',           direction: 'in' },
-  { key: 'transfer',    label: '이동',       icon: '🔄', sub: '차량 이동/배차',      direction: 'out' },
-  { key: 'maintenance', label: '정비',       icon: '🔧', sub: '정비/소모품 교환',    direction: 'out' },
-  { key: 'wash',        label: '세차',       icon: '🧼', sub: '세차/실내크리닝',     direction: 'out' },
-  { key: 'inspect',     label: '차량점검',   icon: '📋', sub: '출고전/반납후 점검',  direction: 'out' },
-  { key: 'accident',    label: '사고',       icon: '💥', sub: '사고 발생/처리',      direction: 'out' },
-  { key: 'penalty',     label: '과태료',     icon: '🚫', sub: '교통 과태료/위반',    direction: 'out' },
-  { key: 'key',         label: '키관리',     icon: '🔑', sub: '키 수령/반납/분실',   direction: 'out' },
-  { key: 'contact',     label: '고객응대',   icon: '📞', sub: '통화/상담/컴플레인',  direction: 'out' },
-  { key: 'fuel',        label: '주유/충전',  icon: '⛽', sub: '유류비 기록',         direction: 'out' },
-  { key: 'insurance',   label: '보험',       icon: '🛡', sub: '보험접수/갱신/청구',  direction: 'out' },
+  { key: 'contact',     label: '고객응대',       icon: '📞', sub: '통화/상담/컴플레인',       direction: 'out' },
+  { key: 'delivery',    label: '출고(인도)',     icon: '🚗', sub: '차량 인도',                 direction: 'out' },
+  { key: 'return',      label: '반납(회수)',     icon: '🔙', sub: '차량 회수',                 direction: 'in' },
+  { key: 'transfer',    label: '차량이동',       icon: '🔄', sub: '이동/배차/탁송',            direction: 'out' },
+  { key: 'key',         label: '차키관리',       icon: '🔑', sub: '키 수령/반납/분실',          direction: 'out' },
+  { key: 'parts',       label: '소모품교체',     icon: '🔧', sub: '오일/타이어/배터리/와이퍼',  direction: 'out' },
+  { key: 'product',     label: '상품화',         icon: '✨', sub: '반납 후 재상품화',           direction: 'out' },
+  { key: 'accident',    label: '사고접수 및 처리', icon: '💥', sub: '사고 발생/보험접수',        direction: 'out' },
+  { key: 'repair',      label: '사고수리',       icon: '🔨', sub: '판금/도색/수리',             direction: 'out' },
+  { key: 'penalty',     label: '과태료',         icon: '🚫', sub: '교통 과태료/위반',           direction: 'out' },
+  { key: 'collect',     label: '미수관리',       icon: '📨', sub: '독촉/내용증명/법적조치',     direction: 'out' },
+  { key: 'wash',        label: '세차',           icon: '🧼', sub: '세차/실내크리닝',           direction: 'out' },
+  { key: 'fuel',        label: '연료보충',       icon: '⛽', sub: '주유/전기충전',              direction: 'out' },
 ];
 
 const ORDER_KEY = 'jpk.op.order';
@@ -355,6 +356,124 @@ function renderForm() {
       </div>
     </div>`;
 
+  } else if (currentType === 'parts') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">소모품 교체</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>교체내용</label><input type="text" name="title" placeholder="예: 엔진오일+에어필터"></div>
+        ${sel('parts_type', '품목', ['엔진오일','미션오일','브레이크오일','에어필터','에어컨필터','와이퍼','배터리','타이어','브레이크패드','냉각수','기타'])}
+        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>정비업체</label><input type="text" name="vendor" placeholder="업체명"></div>
+        <div class="field"><label>다음교체예정</label><input type="date" name="next_maint_date"></div>
+        <div class="field"><label>다음교체km</label><input type="text" name="next_maint_km" inputmode="numeric" placeholder="km"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'product') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">상품화 기본</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 반납 후 상품화"></div>
+        ${sel('product_status', '진행상태', ['시작','진행중','완료'])}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">세차/크리닝</div>
+      <div class="form-grid">
+        ${sel('wash_type', '세차', ['미실시','외부세차','실내크리닝','외부+실내','광택'])}
+        <div class="field"><label>세차비용</label><input type="text" name="wash_cost" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>세차업체</label><input type="text" name="wash_vendor"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">정비/소모품 (해당 시)</div>
+      <div class="form-grid">
+        ${sel('product_maint', '정비여부', ['없음','소모품교체','수리','판금/도색'])}
+        <div class="field"><label>정비내용</label><input type="text" name="maint_detail" placeholder="예: 엔진오일+와이퍼"></div>
+        <div class="field"><label>정비비용</label><input type="text" name="maint_cost" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>정비업체</label><input type="text" name="maint_vendor"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">차량 상태</div>
+      <div class="form-grid">
+        ${sel('exterior', '외관', ['양호','경미흠집','손상있음'])}
+        ${sel('interior', '실내', ['양호','보통','청소필요'])}
+        ${sel('tire_status', '타이어', ['양호','교체필요','편마모'])}
+        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="field"><label>총 비용</label><input type="text" name="amount" inputmode="numeric" placeholder="세차+정비 합계"></div>
+        <div class="field"><label>예상출고일</label><input type="date" name="expected_delivery"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="상품화 상세 기록"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'repair') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">사고수리 정보</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>수리내용</label><input type="text" name="title" placeholder="예: 전면범퍼 판금도색"></div>
+        ${sel('repair_type', '수리유형', ['판금','도색','판금+도색','부품교체','전체수리'])}
+        <div class="field"><label>수리업체</label><input type="text" name="vendor" placeholder="공업사명"></div>
+        <div class="field"><label>입고일</label><input type="date" name="repair_in_date"></div>
+        <div class="field"><label>출고예정일</label><input type="date" name="repair_out_date"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">비용</div>
+      <div class="form-grid">
+        <div class="field"><label>수리비(견적)</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>보험처리금액</label><input type="text" name="insurance_amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>자기부담금</label><input type="text" name="self_pay" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>금액(확정)</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-grid">
+        ${sel('repair_status', '수리상태', ['견적중','수리중','수리완료','출고완료'])}
+        ${sel('rental_car', '대차', ['미제공','대차중','대차반납'])}
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'collect') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">미수관리</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 3회차 미납 독촉"></div>
+        <div class="field"><label>고객명</label><input type="text" name="customer_name"></div>
+        <div class="field"><label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
+        <div class="field"><label>미수금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">조치 내역</div>
+      <div class="form-grid">
+        ${sel('collect_action', '조치', ['전화독촉','문자발송','내용증명발송','법적조치예고','법적조치진행','기타'])}
+        ${sel('collect_result', '결과', ['납부약속','즉시납부','연락불가','거부','기타'])}
+        <div class="field"><label>약속납부일</label><input type="date" name="promise_date"></div>
+        <div class="field"><label>담당자</label><input type="text" name="handler"></div>
+        <div class="field" style="grid-column:1/-1"><label>상세내용</label><textarea name="note" rows="3" placeholder="통화 내용, 조치 사항 기록"></textarea></div>
+      </div>
+    </div>`;
+
   } else if (currentType === 'wash') {
     sections = `
     <div class="form-section">
@@ -620,9 +739,13 @@ async function submitForm() {
       'equip_navi', 'equip_blackbox', 'equip_hipass', 'equip_charger', 'equip_triangle', 'equip_fire',
       'extra_mileage', 'extra_fuel', 'extra_damage',
       'from_location', 'to_location', 'transfer_reason',
-      'wash_type', 'inspect_type', 'tire_status', 'light_status',
+      'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
       'insurance_type', 'insurance_start', 'insurance_end',
+      'parts_type', 'next_maint_km',
+      'product_status', 'product_maint', 'maint_detail', 'maint_cost', 'maint_vendor', 'expected_delivery',
+      'repair_type', 'repair_in_date', 'repair_out_date', 'repair_estimate', 'insurance_amount', 'self_pay', 'repair_status',
+      'collect_action', 'collect_result', 'promise_date',
       'key_action', 'key_type', 'key_info',
       'customer_name', 'customer_phone', 'contact_type', 'contact_result', 'handler',
     ];

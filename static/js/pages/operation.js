@@ -15,22 +15,23 @@ const fmtDate = (s) => {
 };
 
 const TYPES = [
-  { key: 'all',         label: '전체',       icon: '📋' },
-  { key: 'delivery',    label: '출고(인도)', icon: '🚗' },
-  { key: 'return',      label: '반납(회수)', icon: '🔙' },
-  { key: 'transfer',    label: '이동',       icon: '🔄' },
-  { key: 'maintenance', label: '정비',       icon: '🔧' },
-  { key: 'wash',        label: '세차',       icon: '🧼' },
-  { key: 'inspect',     label: '차량점검',   icon: '📋' },
-  { key: 'accident',    label: '사고',       icon: '💥' },
-  { key: 'penalty',     label: '과태료',     icon: '🚫' },
-  { key: 'key',         label: '키관리',     icon: '🔑' },
-  { key: 'contact',     label: '고객응대',   icon: '📞' },
-  { key: 'fuel',        label: '주유/충전',  icon: '⛽' },
-  { key: 'insurance',   label: '보험',       icon: '🛡' },
+  { key: 'all',         label: '전체',           icon: '📋' },
+  { key: 'contact',     label: '고객응대',       icon: '📞' },
+  { key: 'delivery',    label: '출고(인도)',     icon: '🚗' },
+  { key: 'return',      label: '반납(회수)',     icon: '🔙' },
+  { key: 'transfer',    label: '차량이동',       icon: '🔄' },
+  { key: 'key',         label: '차키관리',       icon: '🔑' },
+  { key: 'parts',       label: '소모품교체',     icon: '🔧' },
+  { key: 'product',     label: '상품화',         icon: '✨' },
+  { key: 'accident',    label: '사고접수/처리',  icon: '💥' },
+  { key: 'repair',      label: '사고수리',       icon: '🔨' },
+  { key: 'penalty',     label: '과태료',         icon: '🚫' },
+  { key: 'collect',     label: '미수관리',       icon: '📨' },
+  { key: 'wash',        label: '세차',           icon: '🧼' },
+  { key: 'fuel',        label: '연료보충',       icon: '⛽' },
 ];
 
-const OP_TYPES = ['delivery', 'return', 'transfer', 'maintenance', 'wash', 'inspect', 'accident', 'penalty', 'key', 'contact', 'fuel', 'insurance'];
+const OP_TYPES = ['contact', 'delivery', 'return', 'transfer', 'key', 'parts', 'product', 'accident', 'repair', 'penalty', 'collect', 'wash', 'fuel'];
 
 let allEvents = [];
 let activeType = 'all';
