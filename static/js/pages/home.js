@@ -242,15 +242,6 @@ function render() {
         ${Object.entries(idleByStatus).map(([st, items]) => `<span>${st} <strong>${items.length}</strong></span>`).join('') || '<span style="color:var(--c-success)">전차 가동</span>'}
       </div>
     </div>
-    <div style="font-size:var(--font-size-sm);font-weight:600;margin-top:4px">최근 활동</div>
-    ${recentOps.slice(0, 8).map(e => `
-      <div class="dash-card" style="padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:var(--font-size-sm)" onclick="location.href='/operation'">
-        <span>${EVENT_ICONS[e.type] || '📝'}</span>
-        <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.title || e.type}</span>
-        <span style="color:var(--c-text-muted);font-size:var(--font-size-xs)">${e.car_number || ''}</span>
-        <span style="color:var(--c-text-muted);font-size:var(--font-size-xs)">${fmtDate(e.date)}</span>
-      </div>
-    `).join('')}
   `;
 
   // ─── 최근업무 (실시간 타임라인) ─────────
