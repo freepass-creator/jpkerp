@@ -179,7 +179,8 @@ function bindButtons() {
     refreshGrid();
   });
   document.getElementById('stageCommitAll')?.addEventListener('click', commitAll);
-  document.getElementById('inputCsv')?.addEventListener('click', () => {
+  // 업로드 (CSV/구글시트/엑셀/이미지 — 스키마 기준 매핑)
+  document.getElementById('inputUpload')?.addEventListener('click', () => {
     const { schema, label, csvSchema } = _state;
     openCsvUpload({
       title: `${label || '일괄'} 업로드`,
