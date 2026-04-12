@@ -452,6 +452,7 @@ function renderForm() {
     </div>`;
 
   } else if (currentType === 'product') {
+    const prodVendors = vendors.filter(v => ['정비소','세차장','도색/판금'].includes(v.vendor_type)).map(v => `<option value="${v.vendor_name}">`).join('');
     sections = `
     <div class="form-section">
       <div class="form-section-title">상품화 기본</div>
@@ -460,24 +461,16 @@ function renderForm() {
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 반납 후 상품화"></div>
         ${sel('product_status', '진행상태', ['시작','진행중','완료'])}
+        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        <div class="field"><label>예상출고일</label><input type="date" name="expected_delivery"></div>
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">세차/크리닝</div>
-      <div class="form-grid">
-        ${sel('wash_type', '세차', ['미실시','외부세차','실내크리닝','외부+실내','광택'])}
-        <div class="field"><label>세차비용</label><input type="text" name="wash_cost" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>세차업체</label><input type="text" name="wash_vendor"></div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="form-section-title">정비/소모품 (해당 시)</div>
-      <div class="form-grid">
-        ${sel('product_maint', '정비여부', ['없음','소모품교체','수리','판금/도색'])}
-        <div class="field"><label>정비내용</label><input type="text" name="maint_detail" placeholder="예: 엔진오일+와이퍼"></div>
-        <div class="field"><label>정비비용</label><input type="text" name="maint_cost" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>정비업체</label><input type="text" name="maint_vendor"></div>
-      </div>
+      <div class="form-section-title">작업 항목 <button type="button" class="btn" id="addProductRow" style="margin-left:auto">+ 항목추가</button></div>
+      <table class="grid-table" id="productTable">
+        <thead><tr><th>작업내용</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
     <div class="form-section">
       <div class="form-section-title">차량 상태</div>
@@ -485,38 +478,42 @@ function renderForm() {
         ${sel('exterior', '외관', ['양호','경미흠집','손상있음'])}
         ${sel('interior', '실내', ['양호','보통','청소필요'])}
         ${sel('tire_status', '타이어', ['양호','교체필요','편마모'])}
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
       </div>
     </div>
     <div class="form-section">
       <div class="form-grid">
-        <div class="field"><label>총 비용</label><input type="text" name="amount" inputmode="numeric" placeholder="세차+정비 합계"></div>
-        <div class="field"><label>예상출고일</label><input type="date" name="expected_delivery"></div>
+        <div class="field"><label>총 비용</label><input type="text" name="amount" inputmode="numeric" placeholder="자동 계산" readonly id="productTotal"></div>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="상품화 상세 기록"></textarea></div>
       </div>
     </div>`;
 
   } else if (currentType === 'repair') {
+    const repairVendors = vendors.filter(v => ['정비소','도색/판금'].includes(v.vendor_type)).map(v => `<option value="${v.vendor_name}">`).join('');
     sections = `
     <div class="form-section">
-      <div class="form-section-title">사고수리 정보</div>
+      <div class="form-section-title">사고수리 기본</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>수리내용</label><input type="text" name="title" placeholder="예: 전면범퍼 판금도색"></div>
-        ${sel('repair_type', '수리유형', ['판금','도색','판금+도색','부품교체','전체수리'])}
-        <div class="field"><label>수리업체</label><input type="text" name="vendor" placeholder="공업사명"></div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 전면범퍼 판금도색"></div>
+        <div class="field"><label>수리업체</label><input type="text" name="vendor" list="repairVendorList"><datalist id="repairVendorList">${repairVendors}</datalist></div>
         <div class="field"><label>입고일</label><input type="date" name="repair_in_date"></div>
         <div class="field"><label>출고예정일</label><input type="date" name="repair_out_date"></div>
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">비용</div>
+      <div class="form-section-title">수리 항목 <button type="button" class="btn" id="addRepairRow" style="margin-left:auto">+ 항목추가</button></div>
+      <table class="grid-table" id="repairTable">
+        <thead><tr><th>수리내용</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">비용 정산</div>
       <div class="form-grid">
-        <div class="field"><label>수리비(견적)</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>수리비 합계</label><input type="text" name="amount" inputmode="numeric" placeholder="자동 계산" readonly id="repairTotal"></div>
         <div class="field"><label>보험처리금액</label><input type="text" name="insurance_amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>자기부담금</label><input type="text" name="self_pay" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>금액(확정)</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
       </div>
     </div>
     <div class="form-section">
@@ -740,6 +737,71 @@ function renderForm() {
     });
   }
 
+  // 사고수리: 행 추가
+  if (currentType === 'repair') {
+    const repairOpts = ['판금','도색','판금+도색','부품교체','범퍼','유리교체','도어','펜더','후드','트렁크','기타'];
+    const addRepairRow = () => {
+      const tbody = host.querySelector('#repairTable tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" name="repairTable_item" placeholder="수리항목" style="width:100%;border:none;outline:none" list="repairOpts"><datalist id="repairOpts">${repairOpts.map(o => `<option value="${o}">`).join('')}</datalist></td>
+        <td><input type="text" name="repairTable_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
+        <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('repair-calc'))">✕</button></td>`;
+      tbody.appendChild(tr);
+      tr.querySelector('input').focus();
+      tr.querySelectorAll('[name$="_cost"]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const d = inp.value.replace(/[^\d]/g, '');
+          inp.value = d ? Number(d).toLocaleString() : '';
+          document.dispatchEvent(new Event('repair-calc'));
+        });
+      });
+    };
+    host.querySelector('#addRepairRow')?.addEventListener('click', addRepairRow);
+    addRepairRow();
+    document.addEventListener('repair-calc', () => {
+      let total = 0;
+      host.querySelectorAll('#repairTable [name$="_cost"]').forEach(inp => {
+        total += Number(String(inp.value).replace(/,/g, '')) || 0;
+      });
+      const el = host.querySelector('#repairTotal');
+      if (el) el.value = total ? total.toLocaleString() : '';
+    });
+  }
+
+  // 상품화: 행 추가
+  if (currentType === 'product') {
+    const prodOpts = ['외부세차','실내크리닝','광택','엔진오일','와이퍼','에어컨필터','타이어','흠집보수','실내수리','시트수리','냄새제거','기타'];
+    const addProductRow = () => {
+      const tbody = host.querySelector('#productTable tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" name="productTable_item" placeholder="작업내용" style="width:100%;border:none;outline:none" list="prodOpts"><datalist id="prodOpts">${prodOpts.map(o => `<option value="${o}">`).join('')}</datalist></td>
+        <td><input type="text" name="productTable_vendor" placeholder="업체" style="width:100%;border:none;outline:none" list="opVendorList"></td>
+        <td><input type="text" name="productTable_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
+        <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('product-calc'))">✕</button></td>`;
+      tbody.appendChild(tr);
+      tr.querySelector('input').focus();
+      tr.querySelectorAll('[name$="_cost"]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const d = inp.value.replace(/[^\d]/g, '');
+          inp.value = d ? Number(d).toLocaleString() : '';
+          document.dispatchEvent(new Event('product-calc'));
+        });
+      });
+    };
+    host.querySelector('#addProductRow')?.addEventListener('click', addProductRow);
+    addProductRow();
+    document.addEventListener('product-calc', () => {
+      let total = 0;
+      host.querySelectorAll('#productTable [name$="_cost"]').forEach(inp => {
+        total += Number(String(inp.value).replace(/,/g, '')) || 0;
+      });
+      const el = host.querySelector('#productTotal');
+      if (el) el.value = total ? total.toLocaleString() : '';
+    });
+  }
+
   // 키관리: 메인키 기본 체크
   if (currentType === 'key') {
     const mainKey = host.querySelector('[name="key_main"]');
@@ -886,6 +948,28 @@ async function submitForm() {
       data.title = names.length ? names.join(', ') : '';
     }
     data.parts_items = partsRows.map(r => r.item).join(', ');
+  }
+  // 사고수리: 행 수집
+  if (currentType === 'repair') {
+    const rows = [];
+    host.querySelectorAll('#repairTable tbody tr').forEach(tr => {
+      const item = tr.querySelector('[name="repairTable_item"]')?.value.trim();
+      const cost = Number(String(tr.querySelector('[name="repairTable_cost"]')?.value || '').replace(/,/g, '')) || 0;
+      if (item) rows.push({ item, cost });
+    });
+    if (rows.length) data.repair_list = rows;
+  }
+  // 상품화: 행 수집
+  if (currentType === 'product') {
+    const rows = [];
+    host.querySelectorAll('#productTable tbody tr').forEach(tr => {
+      const item = tr.querySelector('[name="productTable_item"]')?.value.trim();
+      const vendor = tr.querySelector('[name="productTable_vendor"]')?.value.trim();
+      const cost = Number(String(tr.querySelector('[name="productTable_cost"]')?.value || '').replace(/,/g, '')) || 0;
+      if (item) rows.push({ item, vendor, cost });
+    });
+    if (rows.length) data.product_list = rows;
+    if (!data.title) data.title = rows.map(r => r.item).join(', ');
   }
 
   if (!data.date || !data.car_number) {
