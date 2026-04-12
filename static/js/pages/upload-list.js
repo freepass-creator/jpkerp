@@ -61,11 +61,11 @@ export async function mount() {
 }
 
 function showDetail(u) {
-  $('#ulDetailTitle').textContent = u.detected_label || u.filename || '상세';
   const ok = u.results?.ok || 0;
   const fail = u.results?.fail || 0;
   const skip = u.results?.skip || 0;
-  $('#ulDetailInfo').textContent = `${u.row_count || 0}행 · 반영 ${ok} · 실패 ${fail} · 중복 ${skip}`;
+  $('#ulDetailTitle').textContent = u.filename || '상세';
+  $('#ulDetailInfo').textContent = `${u.detected_label || ''} · ${u.row_count || 0}행 · 반영${ok} · 실패${fail} · 중복${skip}`;
 
   if (u.rows && u.rows.length) {
     const keys = Object.keys(u.rows[0]).filter(k => !k.startsWith('_'));
@@ -78,12 +78,12 @@ function showDetail(u) {
         ...cols,
       ],
       rowData: u.rows,
-      defaultColDef: { resizable: true, sortable: true, editable: false, minWidth: 50 },
+      defaultColDef: { resizable: true, sortable: true, filter: 'agTextColumnFilter', editable: false, minWidth: 50 },
       rowHeight: 28,
       headerHeight: 28,
       animateRows: false,
       suppressContextMenu: true,
-      onGridReady: (p) => { p.api.autoSizeAllColumns(); p.api.gridOptionsService?.eGridDiv && (p.api.gridOptionsService.eGridDiv._agApi = p.api); },
+      onGridReady: (p) => { p.api.autoSizeAllColumns(); $('#ulDetailGrid')._agApi = p.api; },
     });
   } else {
     if (detailGrid) { detailGrid.destroy(); detailGrid = null; }
