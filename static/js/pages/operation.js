@@ -102,6 +102,110 @@ function refreshGrid() {
     animateRows: false,
     suppressContextMenu: true,
     onGridReady: (p) => p.api.autoSizeAllColumns(),
+    onRowClicked: (e) => {
+      if (e.data) showDetail(e.data);
+    },
+  });
+}
+
+function showDetail(ev) {
+  const grid = $('#opViewGrid');
+  const detail = $('#opDetailView');
+  grid.style.display = 'none';
+  detail.hidden = false;
+  detail.style.display = 'block';
+
+  const t = TYPES.find(x => x.key === ev.type) || {};
+  const fmtAmt = (v) => v ? fmt(v) : '';
+
+  // 기본 필드
+  const fields = [
+    ['일자', fmtDate(ev.date)],
+    ['유형', `${t.icon || ''} ${EVENT_TYPES[ev.type] || ev.type || ''}`],
+    ['차량번호', ev.car_number],
+    ['제목', ev.title],
+    ['금액', fmtAmt(ev.amount)],
+    ['업체/장소', ev.vendor],
+  ];
+
+  // 유형별 추가 필드
+  const extras = [];
+  if (ev.insurance_company) extras.push(['보험사', ev.insurance_company]);
+  if (ev.insurance_no) extras.push(['접수번호', ev.insurance_no]);
+  if (ev.accident_other) extras.push(['상대방', ev.accident_other]);
+  if (ev.accident_other_phone) extras.push(['상대방연락처', ev.accident_other_phone]);
+  if (ev.fault_pct) extras.push(['과실비율', ev.fault_pct]);
+  if (ev.fault_ratio) extras.push(['과실(기타)', ev.fault_ratio]);
+  if (ev.accident_status) extras.push(['종결여부', ev.accident_status]);
+  if (ev.mileage) extras.push(['주행거리', ev.mileage + ' km']);
+  if (ev.fuel_level) extras.push(['연료잔량', ev.fuel_level]);
+  if (ev.car_condition) extras.push(['차량상태', ev.car_condition]);
+  if (ev.exterior) extras.push(['외관', ev.exterior]);
+  if (ev.interior) extras.push(['실내', ev.interior]);
+  if (ev.delivery_location) extras.push(['인도장소', ev.delivery_location]);
+  if (ev.return_location) extras.push(['반납장소', ev.return_location]);
+  if (ev.receiver_name) extras.push(['인수자', ev.receiver_name]);
+  if (ev.customer_name) extras.push(['고객명', ev.customer_name]);
+  if (ev.customer_phone) extras.push(['연락처', ev.customer_phone]);
+  if (ev.contact_type) extras.push(['응대유형', ev.contact_type]);
+  if (ev.contact_result) extras.push(['처리결과', ev.contact_result]);
+  if (ev.handler) extras.push(['담당자', ev.handler]);
+  if (ev.repair_status) extras.push(['수리상태', ev.repair_status]);
+  if (ev.key_action) extras.push(['키구분', ev.key_action]);
+  if (ev.product_status) extras.push(['진행상태', ev.product_status]);
+
+  // 리스트 데이터 (정비/사고수리/상품화 항목)
+  let listHtml = '';
+  const renderList = (title, items) => {
+    if (!items || !items.length) return '';
+    return `<div style="margin-top:12px">
+      <div style="font-weight:600;font-size:var(--font-size-sm);margin-bottom:4px">${title}</div>
+      <table class="grid-table" style="font-size:var(--font-size-sm)">
+        <thead><tr><th>항목</th>${items[0].vendor !== undefined ? '<th>업체</th>' : ''}<th class="is-num">금액</th></tr></thead>
+        <tbody>${items.map(r => `<tr><td>${r.item || ''}</td>${r.vendor !== undefined ? `<td>${r.vendor || ''}</td>` : ''}<td class="is-num">${r.cost ? fmt(r.cost) : ''}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  };
+
+  if (ev.parts_list) listHtml += renderList('소모품 교체', ev.parts_list);
+  if (ev.fix_list) listHtml += renderList('기능수리', ev.fix_list);
+  if (ev.repair_list) listHtml += renderList('수리 항목', ev.repair_list);
+  if (ev.wash_list) listHtml += renderList('세차/광택', ev.wash_list);
+  if (ev.product_sections) {
+    const names = { prodAccessory: '부속품', prodWash: '세차/광택', prodBody: '외판수리', prodParts: '소모품', prodFix: '기능수리' };
+    Object.entries(ev.product_sections).forEach(([k, v]) => {
+      listHtml += renderList(names[k] || k, v);
+    });
+  }
+
+  detail.innerHTML = `
+    <div style="max-width:800px;margin:0 auto;padding:24px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <button class="btn" id="opDetailBack">← 목록</button>
+        <span style="font-size:var(--font-size-lg);font-weight:700">${t.icon || ''} ${ev.title || ''}</span>
+      </div>
+      <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:20px">
+        <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+          ${[...fields, ...extras].filter(([,v]) => v).map(([label, value]) => `
+            <tr>
+              <td style="padding:6px 12px 6px 0;color:var(--c-text-muted);width:120px;vertical-align:top">${label}</td>
+              <td style="padding:6px 0;font-weight:500">${value}</td>
+            </tr>
+          `).join('')}
+          ${ev.note ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);vertical-align:top">메모</td><td style="padding:6px 0;white-space:pre-wrap">${ev.note}</td></tr>` : ''}
+        </table>
+        ${listHtml}
+      </div>
+      <div style="margin-top:12px;color:var(--c-text-muted);font-size:var(--font-size-xs)">
+        등록: ${new Date(ev.created_at).toLocaleString('ko-KR')} · ID: ${ev.event_id || ''}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('opDetailBack')?.addEventListener('click', () => {
+    detail.style.display = 'none';
+    detail.hidden = true;
+    grid.style.display = '';
   });
 }
 
