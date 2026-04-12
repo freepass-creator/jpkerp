@@ -191,53 +191,118 @@ function render() {
 
   // ─── 회사현황 ─────────────────────────
   company.innerHTML = `
-    <div style="display:flex;justify-content:space-around;padding:8px 0">
+    <div class="dash-card__label" style="margin-bottom:6px">자산현황</div>
+    <div style="display:flex;justify-content:space-around;padding:4px 0">
       ${miniCard('총자산', `${totalAssets}대`)}
       ${miniCard('가동', `${activating}대`, 'var(--c-success)')}
       ${miniCard('휴차', `${idle}대`, idle > 0 ? 'var(--c-warn)' : 'var(--c-success)')}
     </div>
     <div class="dash-card" style="padding:10px 14px">
       ${progressBar('가동률', activating, totalAssets, utilizationRate >= 80 ? 'var(--c-success)' : 'var(--c-warn)')}
-      ${progressBar('수금률', totalPaid, totalDue, collectRate >= 90 ? 'var(--c-success)' : collectRate >= 70 ? 'var(--c-warn)' : 'var(--c-danger)')}
     </div>
+    ${Object.keys(idleByStatus).length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:var(--font-size-xs);color:var(--c-text-muted);padding:0 4px">
+      ${Object.entries(idleByStatus).map(([st, items]) => `<span>${st} <strong>${items.length}</strong></span>`).join(' · ')}
+    </div>` : ''}
+
+    <div class="dash-card__label" style="margin-top:12px;margin-bottom:6px">청구/수납</div>
     <div class="dash-card" onclick="location.href='/billing'">
       <div style="display:flex;justify-content:space-around;text-align:center">
-        <div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">청구</div><div style="font-weight:700">${fmt(totalDue)}</div></div>
+        <div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">총 청구</div><div style="font-weight:700">${fmt(totalDue)}</div></div>
         <div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">납부</div><div style="font-weight:700;color:var(--c-success)">${fmt(totalPaid)}</div></div>
         <div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">미납</div><div style="font-weight:700;color:${totalUnpaid > 0 ? 'var(--c-danger)' : 'var(--c-success)'}">${fmt(totalUnpaid)}</div></div>
       </div>
     </div>
+    <div class="dash-card" style="padding:10px 14px">
+      ${progressBar('수금률', totalPaid, totalDue, collectRate >= 90 ? 'var(--c-success)' : collectRate >= 70 ? 'var(--c-warn)' : 'var(--c-danger)')}
+    </div>
     <div style="display:flex;justify-content:space-around;padding:4px 0">
       ${miniCard('금일입금', fmt(todayInSum), 'var(--c-primary)')}
-      ${miniCard(`출고`, `${monthStarts.length}건`)}
-      ${miniCard(`반납`, `${monthReturns.length}건`)}
+      ${miniCard('이번달출고', `${monthStarts.length}건`)}
+      ${miniCard('이번달반납', `${monthReturns.length}건`)}
     </div>
-    <div class="dash-card" onclick="location.href='/billing'" style="padding:10px 14px">
-      <div style="font-size:var(--font-size-xs);color:var(--c-text-muted);margin-bottom:6px">연체 구간</div>
-      ${buckets.map(bk => bucketBar(bk)).join('')}
+    <div style="display:flex;justify-content:space-around;padding:4px 0">
+      ${miniCard('활성계약', `${activeContracts.length}건`, 'var(--c-primary)')}
+      ${miniCard('미납건수', `${overdue.length}건`, overdue.length ? 'var(--c-danger)' : '')}
     </div>
   `;
 
-  // ─── 부서할일 ─────────────────────────
+  // ─── 업무상황 ─────────────────────────
+  // 출고예정 (7일 이내 시작 계약)
+  const week = offsetDate(0.25); // ~7일
+  const upcomingDelivery = contracts.filter(c => {
+    const start = normalizeDate(c.start_date);
+    return start && start >= today && start <= week;
+  });
+  // 반납예정 (7일 이내 종료 계약)
+  const upcomingReturn = contracts.filter(c => {
+    const end = computeContractEnd(c);
+    return end && end >= today && end <= week;
+  });
+
+  const overdue3 = overdue.filter(o => o.days >= 1 && o.days <= 3);
+  const overdue7 = overdue.filter(o => o.days >= 4 && o.days <= 7);
+  const overdue10 = overdue.filter(o => o.days >= 8 && o.days <= 10);
+  const overdue10p = overdue.filter(o => o.days > 10);
+
   team.innerHTML = `
-    <div class="dash-card" onclick="location.href='/billing'" style="border-left:3px solid var(--c-danger)">
-      <div style="font-weight:600;color:var(--c-danger);margin-bottom:4px">🔴 미납 독촉 ${overdue.length}건</div>
-      <div style="display:flex;gap:12px;font-size:var(--font-size-sm)">
-        <span>7일+ <strong>${overdue.filter(o => o.days >= 7).length}</strong></span>
-        <span>30일+ <strong style="color:#991b1b">${overdue.filter(o => o.days >= 30).length}</strong></span>
-        <span style="margin-left:auto;color:var(--c-danger);font-weight:600">${fmt(totalUnpaid)}원</span>
-      </div>
+    <!-- 출고예정 -->
+    <div class="dash-card" onclick="location.href='/contract'" style="border-left:3px solid var(--c-success)">
+      <div style="font-weight:600;color:var(--c-success);margin-bottom:4px">🚗 출고예정 ${upcomingDelivery.length}건</div>
+      ${upcomingDelivery.length ? upcomingDelivery.slice(0, 5).map(c => `
+        <div style="display:flex;justify-content:space-between;font-size:var(--font-size-xs);padding:2px 0;border-bottom:1px solid var(--c-border)">
+          <span>${c.contractor_name || '-'} <span style="color:var(--c-text-muted)">${c.car_number || ''}</span></span>
+          <span>${fmtDate(normalizeDate(c.start_date))}</span>
+        </div>
+      `).join('') : '<div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">예정 없음</div>'}
     </div>
+
+    <!-- 반납예정 -->
     <div class="dash-card" onclick="location.href='/contract'" style="border-left:3px solid var(--c-warn)">
-      <div style="font-weight:600;color:var(--c-warn);margin-bottom:4px">🟡 만기 도래 ${exp1.length + exp2.length + exp3.length}건</div>
+      <div style="font-weight:600;color:var(--c-warn);margin-bottom:4px">🔙 반납예정 ${upcomingReturn.length}건</div>
+      ${upcomingReturn.length ? upcomingReturn.slice(0, 5).map(c => `
+        <div style="display:flex;justify-content:space-between;font-size:var(--font-size-xs);padding:2px 0;border-bottom:1px solid var(--c-border)">
+          <span>${c.contractor_name || '-'} <span style="color:var(--c-text-muted)">${c.car_number || ''}</span></span>
+          <span>${fmtDate(computeContractEnd(c))}</span>
+        </div>
+      `).join('') : '<div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">예정 없음</div>'}
+    </div>
+
+    <!-- 만기도래 -->
+    <div class="dash-card" onclick="location.href='/contract'" style="border-left:3px solid var(--c-warn)">
+      <div style="font-weight:600;color:var(--c-warn);margin-bottom:4px">📅 만기 도래</div>
       <div style="display:flex;gap:12px;font-size:var(--font-size-sm)">
         <span>1개월 <strong style="color:var(--c-danger)">${exp1.length}</strong></span>
         <span>2개월 <strong>${exp2.length}</strong></span>
         <span>3개월 <strong>${exp3.length}</strong></span>
       </div>
     </div>
+
+    <!-- 미수현황 (일자별) -->
+    <div class="dash-card" onclick="location.href='/billing'" style="border-left:3px solid var(--c-danger)">
+      <div style="font-weight:600;color:var(--c-danger);margin-bottom:6px">💰 미수현황 ${overdue.length}건 · ${fmt(totalUnpaid)}원</div>
+      <div style="display:flex;flex-direction:column;gap:2px;font-size:var(--font-size-sm)">
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--c-border)">
+          <span>3일 이하</span>
+          <span><strong>${overdue3.length}</strong>건 · ${fmt(overdue3.reduce((s,o) => s + o.unpaid, 0))}원</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--c-border)">
+          <span style="color:var(--c-warn)">4~7일</span>
+          <span style="color:var(--c-warn)"><strong>${overdue7.length}</strong>건 · ${fmt(overdue7.reduce((s,o) => s + o.unpaid, 0))}원</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--c-border)">
+          <span style="color:var(--c-danger)">8~10일</span>
+          <span style="color:var(--c-danger)"><strong>${overdue10.length}</strong>건 · ${fmt(overdue10.reduce((s,o) => s + o.unpaid, 0))}원</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0">
+          <span style="color:#991b1b;font-weight:600">10일 초과</span>
+          <span style="color:#991b1b;font-weight:600"><strong>${overdue10p.length}</strong>건 · ${fmt(overdue10p.reduce((s,o) => s + o.unpaid, 0))}원</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 휴차 -->
     <div class="dash-card" onclick="location.href='/asset'" style="border-left:3px solid var(--c-info)">
-      <div style="font-weight:600;color:var(--c-info);margin-bottom:4px">🔵 휴차 ${idle}대</div>
+      <div style="font-weight:600;color:var(--c-info);margin-bottom:4px">🅿 휴차 ${idle}대</div>
       <div style="display:flex;gap:8px;font-size:var(--font-size-sm);flex-wrap:wrap">
         ${Object.entries(idleByStatus).map(([st, items]) => `<span>${st} <strong>${items.length}</strong></span>`).join('') || '<span style="color:var(--c-success)">전차 가동</span>'}
       </div>
