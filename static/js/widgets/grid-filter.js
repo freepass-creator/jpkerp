@@ -121,16 +121,20 @@ function showFilterPopup(api, colId, headerEl) {
 
   } else if (colType === 'select') {
     let currentFilter = ''; try { const m = api.getColumnFilterModel(colId); currentFilter = m?.filter || ''; } catch {}
+    const selected = new Set();
+    if (currentFilter) selected.add(currentFilter);
     popup.innerHTML = `
       <input class="gf-search" placeholder="검색..." autofocus>
       <div class="gf-list">
         ${sorted.map(([val, cnt]) => {
-          const active = currentFilter && currentFilter === (val === '(빈값)' ? '' : val) ? ' is-active' : '';
-          return `<div class="gf-item${active}" data-val="${val === '(빈값)' ? '' : val}">${val}<span class="gf-count">${cnt}</span></div>`;
+          const dataVal = val === '(빈값)' ? '' : val;
+          const active = selected.has(dataVal) ? ' is-active' : '';
+          return `<div class="gf-item${active}" data-val="${dataVal}">${val}<span class="gf-count">${cnt}</span></div>`;
         }).join('')}
       </div>
       <div class="gf-footer">
         <button class="btn gf-reset">초기화</button>
+        <button class="btn btn-primary gf-apply">적용</button>
       </div>
     `;
     popup.querySelector('.gf-search').addEventListener('input', (e) => {
@@ -142,9 +146,19 @@ function showFilterPopup(api, colId, headerEl) {
     popup.querySelectorAll('.gf-item').forEach(item => {
       item.addEventListener('click', () => {
         const val = item.dataset.val;
-        applyFilter(val ? { type: 'equals', filter: val } : null);
-        closePopup();
+        item.classList.toggle('is-active');
+        if (item.classList.contains('is-active')) selected.add(val);
+        else selected.delete(val);
       });
+    });
+    popup.querySelector('.gf-apply')?.addEventListener('click', () => {
+      if (selected.size === 0) { applyFilter(null); }
+      else if (selected.size === 1) { applyFilter({ type: 'equals', filter: [...selected][0] }); }
+      else {
+        const conditions = [...selected].map(v => ({ type: 'equals', filter: v }));
+        applyFilter({ operator: 'OR', conditions });
+      }
+      closePopup();
     });
 
   } else {
