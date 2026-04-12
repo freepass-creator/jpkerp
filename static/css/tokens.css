@@ -31,10 +31,11 @@
 
   /* ── 폰트 ── */
   --font-sans:   'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
   --font-size:    12px;
-  --font-size-sm: 12px;
-  --font-size-md: 12px;
-  --font-size-lg: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 14px;
   --fw:           400;
   --fw-medium:    500;
   --fw-bold:      600;

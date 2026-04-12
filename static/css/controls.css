@@ -87,3 +87,31 @@
   color: var(--c-text-muted);
   cursor: default;
 }
+
+/* ── 그리드 테이블 (AG Grid 아닌 일반 테이블) ── */
+.grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size);
+  font-family: var(--font-sans);
+}
+.grid-table th {
+  background: var(--c-bg-sub);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-sub);
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.grid-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--c-border);
+  vertical-align: middle;
+}
+.grid-table tr:hover { background: var(--c-bg-hover); }
+.grid-table tr.is-active { background: var(--c-bg-active); }
+.grid-table .is-num { text-align: right; font-variant-numeric: tabular-nums; }

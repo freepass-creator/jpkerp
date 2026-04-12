@@ -148,22 +148,22 @@ function render() {
 
   // ─── 렌더 ─────────────────────────────────
   const card = (label, value, sub, color, href) =>
-    `<div class="dash-card" ${href ? `onclick="location.href='${href}'" style="cursor:pointer"` : ''}>
-      <div style="font-size:11px;color:var(--c-text-muted)">${label}</div>
-      <div style="font-size:20px;font-weight:700;${color ? `color:${color}` : ''}">${value}</div>
-      ${sub ? `<div style="font-size:10px;color:var(--c-text-muted);margin-top:2px">${sub}</div>` : ''}
+    `<div class="dash-card" ${href ? `onclick="location.href='${href}'"` : ''}>
+      <div class="dash-card__label">${label}</div>
+      <div class="dash-card__value"${color ? ` style="color:${color}"` : ''}>${value}</div>
+      ${sub ? `<div class="dash-card__sub">${sub}</div>` : ''}
     </div>`;
 
   const maxBucket = Math.max(...buckets.map(b => b.items.length), 1);
   const bucketBar = (bk) => {
     const pct = Math.round(bk.items.length / maxBucket * 100);
     return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <div style="width:60px;font-size:11px;color:var(--c-text-muted);flex-shrink:0">${bk.label}</div>
+      <div style="width:60px;font-size:var(--font-size-sm);color:var(--c-text-muted);flex-shrink:0">${bk.label}</div>
       <div style="flex:1;height:16px;background:var(--c-bg-hover);border-radius:2px;overflow:hidden">
         <div style="width:${pct}%;height:100%;background:${bk.color};border-radius:2px;opacity:0.7"></div>
       </div>
-      <div style="width:40px;text-align:right;font-size:11px;font-weight:600;color:${bk.color}">${bk.items.length}건</div>
-      <div style="width:80px;text-align:right;font-size:10px;color:${bk.color}">${bk.sum ? fmt(bk.sum) : '-'}</div>
+      <div style="width:40px;text-align:right;font-size:var(--font-size-sm);font-weight:600;color:${bk.color}">${bk.items.length}건</div>
+      <div style="width:80px;text-align:right;font-size:var(--font-size-xs);color:${bk.color}">${bk.sum ? fmt(bk.sum) : '-'}</div>
     </div>`;
   };
 
@@ -187,28 +187,28 @@ function render() {
 
   // ─── 우측: 할 일 ────────────────────────────
   right.innerHTML = `
-    <div style="font-size:12px;font-weight:600;margin-bottom:4px;color:var(--c-danger)">미납 독촉</div>
+    <div class="section-label" style=";color:var(--c-danger)">미납 독촉</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
       ${card('미납자', `${overdue.length}건`, fmt(totalUnpaid) + '원', overdue.length ? 'var(--c-danger)' : 'var(--c-success)', '/billing')}
       ${card('7일+', `${overdue.filter(o => o.days >= 7).length}건`, '', overdue.some(o => o.days >= 7) ? 'var(--c-danger)' : '', '/billing')}
       ${card('30일+', `${overdue.filter(o => o.days >= 30).length}건`, '', overdue.some(o => o.days >= 30) ? '#991b1b' : '', '/billing')}
     </div>
 
-    <div style="font-size:12px;font-weight:600;margin-bottom:4px;margin-top:8px;color:var(--c-warn)">만기 협의</div>
+    <div class="section-label" style=";margin-top:8px;color:var(--c-warn)">만기 협의</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
       ${card('1개월 이내', `${exp1.length}건`, '', exp1.length ? 'var(--c-danger)' : '', '/contract')}
       ${card('1~2개월', `${exp2.length}건`, '', exp2.length ? 'var(--c-warn)' : '', '/contract')}
       ${card('2~3개월', `${exp3.length}건`, '', '', '/contract')}
     </div>
 
-    <div style="font-size:12px;font-weight:600;margin-bottom:4px;margin-top:8px">출고 대기</div>
+    <div class="section-label" style=";margin-top:8px">출고 대기</div>
     <div style="display:grid;grid-template-columns:repeat(${Math.max(Object.keys(idleByStatus).length, 2)},1fr);gap:8px">
       ${Object.keys(idleByStatus).length ? Object.entries(idleByStatus).map(([st, items]) =>
         card(st, `${items.length}대`, '', 'var(--c-warn)', '/asset')
       ).join('') : card('휴차', '0대', '전차 가동중', 'var(--c-success)', '/asset')}
     </div>
 
-    <div style="font-size:12px;font-weight:600;margin-bottom:4px;margin-top:8px">연체 구간</div>
+    <div class="section-label" style=";margin-top:8px">연체 구간</div>
     <div style="cursor:pointer" onclick="location.href='/billing'">
       ${buckets.map(bk => bucketBar(bk)).join('')}
     </div>

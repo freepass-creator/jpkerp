@@ -43,8 +43,18 @@
   background: var(--c-bg);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
-  padding: 14px 16px;
+  padding: 12px 14px;
   transition: background var(--t-fast);
 }
 .dash-card[onclick] { cursor: pointer; }
 .dash-card[onclick]:hover { background: var(--c-bg-hover); }
+.dash-card__label { font-size: var(--font-size-sm); color: var(--c-text-muted); }
+.dash-card__value { font-size: var(--font-size-lg); font-weight: var(--fw-heavy); margin-top: 2px; }
+.dash-card__sub { font-size: var(--font-size-xs); color: var(--c-text-muted); margin-top: 2px; }
+
+/* 섹션 소제목 */
+.section-label {
+  font-size: var(--font-size);
+  font-weight: var(--fw-bold);
+  margin-bottom: var(--sp-2);
+}

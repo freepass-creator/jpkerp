@@ -230,6 +230,11 @@ async function applyDetector(detector, dataRows, headers, filename) {
       row_count: dataRows.length,
       status: 'pending',
       fingerprint: fileFingerprint(filename, dataRows.length, dataRows[0]),
+      rows: parsedRows.slice(0, 500).map(r => {
+        const clean = {};
+        Object.keys(r).forEach(k => { if (!k.startsWith('_')) clean[k] = r[k]; });
+        return clean;
+      }),
     });
     currentUploadId = upload.upload_id;
   } catch (e) { console.warn('[upload save]', e); }
