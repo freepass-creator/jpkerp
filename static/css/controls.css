@@ -104,6 +104,29 @@
 .op-type__sub { font-size: var(--font-size-xs); color: var(--c-text-muted); margin-left: auto; }
 .op-type__handle { color: var(--c-text-muted); font-size: 10px; cursor: grab; margin-left: var(--sp-2); }
 
+/* ── 버튼 그룹 (드롭다운 대체) ── */
+.btn-group {
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+.btn-group .btn-opt {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 4px 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  background: var(--c-bg);
+  color: var(--c-text-sub);
+}
+.btn-group .btn-opt:hover { background: var(--c-bg-hover); color: var(--c-text); }
+.btn-group .btn-opt.is-active {
+  background: var(--c-primary-bg);
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+  font-weight: var(--fw-medium);
+}
+
 .grid-table {
   width: 100%;
   border-collapse: collapse;
