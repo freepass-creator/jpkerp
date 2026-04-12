@@ -22,11 +22,11 @@
 .btn svg { width: var(--ctrl-icon); height: var(--ctrl-icon); flex-shrink: 0; }
 
 .btn-primary {
-  background: var(--c-primary);
+  background: var(--c-text);
   color: #fff;
-  border-color: var(--c-primary);
+  border-color: var(--c-text);
 }
-.btn-primary:hover { background: var(--c-primary-h); color: #fff; }
+.btn-primary:hover { background: #555; color: #fff; }
 
 .btn-outline {
   border-color: var(--c-border-strong);
