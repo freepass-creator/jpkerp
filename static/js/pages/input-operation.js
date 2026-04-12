@@ -579,14 +579,23 @@ function renderForm() {
   } else if (currentType === 'wash') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">세차 정보</div>
+      <div class="form-section-title">세차/광택 기본</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 외부세차+실내크리닝"></div>
-        ${sel('wash_type', '세차유형', ['외부세차','실내크리닝','외부+실내','광택','기타'])}
-        <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>세차업체</label><input type="text" name="vendor" placeholder="세차장명"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">항목 <button type="button" class="btn" id="addWashRow" style="margin-left:auto">+ 항목추가</button></div>
+      <table class="grid-table" id="washTable">
+        <thead><tr><th>항목</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="field"><label>합계</label><input type="text" name="amount" inputmode="numeric" placeholder="자동 계산" readonly id="washTotal"></div>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
@@ -737,6 +746,38 @@ function renderForm() {
     });
   }
 
+  // 세차: 행 추가
+  if (currentType === 'wash') {
+    const washOpts = ['외부세차','실내크리닝','광택','냄새제거','시트세정','코팅','기타'];
+    const addWashRow = () => {
+      const tbody = host.querySelector('#washTable tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" name="washTable_item" placeholder="항목" style="width:100%;border:none;outline:none" list="washOpts"><datalist id="washOpts">${washOpts.map(o => `<option value="${o}">`).join('')}</datalist></td>
+        <td><input type="text" name="washTable_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
+        <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('wash-calc'))">✕</button></td>`;
+      tbody.appendChild(tr);
+      tr.querySelector('input').focus();
+      tr.querySelectorAll('[name$="_cost"]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const d = inp.value.replace(/[^\d]/g, '');
+          inp.value = d ? Number(d).toLocaleString() : '';
+          document.dispatchEvent(new Event('wash-calc'));
+        });
+      });
+    };
+    host.querySelector('#addWashRow')?.addEventListener('click', addWashRow);
+    addWashRow();
+    document.addEventListener('wash-calc', () => {
+      let total = 0;
+      host.querySelectorAll('#washTable [name$="_cost"]').forEach(inp => {
+        total += Number(String(inp.value).replace(/,/g, '')) || 0;
+      });
+      const el = host.querySelector('#washTotal');
+      if (el) el.value = total ? total.toLocaleString() : '';
+    });
+  }
+
   // 사고수리: 행 추가
   if (currentType === 'repair') {
     const repairOpts = ['판금','도색','판금+도색','부품교체','범퍼','유리교체','도어','펜더','후드','트렁크','기타'];
@@ -771,7 +812,14 @@ function renderForm() {
 
   // 상품화: 행 추가
   if (currentType === 'product') {
-    const prodOpts = ['외부세차','실내크리닝','광택','엔진오일','와이퍼','에어컨필터','타이어','흠집보수','실내수리','시트수리','냄새제거','기타'];
+    const prodOpts = [
+      '── 부속품 ──','블랙박스','전면썬팅','후면썬팅','하이패스','네비','매트','방향제',
+      '── 세차/광택 ──','외부세차','실내크리닝','광택','냄새제거','시트세정',
+      '── 외판수리 ──','판금','도색','범퍼','펜더','도어','유리',
+      '── 소모품 ──','엔진오일','와이퍼','에어컨필터','타이어','배터리','브레이크패드',
+      '── 기능수리 ──','에어컨','전기장치','시동','잠금장치',
+      '기타',
+    ].filter(o => !o.startsWith('──'));
     const addProductRow = () => {
       const tbody = host.querySelector('#productTable tbody');
       const tr = document.createElement('tr');
@@ -969,6 +1017,17 @@ async function submitForm() {
       if (item) rows.push({ item, vendor, cost });
     });
     if (rows.length) data.product_list = rows;
+    if (!data.title) data.title = rows.map(r => r.item).join(', ');
+  }
+  // 세차: 행 수집
+  if (currentType === 'wash') {
+    const rows = [];
+    host.querySelectorAll('#washTable tbody tr').forEach(tr => {
+      const item = tr.querySelector('[name="washTable_item"]')?.value.trim();
+      const cost = Number(String(tr.querySelector('[name="washTable_cost"]')?.value || '').replace(/,/g, '')) || 0;
+      if (item) rows.push({ item, cost });
+    });
+    if (rows.length) data.wash_list = rows;
     if (!data.title) data.title = rows.map(r => r.item).join(', ');
   }
 
