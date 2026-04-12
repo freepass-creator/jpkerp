@@ -7,6 +7,7 @@
  */
 import { parseCsv, mapHeaders } from '../widgets/csv-upload.js';
 import { matchEvent } from '../core/match-engine.js';
+import { ocrFile, extractCarNumber, extractVin, extractAmount, extractDate } from '../core/ocr.js';
 import * as shinhanBank from '../data/bank-parsers/shinhan.js';
 import * as shinhanCard from '../data/card-parsers/shinhan.js';
 import { ASSET_SCHEMA } from '../data/schemas/asset.js';
@@ -330,14 +331,87 @@ async function applyDetector(detector, dataRows, headers, filename) {
   });
 }
 
-function handleOcr(file) {
-  $('#uploadDetect').innerHTML = `<div class="dash-card" style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:var(--font-size-lg)">📄</span>
-    <div>
-      <div style="font-weight:600">${file.name}</div>
-      <div style="font-size:10px;color:var(--c-warn)">OCR 기능 준비 중 (Google Vision API 연동 예정)</div>
-    </div>
+async function handleOcr(file) {
+  const detect = $('#uploadDetect');
+  detect.innerHTML = `<div class="dash-card" style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:var(--font-size-lg)">⏳</span>
+    <div><div style="font-weight:600">${file.name}</div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">OCR 분석 중...</div></div>
   </div>`;
+
+  try {
+    const result = await ocrFile(file);
+    const carNo = extractCarNumber(result.text);
+    const vin = extractVin(result.text);
+    const amount = extractAmount(result.text);
+    const date = extractDate(result.text);
+
+    // 기존 데이터 대조
+    const existingAsset = carNo ? existingData.assets.find(a => a.car_number === carNo) : null;
+    const existingByVin = vin ? existingData.assets.find(a => a.vin === vin) : null;
+    const found = existingAsset || existingByVin;
+
+    detect.innerHTML = `
+      <div class="dash-card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:var(--font-size-lg)">📄</span>
+          <div><div style="font-weight:600">${file.name}</div><div style="font-size:var(--font-size-xs);color:var(--c-success)">OCR 완료</div></div>
+        </div>
+        <div style="font-size:var(--font-size-sm)">
+          ${carNo ? `<div>차량번호: <strong>${carNo}</strong></div>` : ''}
+          ${vin ? `<div>차대번호: <strong>${vin}</strong></div>` : ''}
+          ${amount ? `<div>금액: <strong>${amount.toLocaleString()}원</strong></div>` : ''}
+          ${date ? `<div>일자: <strong>${date}</strong></div>` : ''}
+        </div>
+        ${found ? `
+          <div style="margin-top:8px;padding:8px;background:var(--c-warn-bg);border-radius:var(--r-sm);font-size:var(--font-size-sm)">
+            ⚠ <strong>${found.car_number}</strong> 이미 등록된 차량입니다.
+            <div style="color:var(--c-text-muted)">${found.car_model || ''} ${found.manufacturer || ''}</div>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button class="btn" id="ocrUpdate">정보 업데이트</button>
+              <button class="btn" id="ocrSkip">건너뛰기</button>
+            </div>
+          </div>
+        ` : carNo ? `
+          <div style="margin-top:8px;padding:8px;background:var(--c-success-bg);border-radius:var(--r-sm);font-size:var(--font-size-sm)">
+            ✅ <strong>${carNo}</strong> 신규 차량입니다.
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button class="btn btn-primary" id="ocrRegister">신규 등록</button>
+              <button class="btn" id="ocrSkip">건너뛰기</button>
+            </div>
+          </div>
+        ` : `
+          <div style="margin-top:8px;padding:8px;background:var(--c-bg-sub);border-radius:var(--r-sm);font-size:var(--font-size-sm);color:var(--c-text-muted)">
+            차량번호를 인식하지 못했습니다.
+          </div>
+        `}
+      </div>
+      <div style="margin-top:8px;max-height:200px;overflow:auto;padding:8px;background:var(--c-bg-sub);border-radius:var(--r-sm);font-size:var(--font-size-xs);white-space:pre-wrap;color:var(--c-text-muted)">${result.text}</div>
+    `;
+
+    // 버튼 이벤트
+    document.getElementById('ocrRegister')?.addEventListener('click', () => {
+      showToast('자산등록 페이지로 이동합니다', 'info');
+      // TODO: 추출된 데이터로 자산등록 폼 프리필
+      if (typeof navigateTo === 'function') navigateTo('/input/asset');
+      else location.href = '/input/asset';
+    });
+    document.getElementById('ocrUpdate')?.addEventListener('click', () => {
+      showToast('자산관리에서 수정하세요', 'info');
+      if (typeof navigateTo === 'function') navigateTo('/asset');
+      else location.href = '/asset';
+    });
+    document.getElementById('ocrSkip')?.addEventListener('click', () => {
+      detect.innerHTML = '';
+    });
+
+    $('#uploadInfo').textContent = `OCR 완료 · ${carNo || '차량번호 미인식'}`;
+  } catch (e) {
+    detect.innerHTML = `<div class="dash-card" style="color:var(--c-danger)">
+      <div style="font-weight:600">OCR 실패</div>
+      <div style="font-size:var(--font-size-xs)">${e.message}</div>
+    </div>`;
+    showToast(`OCR 실패: ${e.message}`, 'error');
+  }
 }
 
 async function confirmUpload() {
