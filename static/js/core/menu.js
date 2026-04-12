@@ -4,8 +4,11 @@
 
 export const MENU = [
   { href: '/home', label: '대시보드', icon: 'home' },
+  { group: '업로드센터', icon: 'fileup', children: [
+    { href: '/upload',           label: '업로드하기', icon: 'upload' },
+    { href: '/upload/list',      label: '업로드내역', icon: 'listcheck' },
+  ]},
   { group: '입력', icon: 'plus', children: [
-    { href: '/upload',           label: '업로드센터', icon: 'fileup' },
     { href: '/input/operation',  label: '운영등록',   icon: 'circleplus' },
     { href: '/input/asset',      label: '자산등록',   icon: 'gridplus' },
     { href: '/input/contract',   label: '계약등록',   icon: 'clipplus2' },
@@ -40,6 +43,7 @@ const ICONS = {
   logout:   '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
   users:    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   chevron:  '<polyline points="6 9 12 15 18 9"/>',
+  plus:     '<path d="M5 12h14"/><path d="M12 5v14"/>',
   dot:      '<circle cx="12" cy="12" r="2"/>',
   chart:    '<path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>',
   trending: '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',

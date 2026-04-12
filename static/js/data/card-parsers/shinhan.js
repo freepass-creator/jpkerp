@@ -5,8 +5,6 @@
  *   이용일시, 접수일, 승인번호, 이용카드, 이용자명, 가맹점명,
  *   이용금액, 이용구분, 할부개월수, 이용지역, 카드구분, 결제예정일
  */
-import { classifyExpense } from '../../core/match-engine.js';
-
 const REQUIRED = ['이용일시', '가맹점명', '이용금액'];
 const SYNONYMS = {
   date:     ['이용일시', '이용일자', '이용일', '거래일자'],
@@ -87,11 +85,6 @@ export function parseRow(row, headers) {
     pay_date: payDate,
     raw_key: `${date}|card|${amount}|${approval || vendor}`,
   };
-
-  // 자동 분류
-  const expense = classifyExpense(event);
-  event.expense_category = expense.category;
-  event.expense_type = expense.type;
 
   return event;
 }

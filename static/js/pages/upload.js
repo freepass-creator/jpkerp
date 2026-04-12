@@ -207,7 +207,7 @@ function handleCsv(text, filename) {
   });
 }
 
-function applyDetector(detector, dataRows, headers, filename) {
+async function applyDetector(detector, dataRows, headers, filename) {
   detectedType = detector;
   saveFn = detector.save;
 
@@ -216,7 +216,7 @@ function applyDetector(detector, dataRows, headers, filename) {
     <span style="font-size:20px">${detector.icon}</span>
     <div>
       <div style="font-weight:600">${detector.name}</div>
-      <div style="font-size:10px;color:var(--c-text-muted)">${filename}</div>
+      <div style="font-size:10px;color:var(--c-text-muted)">${filename} · ${dataRows.length}행</div>
     </div>
   </div>`;
 
@@ -234,18 +234,27 @@ function applyDetector(detector, dataRows, headers, filename) {
     currentUploadId = upload.upload_id;
   } catch (e) { console.warn('[upload save]', e); }
 
-  // 파싱 + 중복 체크 + 매칭
-  const rawRows = detector.parse(dataRows, headers);
-  if (!rawRows.length) { showToast('파싱된 데이터가 없습니다', 'error'); return; }
+  // 원본 행 데이터 (헤더 기준으로 객체화)
+  const rawObjs = dataRows.map(row => {
+    const obj = {};
+    headers.forEach((h, i) => { if (h) obj[h] = row[i] || ''; });
+    return obj;
+  });
 
+  // 파싱 (ERP용 추출)
+  const parsed = detector.parse(dataRows, headers);
+
+  // 원본 + 파싱 + 중복 + 매칭 합치기
   const isTransaction = detector.name.includes('통장') || detector.name.includes('카드');
   const matchCtx = { contracts: existingData.contracts, billings: existingData.billings, customers: existingData.customers, assets: existingData.assets };
 
-  parsedRows = rawRows.map(row => {
-    const dup = detector.isDup ? detector.isDup(row) : false;
-    const match = isTransaction ? matchEvent(row, matchCtx) : null;
+  parsedRows = rawObjs.map((rawObj, i) => {
+    const erpRow = parsed[i] || null;
+    const dup = erpRow && detector.isDup ? detector.isDup(erpRow) : false;
+    const match = erpRow && isTransaction ? matchEvent(erpRow, matchCtx) : null;
     return {
-      ...row,
+      ...rawObj,
+      _erp: erpRow,
       _dup: dup,
       _matchStatus: match?.status || '',
       _matchCategory: match?.category || '',
@@ -254,43 +263,54 @@ function applyDetector(detector, dataRows, headers, filename) {
     };
   });
 
-  const newCount = parsedRows.filter(r => !r._dup).length;
-  const dupCount = parsedRows.filter(r => r._dup).length;
+  const withErp = parsedRows.filter(r => r._erp);
+  const newCount = withErp.filter(r => !r._dup).length;
+  const dupCount = withErp.filter(r => r._dup).length;
   const autoCount = parsedRows.filter(r => r._matchStatus === 'auto').length;
   const unmatchCount = parsedRows.filter(r => r._matchStatus === 'unmatched').length;
 
-  let infoText = `${detector.name} · 신규 ${newCount}건${dupCount ? ` · 중복 ${dupCount}건` : ''}`;
-  if (isTransaction) infoText += ` · 자동매칭 ${autoCount}건${unmatchCount ? ` · 미매칭 ${unmatchCount}건` : ''}`;
-  $('#uploadInfo').textContent = infoText;
+  $('#uploadInfo').textContent = `${parsedRows.length}행`;
+  $('#uploadDetectTitle').textContent = '데이터 미리보기';
 
-  // 매칭 컬럼 추가
-  const matchColumns = isTransaction ? [
-    { headerName: '분류', field: '_matchCategory', width: 70,
-      cellStyle: (p) => {
-        if (p.value === '대여료') return { color: 'var(--c-success)', fontWeight: 500 };
-        if (p.value === '미매칭입금') return { color: 'var(--c-danger)' };
-        if (p.value === '일괄입금') return { color: 'var(--c-warn)' };
-        return { color: 'var(--c-text-sub)' };
-      }},
-    { headerName: '매칭', field: '_matchReason', width: 180,
-      cellStyle: (p) => {
-        if (p.data._matchStatus === 'auto') return { color: 'var(--c-success)' };
-        if (p.data._matchStatus === 'candidate') return { color: 'var(--c-warn)' };
-        if (p.data._matchStatus === 'unmatched') return { color: 'var(--c-danger)' };
-        return {};
-      }},
-  ] : [];
+  // 감지 결과 바 — ERP 어디에 반영할지
+  const bar = $('#uploadDetectBar');
+  bar.hidden = false;
+  const targets = [];
+  if (isTransaction && detector.name.includes('통장')) {
+    targets.push({ label: '입출금내역', icon: '💰', desc: '계좌 거래 등록' });
+    if (autoCount) targets.push({ label: '수납관리', icon: '📋', desc: `대여료 매칭 ${autoCount}건` });
+  } else if (isTransaction && detector.name.includes('카드')) {
+    targets.push({ label: '입출금내역', icon: '💳', desc: '카드 지출 등록' });
+    targets.push({ label: '비용분류', icon: '📊', desc: '항목별 자동 분류' });
+  } else if (detector.name.includes('자산')) {
+    targets.push({ label: '자산관리', icon: '🚗', desc: '차량 등록' });
+  } else if (detector.name.includes('계약')) {
+    targets.push({ label: '계약관리', icon: '📋', desc: '계약 등록 + 고객 자동 생성' });
+    targets.push({ label: '수납관리', icon: '💰', desc: '회차 자동 생성' });
+  } else if (detector.name.includes('고객')) {
+    targets.push({ label: '고객관리', icon: '👥', desc: '고객 등록' });
+  }
+  bar.innerHTML = `
+    <span style="font-size:20px">${detector.icon}</span>
+    <span style="font-weight:600">${detector.name}</span>
+    <span style="color:var(--c-text-muted)">→</span>
+    ${targets.map(t => `<span style="background:var(--c-primary-bg);color:var(--c-primary);padding:2px 8px;border-radius:var(--r-sm);font-size:11px;font-weight:500">${t.icon} ${t.label}</span>`).join('')}
+    <span style="color:var(--c-text-muted);font-size:11px;margin-left:auto">${newCount}건 반영 예정${dupCount ? ` · ${dupCount}건 중복` : ''}</span>
+  `;
 
-  // AG Grid
+  // 원본 컬럼 전체 — 틀고정 없이 좌우 스크롤
+  const rawColumns = headers.filter(Boolean).map(h => ({
+    headerName: h,
+    field: h,
+    width: 120,
+  }));
+
+  // AG Grid — 원본 그대로
   if (gridApi) gridApi.destroy();
   gridApi = agGrid.createGrid($('#uploadGrid'), {
     columnDefs: [
       { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 45 },
-      { headerName: '상태', field: '_dup', width: 55,
-        cellRenderer: (p) => p.value ? '<span style="color:var(--c-text-muted)">중복</span>' : '<span style="color:var(--c-success)">신규</span>',
-        cellStyle: (p) => p.value ? { background: 'var(--c-bg-hover)' } : {} },
-      ...matchColumns,
-      ...detector.columns(),
+      ...rawColumns,
     ],
     rowData: parsedRows,
     defaultColDef: { resizable: true, sortable: true, editable: false, minWidth: 50 },
@@ -298,6 +318,9 @@ function applyDetector(detector, dataRows, headers, filename) {
     headerHeight: 28,
     animateRows: false,
     suppressContextMenu: true,
+    onGridReady: (params) => {
+      params.api.autoSizeAllColumns();
+    },
   });
 }
 
@@ -312,17 +335,16 @@ function handleOcr(file) {
 }
 
 async function confirmUpload() {
-  const newRows = parsedRows.filter(r => !r._dup);
+  const newRows = parsedRows.filter(r => r._erp && !r._dup);
   if (!newRows.length || !saveFn) { showToast('반영할 신규 데이터가 없습니다', 'info'); return; }
-  const dupSkip = parsedRows.length - newRows.length;
+  const dupSkip = parsedRows.filter(r => r._dup).length;
   if (!confirm(`신규 ${newRows.length}건 반영${dupSkip ? ` (중복 ${dupSkip}건 제외)` : ''}. 진행할까요?`)) return;
 
   $('#uploadConfirm').disabled = true;
   let ok = 0, fail = 0;
   for (const row of newRows) {
     try {
-      const { _dup, ...data } = row;
-      await saveFn(data);
+      await saveFn(row._erp);
       ok++;
     } catch (e) { console.error('[upload]', e); fail++; }
   }

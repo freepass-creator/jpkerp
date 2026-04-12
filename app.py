@@ -13,7 +13,10 @@ ROUTES = [
     ('/',          'pages/home.html',      '대시보드',   'index'),
     ('/home',      'pages/home.html',      '대시보드',   'home'),
     # 입력
-    ('/upload',          'pages/upload.html',          '업로드센터', 'upload'),
+    # 업로드센터
+    ('/upload',          'pages/upload.html',          '업로드',     'upload'),
+    ('/upload/list',     'pages/upload-list.html',     '업로드목록', 'upload_list'),
+    # 입력
     ('/input/operation', 'pages/input-operation.html', '운영등록', 'input_operation'),
     ('/input/asset',     'pages/input-asset.html',     '자산등록', 'input_asset'),
     ('/input/contract',  'pages/input-contract.html',  '계약등록', 'input_contract'),
