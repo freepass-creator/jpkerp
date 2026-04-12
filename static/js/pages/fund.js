@@ -45,10 +45,10 @@ function switchTab(tab) {
 function reset() {
   parsedRows = [];
   if (previewGrid) { previewGrid.destroy(); previewGrid = null; }
-  $('#fundStep1').hidden = false;
-  $('#fundStep2').hidden = true;
+  $('#fundGrid').innerHTML = '';
   $('#fundFile').value = '';
   $('#fundInfo').textContent = '입출금등록';
+  $('#fundPreviewInfo').textContent = '데이터를 불러오세요';
 }
 
 async function loadFile(file) {
@@ -86,9 +86,6 @@ function ingest(text) {
 }
 
 function showPreview() {
-  $('#fundStep1').hidden = true;
-  $('#fundStep2').hidden = false;
-
   const inCount = parsedRows.filter(r => r.direction === 'in').length;
   const outCount = parsedRows.filter(r => r.direction === 'out').length;
   const inSum = parsedRows.filter(r => r.direction === 'in').reduce((s, r) => s + r.amount, 0);

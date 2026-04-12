@@ -51,10 +51,27 @@
 }
 
 .sidebar-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: var(--sp-4) var(--sp-3) var(--sp-2);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  color: var(--c-text-sub);
+  letter-spacing: 0.5px;
+}
+.sidebar-divider::before,
+.sidebar-divider::after {
+  content: '';
+  flex: 1;
   height: 1px;
   background: var(--c-border);
+}
+.sidebar-divider:empty {
   margin: var(--sp-3);
 }
+.sidebar-divider:empty::before { display: block; }
+.sidebar-divider:empty::after { display: none; }
 
 /* ── 탑바 ── */
 .topbar {
@@ -123,6 +140,10 @@
   display: flex;
 }
 .workspace.layout-1 { flex-direction: column; }
+.workspace.layout-55 > :first-child { flex: 1; min-width: 0; }
+.workspace.layout-55 > :last-child  { flex: 1; min-width: 0; }
+.workspace.layout-37 > :first-child { flex: 3; min-width: 0; }
+.workspace.layout-37 > :last-child  { flex: 7; min-width: 0; }
 .workspace.layout-66 > :first-child { flex: 6; min-width: 0; }
 .workspace.layout-66 > :last-child  { flex: 4; min-width: 0; }
 

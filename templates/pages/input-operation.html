@@ -1,0 +1,10 @@
+{% extends 'workspace.html' %}
+{% block topbar_extra %}
+  <span class="topbar-status">운영등록</span>
+{% endblock %}
+{% block workspace %}
+<div id="operationHost" style="width:100%;height:100%;overflow:auto;padding:20px">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:800px;margin:0 auto" id="opCards"></div>
+  <div id="opForm" hidden style="max-width:600px;margin:24px auto 0"></div>
+</div>
+{% endblock %}

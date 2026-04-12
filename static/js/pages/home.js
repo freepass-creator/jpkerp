@@ -1,5 +1,8 @@
 /**
  * pages/home.js — 대시보드
+ *
+ * 좌: 숫자 (현황 파악) — 자산/가동/수금/금일입금
+ * 우: 업무 (액션) — 미납자/만기도래/휴차/최근거래
  */
 import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
@@ -39,13 +42,14 @@ function computeContractEnd(c) {
 let assets = [], contracts = [], billings = [], events = [];
 
 function render() {
-  const host = $('#dashHost');
-  if (!host) return;
+  const left = $('#dashLeft');
+  const right = $('#dashRight');
+  if (!left || !right) return;
   const today = new Date().toISOString().slice(0, 10);
   const todayDate = new Date(today);
   const thisMonth = today.slice(0, 7);
 
-  // ─── 자산/가동 ──────────────────────────────
+  // ─── 자산 ───────────────────────────────────
   const activeContracts = contracts.filter(c => {
     const start = normalizeDate(c.start_date);
     const end = computeContractEnd(c);
@@ -78,7 +82,7 @@ function render() {
   const todayIn = events.filter(e => e.date === today && e.direction === 'in');
   const todayInSum = todayIn.reduce((s, e) => s + (e.amount || 0), 0);
 
-  // ─── 이번달 반납/출고 ─────────────────────────
+  // ─── 이번달 ─────────────────────────────────
   const monthReturns = contracts.filter(c => {
     const end = computeContractEnd(c);
     return end && end.startsWith(thisMonth);
@@ -86,6 +90,10 @@ function render() {
   const monthStarts = contracts.filter(c => {
     const start = normalizeDate(c.start_date);
     return start && start.startsWith(thisMonth);
+  });
+  const newContracts = contracts.filter(c => {
+    const created = c.created_at ? new Date(c.created_at).toISOString().slice(0, 7) : '';
+    return created === thisMonth;
   });
 
   // ─── 만기도래 ───────────────────────────────
@@ -116,7 +124,8 @@ function render() {
       const paid = Number(b.paid_total) || 0;
       const days = Math.floor((todayDate - new Date(b.due_date)) / 86400000);
       return { ...b, contractor_name: c.contractor_name || '-', car_number: c.car_number || '-', unpaid: due - paid, days };
-    });
+    })
+    .sort((a, b) => b.days - a.days);
 
   const buckets = [
     { label: '3일이하', min: 1, max: 3, color: 'var(--c-text-sub)' },
@@ -135,13 +144,7 @@ function render() {
   const recentTx = events
     .filter(e => e.type === 'bank_tx' || e.type === 'card_tx')
     .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
-    .slice(0, 8);
-
-  // ─── 이번달 신규 계약 ────────────────────────
-  const newContracts = contracts.filter(c => {
-    const created = c.created_at ? new Date(c.created_at).toISOString().slice(0, 7) : '';
-    return created === thisMonth;
-  });
+    .slice(0, 10);
 
   // ─── 렌더 ─────────────────────────────────
   const card = (label, value, sub, color, href) =>
@@ -151,82 +154,63 @@ function render() {
       ${sub ? `<div style="font-size:10px;color:var(--c-text-muted);margin-top:2px">${sub}</div>` : ''}
     </div>`;
 
-  host.innerHTML = `
-    <!-- 1행: 자산/가동 + 수금 -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+  const maxBucket = Math.max(...buckets.map(b => b.items.length), 1);
+  const bucketBar = (bk) => {
+    const pct = Math.round(bk.items.length / maxBucket * 100);
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <div style="width:60px;font-size:11px;color:var(--c-text-muted);flex-shrink:0">${bk.label}</div>
+      <div style="flex:1;height:16px;background:var(--c-bg-hover);border-radius:2px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${bk.color};border-radius:2px;opacity:0.7"></div>
+      </div>
+      <div style="width:40px;text-align:right;font-size:11px;font-weight:600;color:${bk.color}">${bk.items.length}건</div>
+      <div style="width:80px;text-align:right;font-size:10px;color:${bk.color}">${bk.sum ? fmt(bk.sum) : '-'}</div>
+    </div>`;
+  };
+
+  // ─── 좌측: 지표 ─────────────────────────────
+  left.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
       ${card('총 자산', `${totalAssets}대`, `가동률 ${utilizationRate}%`, '', '/asset')}
       ${card('가동중', `${activating}대`, '', 'var(--c-success)', '/asset')}
-      ${card('휴차', `${idle}대`, Object.entries(idleByStatus).map(([k, v]) => `${k} ${v.length}`).join(' · ') || '', idle > 0 ? 'var(--c-warn)' : '', '/asset')}
-      ${card('금일 입금', fmt(todayInSum), `${todayIn.length}건`, 'var(--c-primary)', '/ledger')}
+      ${card('휴차', `${idle}대`, Object.entries(idleByStatus).map(([k, v]) => `${k} ${v.length}`).join(' · ') || '없음', idle > 0 ? 'var(--c-warn)' : 'var(--c-success)', '/asset')}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
       ${card('총 청구', fmt(totalDue), `수금률 ${collectRate}%`, '', '/billing')}
       ${card('납부', fmt(totalPaid), '', 'var(--c-success)', '/billing')}
       ${card('미납', fmt(totalUnpaid), `${overdue.length}건`, totalUnpaid > 0 ? 'var(--c-danger)' : 'var(--c-success)', '/billing')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${card('금일 입금', fmt(todayInSum), `${todayIn.length}건`, 'var(--c-primary)', '/ledger')}
       ${card('이번달', `출고 ${monthStarts.length} · 반납 ${monthReturns.length}`, `신규 ${newContracts.length}건`, 'var(--c-info)', '/contract')}
     </div>
+  `;
 
-    <!-- 2행: 만기도래 -->
-    <div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px">만기도래</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-        ${[['1개월 이내', exp1, 'var(--c-danger)'], ['1~2개월', exp2, 'var(--c-warn)'], ['2~3개월', exp3, 'var(--c-text-sub)']].map(([label, items, color]) => `
-          <div class="dash-card">
-            <div style="font-size:11px;color:var(--c-text-muted);margin-bottom:4px">${label} · <span style="color:${color};font-weight:600">${items.length}건</span></div>
-            ${items.slice(0, 5).map(c => `<div style="font-size:11px;display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--c-border)">
-              <span>${c.contractor_name || '-'} <span style="color:var(--c-text-muted)">${c.car_number || ''}</span></span>
-              <span style="color:${color}">${fmtDate(computeContractEnd(c))}</span>
-            </div>`).join('')}
-            ${items.length > 5 ? `<div style="font-size:9px;color:var(--c-text-muted);margin-top:4px">외 ${items.length - 5}건</div>` : ''}
-            ${!items.length ? '<div style="font-size:11px;color:var(--c-text-muted)">없음</div>' : ''}
-          </div>
-        `).join('')}
-      </div>
+  // ─── 우측: 할 일 ────────────────────────────
+  right.innerHTML = `
+    <div style="font-size:12px;font-weight:600;margin-bottom:4px;color:var(--c-danger)">미납 독촉</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      ${card('미납자', `${overdue.length}건`, fmt(totalUnpaid) + '원', overdue.length ? 'var(--c-danger)' : 'var(--c-success)', '/billing')}
+      ${card('7일+', `${overdue.filter(o => o.days >= 7).length}건`, '', overdue.some(o => o.days >= 7) ? 'var(--c-danger)' : '', '/billing')}
+      ${card('30일+', `${overdue.filter(o => o.days >= 30).length}건`, '', overdue.some(o => o.days >= 30) ? '#991b1b' : '', '/billing')}
     </div>
 
-    <!-- 3행: 미납 구간별 -->
-    <div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px">미납자 연체구간</div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
-        ${buckets.map(bk => `<div class="dash-card">
-          <div style="font-size:11px;color:var(--c-text-muted)">${bk.label}</div>
-          <div style="font-size:18px;font-weight:700;color:${bk.color}">${bk.items.length}<span style="font-size:11px;font-weight:400">건</span></div>
-          <div style="font-size:10px;color:${bk.color}">${bk.sum ? fmt(bk.sum) + '원' : '-'}</div>
-          ${bk.items.slice(0, 3).map(o => `<div style="font-size:10px;color:var(--c-text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.contractor_name} ${o.days}일 ${fmt(o.unpaid)}</div>`).join('')}
-          ${bk.items.length > 3 ? `<div style="font-size:9px;color:var(--c-text-muted)">외 ${bk.items.length - 3}건</div>` : ''}
-        </div>`).join('')}
-      </div>
+    <div style="font-size:12px;font-weight:600;margin-bottom:4px;margin-top:8px;color:var(--c-warn)">만기 협의</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      ${card('1개월 이내', `${exp1.length}건`, '', exp1.length ? 'var(--c-danger)' : '', '/contract')}
+      ${card('1~2개월', `${exp2.length}건`, '', exp2.length ? 'var(--c-warn)' : '', '/contract')}
+      ${card('2~3개월', `${exp3.length}건`, '', '', '/contract')}
     </div>
 
-    <!-- 4행: 휴차 목록 + 최근 거래 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px">휴차 ${idle}대</div>
-        ${idle ? `<table class="grid-table">
-          <thead><tr><th>차량번호</th><th>모델</th><th>상태</th></tr></thead>
-          <tbody>${idleAssets.slice(0, 10).map(a => `<tr>
-            <td>${a.car_number || '-'}</td>
-            <td style="color:var(--c-text-muted)">${a.car_model || '-'}</td>
-            <td><span style="font-size:11px;font-weight:500;color:var(--c-warn)">${a.asset_status || '미지정'}</span></td>
-          </tr>`).join('')}</tbody>
-        </table>
-        ${idleAssets.length > 10 ? `<div style="font-size:10px;color:var(--c-text-muted);margin-top:4px">외 ${idleAssets.length - 10}대</div>` : ''}
-        ` : '<div style="color:var(--c-text-muted)">휴차 없음</div>'}
-      </div>
-      <div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px">최근 거래</div>
-        ${recentTx.length ? `<table class="grid-table">
-          <thead><tr><th>일자</th><th>내용</th><th class="is-num">금액</th></tr></thead>
-          <tbody>${recentTx.map(e => {
-            const isIn = e.direction === 'in';
-            return `<tr>
-              <td style="color:var(--c-text-muted)">${fmtDate(e.date)}</td>
-              <td>${e.counterparty || e.summary || '-'}</td>
-              <td class="is-num" style="color:${isIn ? 'var(--c-success)' : 'var(--c-danger)'}">${isIn ? '+' : '-'}${fmt(e.amount)}</td>
-            </tr>`;
-          }).join('')}</tbody>
-        </table>` : '<div style="color:var(--c-text-muted)">거래 없음</div>'}
-      </div>
+    <div style="font-size:12px;font-weight:600;margin-bottom:4px;margin-top:8px">출고 대기</div>
+    <div style="display:grid;grid-template-columns:repeat(${Math.max(Object.keys(idleByStatus).length, 2)},1fr);gap:8px">
+      ${Object.keys(idleByStatus).length ? Object.entries(idleByStatus).map(([st, items]) =>
+        card(st, `${items.length}대`, '', 'var(--c-warn)', '/asset')
+      ).join('') : card('휴차', '0대', '전차 가동중', 'var(--c-success)', '/asset')}
+    </div>
+
+    <div style="font-size:12px;font-weight:600;margin-bottom:4px;margin-top:8px">연체 구간</div>
+    <div style="cursor:pointer" onclick="location.href='/billing'">
+      ${buckets.map(bk => bucketBar(bk)).join('')}
     </div>
   `;
 }

@@ -33,7 +33,7 @@ function initGrid() {
 
   const columnDefs = [
     { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 50, editable: false },
-    ...CONTRACT_SCHEMA.filter(s => s.gridShow).map(s => ({
+    ...CONTRACT_SCHEMA.map(s => ({
       field: s.col,
       headerName: s.label + (s.required ? ' *' : ''),
       editable: (params) => {

@@ -51,7 +51,7 @@
 
   /* ── 컨트롤 ── */
   --ctrl-h:        32px;
-  --ctrl-r:        0;
+  --ctrl-r:        4px;
   --ctrl-px:       6px;
   --ctrl-border:   var(--c-border-strong);
   --ctrl-border-w: 1px;
@@ -63,7 +63,10 @@
   --panel-head-px:  16px;
   --panel-body-pad: 20px;
   --panel-r:        0;
-  /* 모든 라운드 0 */
+  --r-xs:           2px;
+  --r-sm:           4px;
+  --r-md:           6px;
+  --r-lg:           10px;
   --panel-shadow:   none;
 
   /* ── 섹션 타이틀 ── */

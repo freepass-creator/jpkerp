@@ -42,7 +42,7 @@
 .dash-card {
   background: var(--c-bg);
   border: 1px solid var(--c-border);
-  border-radius: 4px;
+  border-radius: var(--r-md);
   padding: 14px 16px;
   transition: background var(--t-fast);
 }

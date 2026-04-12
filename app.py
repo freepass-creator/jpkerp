@@ -12,14 +12,24 @@ def inject_globals():
 ROUTES = [
     ('/',          'pages/home.html',      '대시보드',   'index'),
     ('/home',      'pages/home.html',      '대시보드',   'home'),
-    ('/tasks',     'pages/tasks.html',     '해야할 일',  'tasks'),
-    ('/asset',     'pages/asset.html',     '자산관리',   'asset'),
-    ('/contract',  'pages/contract.html',  '계약관리',   'contract'),
-    ('/customer',  'pages/customer.html',  '고객관리',   'customer'),
-    ('/billing',   'pages/billing.html',   '수납관리',   'billing'),
-    ('/fund',      'pages/fund.html',      '입출금등록', 'fund'),
-    ('/ledger',    'pages/ledger.html',    '입출금내역', 'ledger'),
-    ('/settings',  'pages/settings.html',  '설정',       'settings'),
+    # 입력
+    ('/input/operation', 'pages/input-operation.html', '운영등록', 'input_operation'),
+    ('/input/asset',     'pages/input-asset.html',     '자산등록', 'input_asset'),
+    ('/input/contract',  'pages/input-contract.html',  '계약등록', 'input_contract'),
+    ('/fund',            'pages/fund.html',            '입출금등록', 'fund'),
+    # 조회
+    ('/operation', 'pages/operation.html', '운영관리', 'operation'),
+    ('/asset',     'pages/asset.html',     '자산관리', 'asset'),
+    ('/contract',  'pages/contract.html',  '계약관리', 'contract'),
+    ('/customer',  'pages/customer.html',  '고객관리', 'customer'),
+    ('/billing',   'pages/billing.html',   '수납관리', 'billing'),
+    ('/ledger',    'pages/ledger.html',    '입출금관리', 'ledger'),
+    # 현황
+    ('/status/overdue',  'pages/status-overdue.html',  '미납현황', 'status_overdue'),
+    ('/status/idle',     'pages/status-idle.html',     '휴차현황', 'status_idle'),
+    ('/status/expiring', 'pages/status-expiring.html', '만기도래', 'status_expiring'),
+    # 기타
+    ('/settings',  'pages/settings.html',  '설정',   'settings'),
 ]
 
 def _make_view(tpl, title):

@@ -36,7 +36,7 @@ function initGrid() {
 
   const columnDefs = [
     { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 50, editable: false },
-    ...ASSET_SCHEMA.filter(s => s.gridShow).map(s => ({
+    ...ASSET_SCHEMA.map(s => ({
       field: s.col,
       headerName: s.label + (s.required ? ' *' : ''),
       editable: (params) => {

@@ -1,7 +1,15 @@
 {% extends 'workspace.html' %}
+{% block topbar_extra %}
+  <span class="topbar-status">대시보드</span>
+{% endblock %}
+{% block workspace_layout %}layout-55{% endblock %}
 {% block workspace %}
-<section class="panel" style="flex:1;min-height:0;overflow:auto">
-  <div class="panel-head"><div><span class="panel-title">대시보드</span></div></div>
-  <div class="panel-body is-pad" id="dashHost" style="display:flex;flex-direction:column;gap:24px"></div>
+<section class="panel">
+  <div class="panel-head"><div><span class="panel-title">현황</span></div></div>
+  <div class="panel-body is-pad" id="dashLeft" style="display:flex;flex-direction:column;gap:16px"></div>
+</section>
+<section class="panel">
+  <div class="panel-head"><div><span class="panel-title">업무</span></div></div>
+  <div class="panel-body is-pad" id="dashRight" style="display:flex;flex-direction:column;gap:16px"></div>
 </section>
 {% endblock %}

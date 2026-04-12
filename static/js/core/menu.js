@@ -4,16 +4,24 @@
 
 export const MENU = [
   { href: '/home',     label: '대시보드',   icon: 'home' },
-  { href: '/tasks',    label: '해야할 일',  icon: 'check' },
+  { divider: true, label: '입력' },
+  { href: '/input/operation', label: '운영등록', icon: 'check' },
+  { href: '/input/asset',    label: '자산등록', icon: 'asset' },
+  { href: '/input/contract', label: '계약등록', icon: 'contract' },
+  { href: '/fund',           label: '입출금등록', icon: 'fund' },
+  { divider: true, label: '조회' },
+  { href: '/operation', label: '운영관리', icon: 'check' },
+  { href: '/asset',     label: '자산관리', icon: 'asset' },
+  { href: '/contract',  label: '계약관리', icon: 'contract' },
+  { href: '/customer',  label: '고객관리', icon: 'users' },
+  { href: '/billing',   label: '수납관리', icon: 'fund' },
+  { href: '/ledger',    label: '입출금관리', icon: 'fund' },
+  { divider: true, label: '현황' },
+  { href: '/status/overdue',  label: '미납현황', icon: 'fund' },
+  { href: '/status/idle',     label: '휴차현황', icon: 'asset' },
+  { href: '/status/expiring', label: '만기도래', icon: 'contract' },
   { divider: true },
-  { href: '/asset',    label: '자산관리',   icon: 'asset' },
-  { href: '/contract', label: '계약관리',   icon: 'contract' },
-  { href: '/customer', label: '고객관리',   icon: 'users' },
-  { href: '/billing',  label: '수납관리',   icon: 'fund' },
-  { href: '/fund',     label: '입출금등록', icon: 'fund' },
-  { href: '/ledger',   label: '입출금내역', icon: 'fund' },
-  { divider: true },
-  { href: '/settings', label: '설정',       icon: 'settings' },
+  { href: '/settings', label: '설정',   icon: 'settings' },
 ];
 
 const ICONS = {
