@@ -42,10 +42,20 @@ function setup(ws) {
     let leftW = 0;
     let rightW = 0;
 
+    let dblState = 0; // 0=현재, 1=5:5, 2=3:7
     handle.addEventListener('dblclick', () => {
-      const equal = 100 / panels.length;
-      panels.forEach(p => { p.style.flex = `${equal} 0 0`; });
-      localStorage.setItem(key, JSON.stringify(panels.map(() => equal)));
+      dblState = (dblState + 1) % 3;
+      let ratios;
+      if (dblState === 1) {
+        ratios = panels.map(() => 100 / panels.length);
+      } else if (dblState === 2) {
+        ratios = panels.length === 2 ? [30, 70] : panels.map(() => 100 / panels.length);
+      } else {
+        ratios = panels.map(() => 100 / panels.length);
+        dblState = 1;
+      }
+      panels.forEach((p, i) => { p.style.flex = `${ratios[i]} 0 0`; });
+      localStorage.setItem(key, JSON.stringify(ratios));
     });
 
     handle.addEventListener('mousedown', (e) => {
