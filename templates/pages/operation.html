@@ -1,5 +1,20 @@
 {% extends 'workspace.html' %}
 {% block topbar_extra %}<span class="topbar-status">운영관리</span>{% endblock %}
+{% block workspace_layout %}layout-37{% endblock %}
 {% block workspace %}
-<div id="operationGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>
+<section class="panel">
+  <div class="panel-head">
+    <div><span class="panel-title">유형</span></div>
+  </div>
+  <div class="panel-body" id="opViewList" style="overflow-y:auto"></div>
+</section>
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <span class="panel-title" id="opViewTitle">전체</span>
+      <span class="panel-subtitle" id="opViewCount"></span>
+    </div>
+  </div>
+  <div id="opViewGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
 {% endblock %}
