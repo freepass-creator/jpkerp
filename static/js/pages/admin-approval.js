@@ -33,7 +33,7 @@ function renderList() {
   host.innerHTML = approvals.map(a => {
     const st = STATUS[a.status] || STATUS.draft;
     return `<div class="op-type" data-id="${a.approval_id}" style="cursor:pointer">
-      <span class="op-type__icon" style="font-size:12px;color:${st.color}">●</span>
+      <span class="op-type__icon" style="font-size:var(--font-size);color:${st.color}">●</span>
       <span class="op-type__label">${a.title || '-'}</span>
       <span class="op-type__sub">${fmtTs(a.created_at)} · ${st.label}</span>
     </div>`;

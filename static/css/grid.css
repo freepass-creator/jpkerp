@@ -2,7 +2,7 @@
 
 .ag-theme-alpine {
   --ag-font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-  --ag-font-size: 12px;
+  --ag-font-size: var(--font-size);
   --ag-row-height: 28px;
   --ag-header-height: 28px;
   --ag-cell-horizontal-padding: 6px;
@@ -44,7 +44,7 @@
 .ag-theme-alpine .ag-header-cell-label,
 .ag-theme-alpine .ag-cell {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif !important;
-  font-size: 12px !important;
+  font-size: var(--font-size) !important;
 }
 .ag-theme-alpine .ag-header-cell-label {
   font-weight: 500 !important;

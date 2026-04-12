@@ -196,7 +196,7 @@ function handleCsv(text, filename) {
   // 여러 개 매칭 → 선택
   detect.innerHTML = `<div style="font-size:11px;color:var(--c-text-muted);margin-bottom:4px">여러 유형이 감지되었습니다:</div>` +
     matches.map((d, i) => `<div class="dash-card detect-choice" data-idx="${i}" style="cursor:pointer;display:flex;align-items:center;gap:8px">
-      <span style="font-size:18px">${d.icon}</span>
+      <span style="font-size:var(--font-size-lg)">${d.icon}</span>
       <span style="font-weight:500">${d.name}</span>
     </div>`).join('');
 
@@ -213,7 +213,7 @@ async function applyDetector(detector, dataRows, headers, filename) {
 
   // 좌측 감지 결과
   $('#uploadDetect').innerHTML = `<div class="dash-card" style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:20px">${detector.icon}</span>
+    <span style="font-size:var(--font-size-lg)">${detector.icon}</span>
     <div>
       <div style="font-weight:600">${detector.name}</div>
       <div style="font-size:10px;color:var(--c-text-muted)">${filename} · ${dataRows.length}행</div>
@@ -296,7 +296,7 @@ async function applyDetector(detector, dataRows, headers, filename) {
     targets.push({ label: '고객관리', icon: '👥', desc: '고객 등록' });
   }
   bar.innerHTML = `
-    <span style="font-size:20px">${detector.icon}</span>
+    <span style="font-size:var(--font-size-lg)">${detector.icon}</span>
     <span style="font-weight:600">${detector.name}</span>
     <span style="color:var(--c-text-muted)">→</span>
     ${targets.map(t => `<span style="background:var(--c-primary-bg);color:var(--c-primary);padding:2px 8px;border-radius:var(--r-sm);font-size:11px;font-weight:500">${t.icon} ${t.label}</span>`).join('')}
@@ -331,7 +331,7 @@ async function applyDetector(detector, dataRows, headers, filename) {
 
 function handleOcr(file) {
   $('#uploadDetect').innerHTML = `<div class="dash-card" style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:20px">📄</span>
+    <span style="font-size:var(--font-size-lg)">📄</span>
     <div>
       <div style="font-weight:600">${file.name}</div>
       <div style="font-size:10px;color:var(--c-warn)">OCR 기능 준비 중 (Google Vision API 연동 예정)</div>

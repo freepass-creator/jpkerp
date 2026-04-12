@@ -294,7 +294,7 @@ function renderForm() {
       <div class="form-section-title">차량 사진</div>
       <label id="photoDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--c-text-muted);transition:background var(--t-fast)">
         <input type="file" id="photoFile" multiple accept="image/*" hidden>
-        <span style="font-size:24px">📷</span>
+        <span style="font-size:20px">📷</span>
         <div style="font-size:var(--font-size-sm)">사진 추가 (드래그 또는 클릭)</div>
       </label>
       <div class="photo-grid" id="photoGrid" style="margin-top:8px"></div>

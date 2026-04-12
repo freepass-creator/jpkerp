@@ -28,7 +28,7 @@ function handleFiles(files) {
   const detect = $('#noticeDetect');
   detect.innerHTML = files.map(f => `
     <div class="dash-card" style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:18px">📄</span>
+      <span style="font-size:var(--font-size-lg)">📄</span>
       <div style="flex:1">
         <div style="font-weight:500;font-size:var(--font-size-sm)">${f.name}</div>
         <div style="font-size:var(--font-size-xs);color:var(--c-warn)">OCR 처리 준비 중 (Google Vision 연동 예정)</div>
