@@ -86,24 +86,101 @@
         const totalDue = bills.reduce((s, b) => s + (Number(b.amount) || 0), 0);
         const totalPaid = bills.reduce((s, b) => s + (Number(b.paid_total) || 0), 0);
 
+        // 자산 조회
+        const assetSnap = await get(ref(db, 'assets'));
+        const assetAll = Object.values(assetSnap.val() || {});
+        const asset = assetAll.find(a => a.car_number === match.car_number) || {};
+
+        const fmtDate = (s) => {
+          if (!s) return '-';
+          const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+          return m ? `${m[1].slice(2)}.${m[2]}.${m[3]}` : s;
+        };
+
+        const unpaid = totalDue - totalPaid;
+        const sortedBills = bills.sort((a, b) => (a.seq || 0) - (b.seq || 0));
+
+        const row = (label, value, style) => `<div class="my-row"><span class="my-row-label">${label}</span><span class="my-row-value"${style ? ` style="${style}"` : ''}>${value}</span></div>`;
+
         result.innerHTML = `
+          <!-- 계약 정보 -->
           <div class="my-result-card">
-            <div class="my-row"><span class="my-row-label">계약번호</span><span class="my-row-value">${match.contract_code}</span></div>
-            <div class="my-row"><span class="my-row-label">계약자</span><span class="my-row-value">${match.contractor_name || '-'}</span></div>
-            <div class="my-row"><span class="my-row-label">차량번호</span><span class="my-row-value">${match.car_number}</span></div>
-            <div class="my-row"><span class="my-row-label">시작일</span><span class="my-row-value">${match.start_date || '-'}</span></div>
-            <div class="my-row"><span class="my-row-label">종료일</span><span class="my-row-value">${endDate}</span></div>
-            <div class="my-row"><span class="my-row-label">기간</span><span class="my-row-value">${match.rent_months || '-'}개월</span></div>
-            <div class="my-row"><span class="my-row-label">월 대여료</span><span class="my-row-value">${fmt(match.rent_amount)}원</span></div>
-            <div class="my-row"><span class="my-row-label">보증금</span><span class="my-row-value">${fmt(match.deposit_amount)}원</span></div>
-            <div class="my-row"><span class="my-row-label">결제일</span><span class="my-row-value">매월 ${match.auto_debit_day || '-'}일</span></div>
-            <div class="my-row"><span class="my-row-label">계약상태</span><span class="my-row-value">${match.contract_status || '-'}</span></div>
-            <div class="my-row" style="margin-top:8px;padding-top:8px;border-top:2px solid var(--c-border)">
-              <span class="my-row-label">총 청구</span><span class="my-row-value">${fmt(totalDue)}원</span></div>
-            <div class="my-row"><span class="my-row-label">총 납부</span><span class="my-row-value" style="color:var(--c-success)">${fmt(totalPaid)}원</span></div>
-            <div class="my-row"><span class="my-row-label">미수</span><span class="my-row-value" style="color:${totalDue - totalPaid > 0 ? 'var(--c-danger)' : 'var(--c-success)'}; font-weight:700">${fmt(totalDue - totalPaid)}원</span></div>
+            ${row('계약자', match.contractor_name || '-')}
+            ${row('차량번호', match.car_number)}
+            ${row('차종', [asset.manufacturer, asset.car_model, asset.ext_color ? `(${asset.ext_color})` : ''].filter(Boolean).join(' ') || '-')}
+            ${row('계약기간', `${fmtDate(match.start_date)} ~ ${fmtDate(endDate)} (${match.rent_months || '-'}개월)`)}
+            ${row('월 대여료', `${fmt(match.rent_amount)}원`)}
+            ${row('보증금', `${fmt(match.deposit_amount)}원`)}
+            ${row('결제일', `매월 ${match.auto_debit_day || '-'}일`)}
+          </div>
+
+          <!-- 납부 현황 -->
+          <div class="my-result-card" style="margin-top:12px">
+            <div style="font-weight:600;margin-bottom:8px">납부 현황</div>
+            ${row('총 청구', `${fmt(totalDue)}원`)}
+            ${row('총 납부', `${fmt(totalPaid)}원`, 'color:#0f7b0f')}
+            ${row('미수금', `${fmt(unpaid)}원`, `color:${unpaid > 0 ? '#e03e3e' : '#0f7b0f'};font-weight:700`)}
+          </div>
+
+          <!-- 세부 스케줄 -->
+          <div class="my-result-card" style="margin-top:12px">
+            <div id="scheduleToggle" style="font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+              <span>세부 스케줄 확인하기</span>
+              <span id="scheduleArrow" style="font-size:12px">▼</span>
+            </div>
+            <div id="scheduleBody" hidden style="margin-top:8px">
+              ${sortedBills.map(b => {
+                const due = Number(b.amount) || 0;
+                const paid = Number(b.paid_total) || 0;
+                const isDone = paid >= due;
+                return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;font-size:12px">
+                  <span>${b.seq}회차</span>
+                  <span>${fmtDate(b.due_date)}</span>
+                  <span>${fmt(due)}원</span>
+                  <span style="color:${isDone ? '#0f7b0f' : '#e03e3e'};font-weight:500">${isDone ? '✓ 완납' : '미납'}</span>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- 서류 다운로드 -->
+          <div class="my-result-card" style="margin-top:12px">
+            <div style="font-weight:600;margin-bottom:8px">서류</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eee">
+                <span>📄 임대차계약서</span><span style="color:var(--c-text-muted);font-size:12px">준비 중</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eee">
+                <span>📄 차량등록증</span><span style="color:var(--c-text-muted);font-size:12px">준비 중</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0">
+                <span>📄 보험가입증명서</span><span style="color:var(--c-text-muted);font-size:12px">준비 중</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 보험 정보 -->
+          <div class="my-result-card" style="margin-top:12px">
+            <div style="font-weight:600;margin-bottom:8px">보험 정보</div>
+            ${row('보험사', asset.insurance_company || '-')}
+            ${row('보험연령', asset.insurance_age || '-')}
+            ${row('보험만기', fmtDate(asset.insurance_end) || '-')}
+          </div>
+
+          <!-- 문의 -->
+          <div style="margin-top:16px;text-align:center;padding:12px;background:#f5f5f4;border-radius:var(--r-md)">
+            <div style="font-size:12px;color:var(--c-text-muted)">문의</div>
+            <a href="tel:02-XXX-XXXX" style="font-size:16px;font-weight:700;color:var(--c-text);text-decoration:none">📞 02-XXX-XXXX</a>
           </div>
         `;
+
+        // 스케줄 토글
+        document.getElementById('scheduleToggle')?.addEventListener('click', () => {
+          const body = document.getElementById('scheduleBody');
+          const arrow = document.getElementById('scheduleArrow');
+          if (body.hidden) { body.hidden = false; arrow.textContent = '▲'; }
+          else { body.hidden = true; arrow.textContent = '▼'; }
+        });
       } catch (err) {
         result.innerHTML = '<div class="my-error">조회 중 오류가 발생했습니다.</div>';
         console.error(err);
