@@ -52,7 +52,7 @@ const DEFAULT_TYPES = [
   { key: 'product',     label: '상품화',         icon: '✨', sub: '반납 후 재상품화',           direction: 'out' },
   { key: 'accident',    label: '사고접수 및 처리', icon: '💥', sub: '사고 발생/보험접수',        direction: 'out' },
   { key: 'repair',      label: '사고수리',       icon: '🔨', sub: '판금/도색/수리',             direction: 'out' },
-  { key: 'penalty',     label: '과태료',         icon: '🚫', sub: '교통 과태료/위반',           direction: 'out' },
+  { key: 'penalty',     label: '과태료 임차인 변경부과', icon: '🚫', sub: '과태료 변경부과 처리',  direction: 'out' },
   { key: 'collect',     label: '미수관리',       icon: '📨', sub: '독촉/내용증명/법적조치',     direction: 'out' },
   { key: 'insurance',   label: '보험관리',       icon: '🛡', sub: '보험배서/연령변경/갱신',     direction: 'out' },
   { key: 'wash',        label: '세차',           icon: '🧼', sub: '세차/실내크리닝',           direction: 'out' },
@@ -292,14 +292,12 @@ function renderForm() {
     </div>
     <div class="form-section">
       <div class="form-section-title">차량 사진</div>
-      <div class="photo-grid" id="photoGrid">
-        <div class="photo-slot" data-label="전면"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">전면</span><button type="button" class="photo-slot__del">✕</button></div>
-        <div class="photo-slot" data-label="후면"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">후면</span><button type="button" class="photo-slot__del">✕</button></div>
-        <div class="photo-slot" data-label="좌측"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">좌측</span><button type="button" class="photo-slot__del">✕</button></div>
-        <div class="photo-slot" data-label="우측"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">우측</span><button type="button" class="photo-slot__del">✕</button></div>
-        <div class="photo-slot" data-label="실내"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">실내</span><button type="button" class="photo-slot__del">✕</button></div>
-        <div class="photo-slot" data-label="기타"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">➕</span><span class="photo-slot__label">기타</span><button type="button" class="photo-slot__del">✕</button></div>
-      </div>
+      <label id="photoDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--c-text-muted);transition:background var(--t-fast)">
+        <input type="file" id="photoFile" multiple accept="image/*" hidden>
+        <span style="font-size:24px">📷</span>
+        <div style="font-size:var(--font-size-sm)">사진 추가 (드래그 또는 클릭)</div>
+      </label>
+      <div class="photo-grid" id="photoGrid" style="margin-top:8px"></div>
     </div>
     <div class="form-section">
       <div class="form-section-title">비품 확인</div>
@@ -968,34 +966,35 @@ function renderForm() {
     }
   }
 
-  // 사진 슬롯
-  host.querySelectorAll('.photo-slot').forEach(slot => {
-    const input = slot.querySelector('input[type="file"]');
-    const del = slot.querySelector('.photo-slot__del');
-    slot.addEventListener('click', (e) => {
-      if (e.target === del || e.target.closest('.photo-slot__del')) return;
-      input.click();
+  // 사진 드래그앤드롭 + 클릭 → 여러 장 미리보기
+  const photoDrop = host.querySelector('#photoDrop');
+  const photoFile = host.querySelector('#photoFile');
+  const photoGrid = host.querySelector('#photoGrid');
+  if (photoDrop && photoFile && photoGrid) {
+    const addPhotos = (files) => {
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const slot = document.createElement('div');
+          slot.className = 'photo-slot has-photo';
+          slot.innerHTML = `<img src="${e.target.result}"><button type="button" class="photo-slot__del">✕</button>`;
+          slot.querySelector('.photo-slot__del').addEventListener('click', () => slot.remove());
+          photoGrid.appendChild(slot);
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+    photoDrop.addEventListener('click', () => photoFile.click());
+    photoFile.addEventListener('change', () => addPhotos(photoFile.files));
+    photoDrop.addEventListener('dragover', (e) => { e.preventDefault(); photoDrop.style.background = 'var(--c-bg-hover)'; });
+    photoDrop.addEventListener('dragleave', () => { photoDrop.style.background = ''; });
+    photoDrop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      photoDrop.style.background = '';
+      addPhotos(e.dataTransfer.files);
     });
-    input.addEventListener('change', () => {
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        let img = slot.querySelector('img');
-        if (!img) { img = document.createElement('img'); slot.appendChild(img); }
-        img.src = e.target.result;
-        slot.classList.add('has-photo');
-      };
-      reader.readAsDataURL(file);
-    });
-    del.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const img = slot.querySelector('img');
-      if (img) img.remove();
-      slot.classList.remove('has-photo');
-      input.value = '';
-    });
-  });
+  }
 
   // btn-toggle (복수 선택) 바인딩
   host.querySelectorAll('.btn-toggle').forEach(btn => {

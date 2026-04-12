@@ -1,0 +1,29 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block topbar_extra %}<span class="topbar-status">고지서업무</span>{% endblock %}
+{% block workspace_layout %}layout-37{% endblock %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div><span class="panel-title">고지서 업로드</span></div>
+  </div>
+  <div class="panel-body is-pad" style="overflow-y:auto;display:flex;flex-direction:column;gap:14px">
+    <label id="noticeDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:24px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-text-muted);transition:background var(--t-fast)">
+      <input type="file" id="noticeFile" multiple accept=".pdf,.png,.jpg,.jpeg" hidden>
+      <span style="font-size:28px">📄</span>
+      <div style="font-size:12px;font-weight:600;color:var(--c-text)">과태료 고지서 업로드</div>
+      <div style="font-size:10px">PDF · 이미지 — 자동 OCR 매칭</div>
+    </label>
+    <div id="noticeDetect" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</section>
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <span class="panel-title">매칭 목록</span>
+      <span class="panel-subtitle" id="noticeInfo"></span>
+    </div>
+  </div>
+  <div id="noticeGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+{% endblock %}

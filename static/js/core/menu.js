@@ -28,8 +28,8 @@ export const MENU = [
     { href: '/status/idle',     label: '휴차현황', icon: 'pause' },
     { href: '/status/expiring', label: '만기도래', icon: 'clock' },
   ]},
-  { group: '회사관리', icon: 'settings', children: [
-    { href: '/admin/company',  label: '회사정보',     icon: 'settings' },
+  { group: '회사관리', icon: 'building', children: [
+    { href: '/admin/company',  label: '회사정보',     icon: 'info' },
     { href: '/admin/staff',    label: '직원관리',     icon: 'users' },
     { href: '/admin/card',     label: '법인카드관리', icon: 'wallet' },
     { href: '/admin/account',  label: '계좌관리',     icon: 'fund' },
@@ -37,6 +37,7 @@ export const MENU = [
     { href: '/admin/lease',    label: '임대관리',     icon: 'asset' },
     { href: '/admin/contract', label: '계약서관리',   icon: 'fileplus' },
     { href: '/admin/seal',     label: '인감/도장',    icon: 'circlecheck' },
+    { href: '/admin/notice',   label: '고지서업무',  icon: 'alert' },
   ]},
 ];
 
@@ -54,6 +55,8 @@ const ICONS = {
   chevron:  '<polyline points="6 9 12 15 18 9"/>',
   plus:     '<path d="M5 12h14"/><path d="M12 5v14"/>',
   uploadicon:'<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
+  building: '<path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/>',
+  info:     '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
   dot:      '<circle cx="12" cy="12" r="2"/>',
   chart:    '<path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>',
   trending: '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',
