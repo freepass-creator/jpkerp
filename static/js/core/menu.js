@@ -34,6 +34,9 @@ export const MENU = [
     { href: '/admin/card',     label: '법인카드관리', icon: 'wallet' },
     { href: '/admin/account',  label: '계좌관리',     icon: 'fund' },
     { href: '/admin/vendor',   label: '거래처관리',   icon: 'contract' },
+    { href: '/admin/lease',    label: '임대관리',     icon: 'asset' },
+    { href: '/admin/contract', label: '계약서관리',   icon: 'fileplus' },
+    { href: '/admin/seal',     label: '인감/도장',    icon: 'circlecheck' },
   ]},
 ];
 
