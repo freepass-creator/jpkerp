@@ -9,14 +9,12 @@
   <div class="panel-head">
     <div><span class="panel-title">입력</span></div>
     <div class="panel-actions">
-      {{ btn('upload', 'CSV 업로드', id='inputCsv') }}
+      {{ btn('upload', 'CSV', id='inputCsv') }}
+      {{ btn('refresh', '초기화', id='inputReset') }}
+      {{ btn('plus', '임시 등록', cls='btn-primary', id='inputStage') }}
     </div>
   </div>
   <div class="panel-body is-pad" id="inputFormHost" style="overflow-y:auto"></div>
-  <div class="panel-foot">
-    {{ btn('x', '초기화', id='inputReset') }}
-    {{ btn('plus', '임시 등록', cls='btn-primary', id='inputStage') }}
-  </div>
 </section>
 
 <section class="panel">

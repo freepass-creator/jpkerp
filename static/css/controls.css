@@ -4,8 +4,8 @@
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 5px;
-  height: var(--ctrl-h);
-  padding: 0 var(--ctrl-px);
+  height: auto;
+  padding: 4px 8px;
   border: var(--ctrl-border-w) solid transparent;
   border-radius: var(--ctrl-r);
   background: transparent;
@@ -35,7 +35,7 @@
 }
 .btn-outline:hover { background: var(--c-bg-hover); }
 
-.btn-icon { width: var(--ctrl-h); height: var(--ctrl-h); padding: 0; }
+.btn-icon { width: 24px; height: 24px; padding: 0; }
 
 .btn-danger { color: var(--c-danger); }
 .btn-danger:hover { background: var(--c-danger-bg); }

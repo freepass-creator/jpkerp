@@ -42,18 +42,17 @@ export const ASSET_SCHEMA = [
   { col: 'dealer',          label: '매입처',    section: '취득' },
   { col: 'purchase_price',  label: '취득원가',  section: '취득', type: 'number', num: true, gridShow: true },
 
-  // ── 할부/리스 실행 ──
-  { col: 'loan_company',     label: '할부/리스사',    section: '할부실행' },
-  { col: 'loan_exec_date',   label: '실행일',         section: '할부실행', type: 'date' },
-  { col: 'loan_principal',   label: '원금(실행금액)',  section: '할부실행', type: 'number', num: true },
-  { col: 'loan_down_payment',label: '선수금',         section: '할부실행', type: 'number', num: true },
-  { col: 'loan_months',      label: '할부개월',       section: '할부실행', type: 'number', num: true },
-  { col: 'loan_rate',        label: '금리(%)',        section: '할부실행', type: 'number', num: true },
-  { col: 'loan_monthly',     label: '월 납입금',      section: '할부실행', type: 'number', num: true },
-  { col: 'loan_start_date',  label: '납입시작일',     section: '할부실행', type: 'date' },
-  { col: 'loan_end_date',    label: '납입종료일',     section: '할부실행', type: 'date' },
-  { col: 'loan_account',     label: '출금계좌',       section: '할부실행' },
-  { col: 'loan_status',      label: '상환상태',       section: '할부실행', type: 'select', options: ['상환중','완납','연체','조기상환'] },
+  // ── 할부실행 ──
+  { col: 'loan_company',        label: '금융사',             section: '할부실행' },
+  { col: 'loan_principal',      label: '원금',               section: '할부실행', type: 'number', num: true },
+  { col: 'loan_down_payment',   label: '선수금',             section: '할부실행', type: 'number', num: true },
+  { col: 'loan_months',         label: '할부기간(개월)',      section: '할부실행', type: 'number', num: true },
+  { col: 'loan_rate',           label: '금리(%)',            section: '할부실행', type: 'number', num: true },
+  { col: 'loan_method',         label: '대출방식',           section: '할부실행', type: 'select', options: ['원리금균등','원금균등','만기일시'] },
+  { col: 'loan_start_date',     label: '초회차 납입일',      section: '할부실행', type: 'date' },
+  { col: 'loan_account',        label: '출금계좌',           section: '할부실행' },
+  { col: 'loan_prepay_fee_pct', label: '중도상환 수수료(%)', section: '할부실행', type: 'number', num: true },
+  { col: 'loan_doc',            label: '등록증 첨부',       section: '할부실행', type: 'file' },
 
   // ── 소유 ──
   { col: 'owner_type',  label: '소유구분', section: '소유', type: 'select', options: ['자사','리스사','위탁'] },
