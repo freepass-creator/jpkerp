@@ -105,6 +105,7 @@ function initGrid() {
         gridApi.refreshCells({ rowNodes: [node], force: true });
       }},
       { label: '이 행 저장', icon: '💾', disabled: !hasDirty, action: () => saveRow(key, node) },
+      { label: '상세보기', icon: '📄', action: () => showCustomerDetail(node.data) },
       'sep',
       { label: '위에 행 추가', icon: '⬆', action: () => addRowAt(rowIndex) },
       { label: '아래에 행 추가', icon: '⬇', action: () => addRowAt(rowIndex + 1) },
@@ -158,4 +159,25 @@ function bindButtons() {
   document.getElementById('customerSearch')?.addEventListener('input', (e) => {
     gridApi.setGridOption('quickFilterText', e.target.value);
   });
+}
+
+const row = (l,v) => v ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);width:120px">${l}</td><td style="padding:6px 0;font-weight:500">${v}</td></tr>` : '';
+function showCustomerDetail(d) {
+  const grid = document.getElementById('customerGrid');
+  const detail = document.getElementById('customerDetailView');
+  grid.style.display='none'; detail.hidden=false; detail.style.display='block';
+  detail.innerHTML = `<div style="max-width:800px;margin:0 auto;padding:24px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <button class="btn" id="customerBack">← 목록</button>
+      <span style="font-size:var(--font-size-lg);font-weight:700">👤 ${d.code_name||''}</span>
+    </div>
+    <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:20px">
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+        ${row('고객코드',d.customer_code)}${row('이름/상호',d.code_name)}${row('등록번호',d.customer_reg_no)}
+        ${row('연락처',d.phone)}${row('구분',d.type)}${row('주소',d.address)}${row('이메일',d.email)}
+        ${row('사업자번호',d.biz_no)}${row('상호',d.biz_name)}${row('대표자',d.ceo_name)}
+      </table>
+      ${d.note?`<div style="margin-top:12px;padding:10px;background:var(--c-bg-sub);border-radius:var(--r-md);font-size:var(--font-size-sm)">${d.note}</div>`:''}
+    </div></div>`;
+  document.getElementById('customerBack')?.addEventListener('click',()=>{detail.style.display='none';detail.hidden=true;grid.style.display='';});
 }

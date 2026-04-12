@@ -121,7 +121,49 @@ function refresh() {
     headerHeight: 28,
     animateRows: false,
     suppressContextMenu: true,
+    onRowDoubleClicked: (e) => { if(e.data) showTotalDetail(e.data); },
   });
+}
+
+const row = (l,v) => v && v!=='-' ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);width:120px">${l}</td><td style="padding:6px 0;font-weight:500">${v}</td></tr>` : '';
+function showTotalDetail(d) {
+  const grid = $('#totalGrid');
+  const detail = $('#totalDetailView');
+  grid.style.display='none'; detail.hidden=false; detail.style.display='block';
+  detail.innerHTML = `<div style="max-width:800px;margin:0 auto;padding:24px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <button class="btn" id="totalBack">← 목록</button>
+      <span style="font-size:var(--font-size-lg);font-weight:700">🚗 ${d.car_number} ${d.car_model||''}</span>
+    </div>
+    <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:20px">
+      <div style="font-weight:600;margin-bottom:8px">자산</div>
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+        ${row('차량번호',d.car_number)}${row('모델',d.car_model)}${row('연식',d.car_year)}
+        ${row('상태',d.asset_status)}${row('색상',d.ext_color)}${row('연료',d.fuel_type)}
+        ${row('취득방법',d.purchase_method)}${row('취득가',d.purchase_price?fmt(d.purchase_price)+'원':'')}
+      </table>
+      <div style="font-weight:600;margin:16px 0 8px">할부</div>
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+        ${row('금융사',d.loan_company)}${row('원금',d.loan_principal?fmt(d.loan_principal)+'원':'')}
+        ${row('기간',d.loan_months?d.loan_months+'개월':'')}${row('금리',d.loan_rate?d.loan_rate+'%':'')}
+        ${row('방식',d.loan_method)}
+      </table>
+      <div style="font-weight:600;margin:16px 0 8px">계약</div>
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+        ${row('계약코드',d.contract_code)}${row('계약자',d.contractor_name)}${row('연락처',d.contractor_phone)}
+        ${row('시작일',fmtDate(d.start_date))}${row('기간',d.rent_months?d.rent_months+'개월':'')}
+        ${row('월대여료',d.rent_amount?fmt(d.rent_amount)+'원':'')}${row('보증금',d.deposit_amount?fmt(d.deposit_amount)+'원':'')}
+        ${row('결제일',d.auto_debit_day?'매월 '+d.auto_debit_day+'일':'')}${row('상태',d.contract_status)}
+      </table>
+      <div style="font-weight:600;margin:16px 0 8px">수납</div>
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+        ${row('총청구',fmt(d.total_due)+'원')}
+        ${row('총납부','<span style="color:var(--c-success)">'+fmt(d.total_paid)+'원</span>')}
+        ${row('미수','<span style="color:'+(d.total_unpaid>0?'var(--c-danger)':'var(--c-success)')+'">'+fmt(d.total_unpaid)+'원</span>')}
+        ${row('회차수',d.billing_count)}
+      </table>
+    </div></div>`;
+  document.getElementById('totalBack')?.addEventListener('click',()=>{detail.style.display='none';detail.hidden=true;grid.style.display='';});
 }
 
 export async function mount() {

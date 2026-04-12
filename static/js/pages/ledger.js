@@ -182,7 +182,29 @@ function refresh() {
     headerHeight: 28,
     animateRows: false,
     suppressContextMenu: true,
+    onRowDoubleClicked: (e) => { if(e.data && (activePeriod==='day'||activePeriod==='week')) showLedgerDetail(e.data); },
   });
+}
+
+const row = (l,v) => v ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);width:100px">${l}</td><td style="padding:6px 0;font-weight:500">${v}</td></tr>` : '';
+function showLedgerDetail(d) {
+  const grid = $('#ledgerGrid');
+  const detail = $('#ledgerDetailView');
+  grid.style.display='none'; detail.hidden=false; detail.style.display='block';
+  detail.innerHTML = `<div style="max-width:800px;margin:0 auto;padding:24px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <button class="btn" id="ledgerBack">← 목록</button>
+      <span style="font-size:var(--font-size-lg);font-weight:700">${d._isIn?'💰':'💳'} ${d.counterparty||d.type||''}</span>
+    </div>
+    <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:20px">
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+        ${row('일자',fmtDate(d.date))}${row('유형',d.type)}${row('방향',d.direction)}
+        ${row('금액',fmt(d.amount)+'원')}${row('상대방',d.counterparty)}
+        ${row('계좌',d.account)}${row('적요',d.summary)}${row('메모',d.memo)}
+        ${row('잔액',d.balance?fmt(d.balance)+'원':'')}
+      </table>
+    </div></div>`;
+  document.getElementById('ledgerBack')?.addEventListener('click',()=>{detail.style.display='none';detail.hidden=true;grid.style.display='';});
 }
 
 export async function mount() {

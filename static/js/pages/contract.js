@@ -105,6 +105,7 @@ function initGrid() {
         gridApi.refreshCells({ rowNodes: [node], force: true });
       }},
       { label: '이 행 저장', icon: '💾', disabled: !hasDirty, action: () => saveRow(key, node) },
+      { label: '상세보기', icon: '📄', action: () => showContractDetail(node.data) },
       'sep',
       { label: '위에 행 추가', icon: '⬆', action: () => addRowAt(rowIndex) },
       { label: '아래에 행 추가', icon: '⬇', action: () => addRowAt(rowIndex + 1) },
@@ -158,4 +159,39 @@ function bindButtons() {
   document.getElementById('contractSearch')?.addEventListener('input', (e) => {
     gridApi.setGridOption('quickFilterText', e.target.value);
   });
+}
+
+const fmtD = s => { if(!s) return '-'; const m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?`${m[1].slice(2)}.${m[2]}.${m[3]}`:s; };
+const fmtN = v => v ? Number(v).toLocaleString('ko-KR') : '-';
+const row = (l,v) => v && v !== '-' ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);width:120px">${l}</td><td style="padding:6px 0;font-weight:500">${v}</td></tr>` : '';
+function normalizeDate(s){if(!s)return'';let v=String(s).trim().replace(/[./]/g,'-');const m=v.match(/^(\d{2})-(\d{1,2})-(\d{1,2})$/);if(m)v=`${Number(m[1])<50?2000+Number(m[1]):1900+Number(m[1])}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;return v;}
+
+function showContractDetail(d) {
+  const grid = document.getElementById('contractGrid');
+  const detail = document.getElementById('contractDetailView');
+  grid.style.display = 'none'; detail.hidden = false; detail.style.display = 'block';
+  const endDate = d.end_date || (() => { const s=normalizeDate(d.start_date); if(!s||!d.rent_months) return'-'; const dt=new Date(s); dt.setMonth(dt.getMonth()+Number(d.rent_months)); dt.setDate(dt.getDate()-1); return dt.toISOString().slice(0,10); })();
+  detail.innerHTML = `<div style="max-width:800px;margin:0 auto;padding:24px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <button class="btn" id="contractBack">← 목록</button>
+      <span style="font-size:var(--font-size-lg);font-weight:700">📋 ${d.contract_code||''} ${d.contractor_name||''}</span>
+    </div>
+    <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:20px">
+      <div style="font-weight:600;margin-bottom:8px">계약 정보</div>
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+        ${row('계약코드',d.contract_code)}${row('차량번호',d.car_number)}${row('모델',d.car_model)}
+        ${row('계약자',d.contractor_name)}${row('등록번호',d.contractor_reg_no)}${row('연락처',d.contractor_phone)}
+        ${row('구분',d.contractor_type)}${row('주소',d.contractor_address)}
+      </table>
+      ${d.biz_no?`<div style="font-weight:600;margin:16px 0 8px">사업자</div><table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">${row('사업자번호',d.biz_no)}${row('상호',d.biz_name)}${row('대표자',d.ceo_name)}</table>`:''}
+      ${d.driver_name?`<div style="font-weight:600;margin:16px 0 8px">실운전자</div><table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">${row('이름',d.driver_name)}${row('연락처',d.driver_phone)}</table>`:''}
+      <div style="font-weight:600;margin:16px 0 8px">조건</div>
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
+        ${row('시작일',fmtD(normalizeDate(d.start_date)))}${row('종료일',fmtD(endDate))}${row('기간',d.rent_months?d.rent_months+'개월':'-')}
+        ${row('월대여료',fmtN(d.rent_amount)+'원')}${row('보증금',fmtN(d.deposit_amount)+'원')}${row('결제일','매월 '+(d.auto_debit_day||'-')+'일')}
+        ${row('상태',d.contract_status)}
+      </table>
+      ${d.note?`<div style="margin-top:12px;padding:10px;background:var(--c-bg-sub);border-radius:var(--r-md);font-size:var(--font-size-sm)">${d.note}</div>`:''}
+    </div></div>`;
+  document.getElementById('contractBack')?.addEventListener('click',()=>{detail.style.display='none';detail.hidden=true;grid.style.display='';});
 }
