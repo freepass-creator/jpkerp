@@ -68,9 +68,12 @@
   box-shadow: none !important;
 }
 
-/* 필터: AG Grid 기본 필터 UI 숨김 */
+/* 기본 필터/메뉴/정렬아이콘 완전 숨김 — 커스텀 필터만 사용 */
 .ag-theme-alpine .ag-header-cell-menu-button { display: none !important; }
 .ag-theme-alpine .ag-floating-filter { display: none !important; }
+.ag-theme-alpine .ag-sort-indicator-icon { display: none !important; }
+.ag-theme-alpine .ag-filter-icon { display: none !important; }
+.ag-theme-alpine .ag-header-cell-filter-button { display: none !important; }
 
 /* 헤더 클릭 가능 느낌 */
 .ag-theme-alpine .ag-header-cell-label { cursor: pointer; }
