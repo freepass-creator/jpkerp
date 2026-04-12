@@ -150,20 +150,21 @@ function showFilterPopup(api, colId, headerEl) {
         if (item.classList.contains('is-active')) selected.add(val);
         else selected.delete(val);
         // 즉시 반영
-        if (selected.size === 0) applyFilter(null);
-        else if (selected.size === 1) applyFilter({ type: 'equals', filter: [...selected][0] });
-        else applyFilter({ operator: 'OR', conditions: [...selected].map(v => ({ type: 'equals', filter: v })) });
+        applySetFilter(selected);
       });
     });
-    popup.querySelector('.gf-apply')?.addEventListener('click', () => {
-      if (selected.size === 0) { applyFilter(null); }
-      else if (selected.size === 1) { applyFilter({ type: 'equals', filter: [...selected][0] }); }
-      else {
-        const conditions = [...selected].map(v => ({ type: 'equals', filter: v }));
-        applyFilter({ operator: 'OR', conditions });
-      }
-      closePopup();
-    });
+    const applySetFilter = (set) => {
+      if (set.size === 0 || set.size === sorted.length) { applyFilter(null); return; }
+      // AG Grid은 OR conditions 2개까지만 지원 → 외부 필터 사용
+      api.setGridOption('isExternalFilterPresent', () => set.size > 0 && set.size < sorted.length);
+      api.setGridOption('doesExternalFilterPass', (node) => {
+        const v = String(node.data?.[colId] ?? '').trim() || '';
+        return set.has(v);
+      });
+      api.onFilterChanged();
+    };
+
+    popup.querySelector('.gf-apply')?.addEventListener('click', () => { closePopup(); });
 
   } else {
     popup.innerHTML = `
@@ -189,6 +190,9 @@ function showFilterPopup(api, colId, headerEl) {
   popup.querySelector('.gf-reset')?.addEventListener('click', () => {
     applyFilter(null);
     api.applyColumnState({ state: [{ colId, sort: null }] });
+    // 외부 필터 해제
+    api.setGridOption('isExternalFilterPresent', () => false);
+    api.onFilterChanged();
     closePopup();
   });
 
