@@ -309,7 +309,7 @@ function render() {
     </div>
   `;
 
-  // ─── 최근업무 (실시간 타임라인) ─────────
+  // ─── 미결업무 ─────────
   const allRecentOps = allEvents
     .filter(e => e.created_at)
     .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
@@ -325,38 +325,29 @@ function render() {
     return `${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   };
 
-  if (!allRecentOps.length) {
-    my.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted);font-size:var(--font-size-sm)">아직 업무 기록이 없습니다</div>';
-  } else {
-    my.innerHTML = allRecentOps.map(e => `
-      <div class="recent-item" data-id="${e.event_id || ''}" style="display:flex;gap:8px;padding:8px 4px;border-bottom:1px solid var(--c-border);font-size:var(--font-size-sm);cursor:pointer;transition:background var(--t-fast)">
-        <span style="flex-shrink:0;font-size:14px">${EVENT_ICONS[e.type] || '📝'}</span>
+  // 미결업무: 담당자 배정됐는데 아직 처리 안 된 것 + 미납독촉 + 결재대기
+  const pendingOps = allEvents.filter(e => e.assignee && !['완료','종결','처리완료'].includes(e.contact_result || e.accident_status || e.repair_status || e.product_status || ''))
+    .sort((a,b) => (b.created_at||0) - (a.created_at||0)).slice(0, 15);
+
+  my.innerHTML = `
+    <div class="dash-card" style="text-align:center;padding:12px" onclick="location.href='/operation'">
+      <div style="font-size:22px;font-weight:800;color:${pendingOps.length ? 'var(--c-danger)' : 'var(--c-success)'}">${pendingOps.length}</div>
+      <div class="dash-card__label">미결 업무</div>
+    </div>
+    <div class="dash-card" style="text-align:center;padding:12px" onclick="location.href='/billing'">
+      <div style="font-size:22px;font-weight:800;color:${overdue.length ? 'var(--c-danger)' : 'var(--c-success)'}">${overdue.length}</div>
+      <div class="dash-card__label">미납 독촉</div>
+    </div>
+    ${pendingOps.length ? pendingOps.map(e => `
+      <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--c-border);font-size:var(--font-size-sm);cursor:pointer" onclick="location.href='/operation'">
+        <span style="flex-shrink:0">${EVENT_ICONS[e.type] || '📝'}</span>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;justify-content:space-between;gap:4px">
-            <span style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.title || e.type || '-'}</span>
-            <span style="flex-shrink:0;color:var(--c-text-muted);font-size:var(--font-size-xs)">${timeAgo(e.created_at)}</span>
-          </div>
-          <div style="color:var(--c-text-muted);font-size:var(--font-size-xs)">
-            ${e.car_number || ''} ${e.assignee ? `· 담당: ${e.assignee}` : ''}
-          </div>
-          <div style="display:flex;gap:8px;margin-top:4px">
-            <span class="like-btn" data-id="${e.event_id || ''}" style="font-size:var(--font-size-xs);color:var(--c-text-muted);cursor:pointer">👍 ${e.likes || 0}</span>
-            <span style="font-size:var(--font-size-xs);color:var(--c-text-muted)">💬 ${e.comment_count || 0}</span>
-          </div>
+          <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.title || '-'}</div>
+          <div style="color:var(--c-text-muted);font-size:var(--font-size-xs)">${e.car_number || ''} · ${e.assignee || ''} · ${timeAgo(e.created_at)}</div>
         </div>
       </div>
-    `).join('');
-
-    // 클릭 → 운영관리 상세
-    my.querySelectorAll('.recent-item').forEach(el => {
-      el.addEventListener('click', (e) => {
-        if (e.target.closest('.like-btn')) return;
-        navigateTo('/operation');
-      });
-      el.addEventListener('mouseenter', () => { el.style.background = 'var(--c-bg-hover)'; });
-      el.addEventListener('mouseleave', () => { el.style.background = ''; });
-    });
-  }
+    `).join('') : '<div style="padding:12px;text-align:center;color:var(--c-text-muted);font-size:var(--font-size-sm)">미결 업무 없음</div>'}
+  `;
 }
 
 export async function mount() {
