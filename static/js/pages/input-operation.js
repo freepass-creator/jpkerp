@@ -4,11 +4,41 @@
  * 좌: 유형 목록 (정비/사고/과태료/출고반납)
  * 우: 선택한 유형의 입력 폼 + 등록
  */
-import { saveEvent } from '../firebase/events.js';
+import { saveEvent, watchEvents } from '../firebase/events.js';
 import { watchAssets } from '../firebase/assets.js';
+import { watchContracts } from '../firebase/contracts.js';
 import { showToast } from '../core/toast.js';
 
 const $ = (s) => document.querySelector(s);
+
+// 최근 차량 / 즐겨찾기 / 자주 쓰는 제목
+const RECENT_KEY = 'jpk.op.recent_cars';
+const FAV_KEY = 'jpk.op.favorites';
+const TITLE_KEY = 'jpk.op.titles';
+
+function loadRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; } }
+function saveRecent(car) {
+  let list = loadRecent().filter(c => c !== car);
+  list.unshift(car);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 5)));
+}
+function loadFavorites() { try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; } }
+function saveFavorite(place) {
+  let list = loadFavorites().filter(p => p !== place);
+  list.unshift(place);
+  localStorage.setItem(FAV_KEY, JSON.stringify(list.slice(0, 10)));
+}
+function loadTitles(type) {
+  try { const all = JSON.parse(localStorage.getItem(TITLE_KEY)) || {}; return all[type] || []; } catch { return []; }
+}
+function saveTitle(type, title) {
+  try {
+    const all = JSON.parse(localStorage.getItem(TITLE_KEY)) || {};
+    if (!all[type]) all[type] = [];
+    if (!all[type].includes(title)) { all[type].unshift(title); all[type] = all[type].slice(0, 10); }
+    localStorage.setItem(TITLE_KEY, JSON.stringify(all));
+  } catch {}
+}
 
 const DEFAULT_TYPES = [
   { key: 'maintenance', label: '정비',     icon: '🔧', sub: '차량 정비/소모품 교환', direction: 'out' },
@@ -37,7 +67,10 @@ function saveOrder(types) {
 let TYPES = loadTypes();
 
 let assets = [];
+let contracts = [];
+let allEvents = [];
 let currentType = null;
+let lastCarNumber = '';
 
 function renderList() {
   const host = $('#opList');
@@ -447,6 +480,80 @@ function renderForm() {
     amtInput.value = d ? Number(d).toLocaleString() : '';
   });
 
+  // 최근 차량 바로 선택
+  const recentCars = loadRecent();
+  if (recentCars.length) {
+    const recentHtml = `<div style="margin-bottom:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:var(--font-size-xs);color:var(--c-text-muted)">최근:</span>
+      ${recentCars.map(c => {
+        const a = assets.find(x => x.car_number === c);
+        return `<span class="btn-opt recent-car" data-car="${c}" style="font-size:var(--font-size-xs)">${c}${a ? ' ' + (a.car_model || '') : ''}</span>`;
+      }).join('')}
+    </div>`;
+    host.querySelector('.form-section')?.insertAdjacentHTML('afterbegin', recentHtml);
+    host.querySelectorAll('.recent-car').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const inp = host.querySelector('[name="car_number"]');
+        if (inp) { inp.value = btn.dataset.car; inp.dispatchEvent(new Event('input')); }
+      });
+    });
+  }
+
+  // 차량번호 입력 → 차량정보 자동 표시
+  const carInput = host.querySelector('[name="car_number"]');
+  let carInfoEl = document.createElement('div');
+  carInfoEl.style.cssText = 'font-size:var(--font-size-xs);color:var(--c-text-muted);padding:2px 0';
+  carInput?.parentNode?.appendChild(carInfoEl);
+  carInput?.addEventListener('input', () => {
+    const car = carInput.value.trim();
+    const a = assets.find(x => x.car_number === car);
+    const c = contracts.find(x => x.car_number === car);
+    if (a || c) {
+      carInfoEl.innerHTML = [
+        a?.car_model, a?.ext_color, c?.contractor_name, c?.contractor_phone
+      ].filter(Boolean).join(' · ');
+    } else {
+      carInfoEl.textContent = '';
+    }
+  });
+  if (lastCarNumber) { carInput.value = lastCarNumber; carInput.dispatchEvent(new Event('input')); }
+
+  // 제목 자동완성 (이전 입력 기반)
+  const titleInput = host.querySelector('[name="title"]');
+  if (titleInput && currentType) {
+    const titles = loadTitles(currentType);
+    if (titles.length) {
+      const dl = document.createElement('datalist');
+      dl.id = 'opTitleList';
+      dl.innerHTML = titles.map(t => `<option value="${t}">`).join('');
+      titleInput.setAttribute('list', 'opTitleList');
+      titleInput.parentNode.appendChild(dl);
+    }
+  }
+
+  // 즐겨찾기 장소
+  const vendorInput = host.querySelector('[name="vendor"]') || host.querySelector('[name="delivery_location"]') || host.querySelector('[name="return_location"]');
+  if (vendorInput) {
+    const favs = loadFavorites();
+    if (favs.length) {
+      const favHtml = `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">
+        ${favs.slice(0, 5).map(f => `<span class="btn-opt fav-place" data-place="${f}" style="font-size:var(--font-size-xs)">${f}</span>`).join('')}
+      </div>`;
+      vendorInput.parentNode.insertAdjacentHTML('beforeend', favHtml);
+      vendorInput.parentNode.querySelectorAll('.fav-place').forEach(btn => {
+        btn.addEventListener('click', () => { vendorInput.value = btn.dataset.place; });
+      });
+    }
+  }
+
+  // Enter = 저장
+  host.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.target.matches('textarea')) {
+      e.preventDefault();
+      submitForm();
+    }
+  });
+
   // btn-group 클릭 바인딩
   host.querySelectorAll('.btn-group').forEach(group => {
     const hidden = group.previousElementSibling;
@@ -522,12 +629,22 @@ async function submitForm() {
     extras.forEach(k => { if (data[k]) event[k] = data[k]; });
     await saveEvent(event);
     showToast('등록 완료', 'success');
+    // 학습: 최근 차량 / 제목 / 즐겨찾기
+    if (data.car_number) saveRecent(data.car_number);
+    if (data.title) saveTitle(currentType, data.title);
+    if (data.vendor) saveFavorite(data.vendor);
+    if (data.delivery_location) saveFavorite(data.delivery_location);
+    if (data.return_location) saveFavorite(data.return_location);
+    // 연속 입력: 차량번호 유지
+    lastCarNumber = data.car_number || '';
     renderForm();
   } catch (err) { showToast(err.message, 'error'); }
 }
 
 export async function mount() {
   watchAssets((items) => { assets = items; });
+  watchContracts((items) => { contracts = items; });
+  watchEvents((items) => { allEvents = items; });
   renderList();
   $('#opReset')?.addEventListener('click', resetForm);
   $('#opSubmit')?.addEventListener('click', submitForm);
