@@ -966,6 +966,18 @@ function renderForm() {
     }
   }
 
+  // 담당자 지정 (모든 업무 공통)
+  const assignSection = document.createElement('div');
+  assignSection.className = 'form-section';
+  assignSection.innerHTML = `
+    <div class="form-section-title">담당자 / 참여자</div>
+    <div class="form-grid">
+      <div class="field"><label>담당자</label><input type="text" name="assignee" placeholder="담당 직원명"></div>
+      <div class="field"><label>참여자</label><input type="text" name="participants" placeholder="관련 직원 (쉼표 구분)"></div>
+    </div>
+  `;
+  host.appendChild(assignSection);
+
   // 사진 드래그앤드롭 + 클릭 → 여러 장 미리보기
   const photoDrop = host.querySelector('#photoDrop');
   const photoFile = host.querySelector('#photoFile');
@@ -1192,6 +1204,7 @@ async function submitForm() {
       'repair_type', 'repair_in_date', 'repair_out_date', 'repair_estimate', 'insurance_amount', 'self_pay', 'repair_status',
       'collect_action', 'collect_result', 'promise_date',
       'force_reason', 'unpaid_amount', 'damage_claim', 'legal_action',
+      'assignee', 'participants',
       'key_action', 'key_type', 'key_info',
       'customer_name', 'customer_phone', 'contact_type', 'contact_result', 'handler',
     ];
