@@ -149,6 +149,10 @@ function showFilterPopup(api, colId, headerEl) {
         item.classList.toggle('is-active');
         if (item.classList.contains('is-active')) selected.add(val);
         else selected.delete(val);
+        // 즉시 반영
+        if (selected.size === 0) applyFilter(null);
+        else if (selected.size === 1) applyFilter({ type: 'equals', filter: [...selected][0] });
+        else applyFilter({ operator: 'OR', conditions: [...selected].map(v => ({ type: 'equals', filter: v })) });
       });
     });
     popup.querySelector('.gf-apply')?.addEventListener('click', () => {
