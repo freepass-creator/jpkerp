@@ -14,7 +14,9 @@ const DEFAULT_TYPES = [
   { key: 'maintenance', label: '정비',     icon: '🔧', sub: '차량 정비/소모품 교환', direction: 'out' },
   { key: 'accident',    label: '사고',     icon: '⚠',  sub: '사고 발생/처리 기록', direction: 'out' },
   { key: 'penalty',     label: '과태료',   icon: '🚫', sub: '교통 과태료/위반', direction: 'out' },
-  { key: 'delivery',    label: '출고/반납', icon: '🚗', sub: '차량 인도/회수', direction: 'in' },
+  { key: 'delivery',    label: '출고(인도)', icon: '🚗', sub: '차량 인도',   direction: 'out' },
+  { key: 'return',      label: '반납(회수)', icon: '🔙', sub: '차량 회수',   direction: 'in' },
+  { key: 'transfer',    label: '이동',       icon: '🔄', sub: '차량 이동/배차', direction: 'out' },
 ];
 
 const ORDER_KEY = 'jpk.op.order';
