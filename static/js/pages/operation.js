@@ -23,9 +23,10 @@ const TYPES = [
   { key: 'return',      label: '반납(회수)', icon: '🔙' },
   { key: 'transfer',    label: '이동',       icon: '🔄' },
   { key: 'key',         label: '키관리',     icon: '🔑' },
+  { key: 'contact',     label: '고객응대',   icon: '📞' },
 ];
 
-const OP_TYPES = ['maintenance', 'accident', 'penalty', 'delivery', 'return', 'transfer', 'key'];
+const OP_TYPES = ['maintenance', 'accident', 'penalty', 'delivery', 'return', 'transfer', 'key', 'contact'];
 
 let allEvents = [];
 let activeType = 'all';
@@ -80,7 +81,11 @@ function refreshGrid() {
       { headerName: '보험사', field: 'insurance_company', width: 90 },
       { headerName: '보험접수번호', field: 'insurance_no', width: 100 },
       { headerName: '키구분', field: 'key_action', width: 65 },
+      { headerName: '키종류', field: 'key_type', width: 65 },
       { headerName: '키번호/위치', field: 'key_info', width: 100 },
+      { headerName: '고객명', field: 'customer_name', width: 80 },
+      { headerName: '연락처', field: 'customer_phone', width: 100 },
+      { headerName: '응대유형', field: 'contact_type', width: 80 },
       { headerName: '메모', field: 'note', flex: 1 },
     ],
     rowData: items,

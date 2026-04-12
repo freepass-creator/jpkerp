@@ -18,6 +18,7 @@ const DEFAULT_TYPES = [
   { key: 'return',      label: '반납(회수)', icon: '🔙', sub: '차량 회수',   direction: 'in' },
   { key: 'transfer',    label: '이동',       icon: '🔄', sub: '차량 이동/배차', direction: 'out' },
   { key: 'key',         label: '키관리',     icon: '🔑', sub: '키 수령/반납/분실', direction: 'out' },
+  { key: 'contact',     label: '고객응대',   icon: '📞', sub: '통화/상담/컴플레인', direction: 'out' },
 ];
 
 const ORDER_KEY = 'jpk.op.order';
@@ -117,7 +118,13 @@ function renderForm() {
         ` : ''}
         ${currentType === 'key' ? `
         <div class="field"><label>구분</label><select name="key_action"><option value="수령">수령</option><option value="반납">반납</option><option value="분실">분실</option><option value="복제">복제</option></select></div>
+        <div class="field"><label>키종류</label><select name="key_type"><option value="메인키">메인키</option><option value="보조키">보조키</option><option value="카드키">카드키</option><option value="기타">기타</option></select></div>
         <div class="field"><label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
+        ` : ''}
+        ${currentType === 'contact' ? `
+        <div class="field"><label>고객명</label><input type="text" name="customer_name" placeholder="고객명"></div>
+        <div class="field"><label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
+        <div class="field"><label>유형</label><select name="contact_type"><option value="일반문의">일반문의</option><option value="컴플레인">컴플레인</option><option value="계약문의">계약문의</option><option value="정비요청">정비요청</option><option value="사고접수">사고접수</option><option value="반납협의">반납협의</option><option value="기타">기타</option></select></div>
         ` : ''}
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
@@ -166,7 +173,11 @@ async function submitForm() {
     if (data.insurance_company) event.insurance_company = data.insurance_company;
     if (data.insurance_no) event.insurance_no = data.insurance_no;
     if (data.key_action) event.key_action = data.key_action;
+    if (data.key_type) event.key_type = data.key_type;
     if (data.key_info) event.key_info = data.key_info;
+    if (data.customer_name) event.customer_name = data.customer_name;
+    if (data.customer_phone) event.customer_phone = data.customer_phone;
+    if (data.contact_type) event.contact_type = data.contact_type;
     await saveEvent(event);
     showToast('등록 완료', 'success');
     renderForm();

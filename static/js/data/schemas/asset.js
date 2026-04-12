@@ -58,9 +58,15 @@ export const ASSET_SCHEMA = [
   { col: 'owner_type',  label: '소유구분', section: '소유', type: 'select', options: ['자사','리스사','위탁'] },
   { col: 'owner_name',  label: '소유자명', section: '소유' },
 
+  // ── 차키 ──
+  { col: 'key_main',  label: '메인키', section: '차키', type: 'number', num: true },
+  { col: 'key_sub',   label: '보조키', section: '차키', type: 'number', num: true },
+  { col: 'key_card',  label: '카드키', section: '차키', type: 'number', num: true },
+  { col: 'key_note',  label: '키비고', section: '차키' },
+
   // ── 기타 ──
   { col: 'mileage', label: '주행거리', section: '기타', type: 'number', num: true },
   { col: 'note',    label: '비고',     section: '기타', type: 'textarea' },
 ];
 
-export const ASSET_SECTIONS = ['차량', '스펙', '제원', '등록', '취득', '할부실행', '소유', '기타'];
+export const ASSET_SECTIONS = ['차량', '스펙', '제원', '등록', '취득', '할부실행', '소유', '차키', '기타'];
