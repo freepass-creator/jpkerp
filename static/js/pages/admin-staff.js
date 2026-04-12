@@ -4,6 +4,7 @@ let gridApi;
 export async function mount() {
   document.getElementById('adminTitle').textContent = '직원관리';
   gridApi = agGrid.createGrid($('#adminGrid'), {
+  $('#adminGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'이름',field:'name',width:80},{headerName:'부서',field:'department',width:80},

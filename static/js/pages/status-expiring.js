@@ -6,6 +6,7 @@ function computeEnd(c){if(c.end_date)return normalizeDate(c.end_date);const s=no
 let gridApi;
 export async function mount() {
   gridApi = agGrid.createGrid($('#expiringGrid'), {
+  $('#expiringGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'계약자',field:'contractor_name',width:80},{headerName:'차량',field:'car_number',width:90},

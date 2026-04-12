@@ -17,6 +17,7 @@ let gridApi;
 
 export async function mount() {
   gridApi = agGrid.createGrid($('#tasksGrid'), {
+  $('#tasksGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'우선',field:'priority',width:55,cellStyle:p=>({color:PRIORITY_COLOR[p.value]||'',fontWeight:500})},

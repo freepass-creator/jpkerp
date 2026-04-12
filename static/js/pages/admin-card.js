@@ -4,6 +4,7 @@ let gridApi;
 export async function mount() {
   document.getElementById('adminTitle').textContent = '법인카드관리';
   gridApi = agGrid.createGrid($('#adminGrid'), {
+  $('#adminGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'카드번호',field:'card_no',width:150},{headerName:'카드사',field:'card_company',width:80},

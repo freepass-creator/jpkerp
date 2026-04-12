@@ -117,6 +117,7 @@ function showPreview() {
 
   if (previewGrid) previewGrid.destroy();
   previewGrid = agGrid.createGrid($('#fundGrid'), {
+  $('#fundGrid')._agApi = previewGrid;
     columnDefs: colDefs,
     rowData: parsedRows,
     defaultColDef: { resizable: true, sortable: true, editable: false, minWidth: 50 },

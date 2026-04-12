@@ -77,6 +77,7 @@ function initGrid() {
 
   const el = document.getElementById('customerGrid');
   gridApi = agGrid.createGrid(el, gridOptions);
+  el._agApi = gridApi;
 
   el.addEventListener('contextmenu', (e) => {
     e.preventDefault();

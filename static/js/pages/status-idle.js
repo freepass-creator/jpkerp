@@ -12,6 +12,7 @@ function refresh() {
 }
 export async function mount() {
   gridApi = agGrid.createGrid($('#idleGrid'), {
+  $('#idleGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'차량번호',field:'car_number',width:90},{headerName:'모델',field:'car_model',width:100},

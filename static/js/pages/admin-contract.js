@@ -5,6 +5,7 @@ let gridApi;
 export async function mount() {
   document.getElementById('adminTitle').textContent = '계약서관리';
   gridApi = agGrid.createGrid($('#adminGrid'), {
+  $('#adminGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'계약서명',field:'doc_name',width:180},{headerName:'유형',field:'doc_type',width:100},

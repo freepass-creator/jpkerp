@@ -22,6 +22,7 @@ export async function mount() {
     try { await saveLeave(data); showToast('휴가 신청 완료','success'); host.querySelectorAll('input:not([type=date]),textarea').forEach(el=>{el.value='';}); } catch(e){ showToast(e.message,'error'); }
   });
   gridApi = agGrid.createGrid($('#leaveGrid'), {
+  $('#leaveGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'신청자',field:'applicant',width:80},{headerName:'유형',field:'leave_type',width:80},

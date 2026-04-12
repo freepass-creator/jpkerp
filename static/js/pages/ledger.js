@@ -175,6 +175,7 @@ function refresh() {
 
   if (gridApi) gridApi.destroy();
   gridApi = agGrid.createGrid($('#ledgerGrid'), {
+  $('#ledgerGrid')._agApi = gridApi;
     columnDefs: getColumnDefs(),
     rowData: rows,
     defaultColDef: { resizable: true, sortable: true, editable: false, minWidth: 50 },

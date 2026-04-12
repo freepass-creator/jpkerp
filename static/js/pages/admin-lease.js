@@ -6,6 +6,7 @@ let gridApi;
 export async function mount() {
   document.getElementById('adminTitle').textContent = '임대관리';
   gridApi = agGrid.createGrid($('#adminGrid'), {
+  $('#adminGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'계약명',field:'lease_name',width:140},{headerName:'유형',field:'lease_type',width:80},

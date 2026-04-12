@@ -86,6 +86,7 @@ function initGrid() {
 
   const el = document.getElementById('assetGrid');
   gridApi = agGrid.createGrid(el, gridOptions);
+  el._agApi = gridApi;
 
   // 우클릭 메뉴
   el.addEventListener('contextmenu', (e) => {

@@ -4,6 +4,7 @@ let gridApi;
 export async function mount() {
   document.getElementById('adminTitle').textContent = '인감/도장';
   gridApi = agGrid.createGrid($('#adminGrid'), {
+  $('#adminGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'인감명',field:'seal_name',width:120},{headerName:'종류',field:'seal_type',width:80},

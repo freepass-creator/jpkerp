@@ -4,6 +4,7 @@ let gridApi;
 export async function mount() {
   document.getElementById('adminTitle').textContent = '거래처관리';
   gridApi = agGrid.createGrid($('#adminGrid'), {
+  $('#adminGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'거래처명',field:'vendor_name',width:120},{headerName:'업종',field:'vendor_type',width:80},

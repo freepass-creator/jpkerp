@@ -79,6 +79,7 @@ function refresh() {
   if (gridApi) gridApi.destroy();
 
   gridApi = agGrid.createGrid($('#totalGrid'), {
+  $('#totalGrid')._agApi = gridApi;
     columnDefs: [
       { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 45, pinned: 'left' },
       // 자산

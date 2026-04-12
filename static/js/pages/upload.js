@@ -313,6 +313,7 @@ async function applyDetector(detector, dataRows, headers, filename) {
   // AG Grid — 원본 그대로
   if (gridApi) gridApi.destroy();
   gridApi = agGrid.createGrid($('#uploadGrid'), {
+  $('#uploadGrid')._agApi = gridApi;
     columnDefs: [
       { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 45 },
       ...rawColumns,

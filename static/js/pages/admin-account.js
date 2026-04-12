@@ -4,6 +4,7 @@ let gridApi;
 export async function mount() {
   document.getElementById('adminTitle').textContent = '계좌관리';
   gridApi = agGrid.createGrid($('#adminGrid'), {
+  $('#adminGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'은행',field:'bank_name',width:80},{headerName:'계좌번호',field:'account_no',width:150},

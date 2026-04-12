@@ -15,6 +15,7 @@ function refresh() {
 }
 export async function mount() {
   gridApi = agGrid.createGrid($('#overdueGrid'), {
+  $('#overdueGrid')._agApi = gridApi;
     columnDefs: [
       {headerName:'#',valueGetter:'node.rowIndex+1',width:45},
       {headerName:'계약자',field:'contractor_name',width:80},{headerName:'차량',field:'car_number',width:90},
