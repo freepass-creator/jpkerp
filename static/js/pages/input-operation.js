@@ -150,7 +150,8 @@ function renderForm() {
 
   const host = $('#opFormHost');
   const carList = `<datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">${a.car_model || ''}</option>`).join('')}</datalist>`;
-  const chk = (name, label) => `<div class="field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="${name}" value="Y"> ${label}</label></div>`;
+  const chk = (name, label) => `<span class="btn-opt btn-toggle" data-name="${name}" data-val="">${label}</span>`;
+  const chkGroup = (items) => `<div class="btn-group" style="flex-wrap:wrap">${items}</div>`;
   const sel = (name, label, opts) => `<div class="field"></label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}">${o}</span>`).join('')}</div></div>`;
 
   // 유형별 폼 생성
@@ -176,28 +177,55 @@ function renderForm() {
   } else if (currentType === 'accident') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">사고 정보</div>
+      <div class="form-section-title">사고 기본</div>
       <div class="form-grid">
-        <div class="field is-required"></label>사고일시</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>사고내용</label><input type="text" name="title" placeholder="예: 후방추돌"></div>
-        ${sel('accident_type', '사고유형', ['자차','대물','대인','자차+대물','자차+대인'])}
-        <div class="field"></label>사고장소</label><input type="text" name="vendor" placeholder="사고 발생 위치"></div>
-        <div class="field"></label>과실비율</label><input type="text" name="fault_ratio" placeholder="예: 100:0, 70:30"></div>
-        <div class="field"></label>상대방</label><input type="text" name="accident_other" placeholder="상대방 이름/차량"></div>
-        <div class="field"></label>상대방연락처</label><input type="text" name="accident_other_phone" placeholder="010-0000-0000"></div>
+        <div class="field is-required"><label>사고일시</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>사고내용</label><input type="text" name="title" placeholder="예: 후방추돌"></div>
+        <div class="field"><label>사고장소</label><input type="text" name="vendor" placeholder="사고 발생 위치"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">사고 구분</div>
+      <div class="form-grid">
+        <div class="field"><label>사고형태</label>${chkGroup(
+          chk('acc_single','단독') + chk('acc_both','쌍방'))}</div>
+        <div class="field"><label>가해/피해</label>${chkGroup(
+          chk('acc_offender','가해') + chk('acc_victim','피해'))}</div>
+      </div>
+      <div class="form-grid" style="margin-top:8px">
+        <div class="field"><label>보험유형 (복수선택)</label>${chkGroup(
+          chk('ins_car','자차') + chk('ins_property','대물') + chk('ins_person','대인') + chk('ins_self','자손') + chk('ins_uninsured','무보험'))}</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">과실비율</div>
+      <div class="form-grid">
+        ${sel('fault_pct', '내 과실', ['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%','기타'])}
+        <div class="field"><label>기타(직접입력)</label><input type="text" name="fault_ratio" placeholder="예: 15%"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">상대방</div>
+      <div class="form-grid">
+        <div class="field"><label>상대방</label><input type="text" name="accident_other" placeholder="이름/차량번호"></div>
+        <div class="field"><label>상대방연락처</label><input type="text" name="accident_other_phone" placeholder="010-0000-0000"></div>
+        <div class="field"><label>상대보험사</label><input type="text" name="other_insurance" placeholder="상대 보험사"></div>
       </div>
     </div>
     <div class="form-section">
       <div class="form-section-title">보험 처리</div>
       <div class="form-grid">
-        <div class="field"></label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
-        <div class="field"></label>보험접수번호</label><input type="text" name="insurance_no" placeholder="접수번호"></div>
-        <div class="field"></label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
-        <div class="field"></label>수리업체</label><input type="text" name="repair_shop" placeholder="수리 맡긴 곳"></div>
-        <div class="field"></label>수리기간(예상)</label><input type="text" name="repair_days" placeholder="일"></div>
-        ${sel('rental_car', '대차여부', ['미정','대차 제공','대차 없음'])}
-        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field"><label>우리보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
+        <div class="field"><label>접수번호</label><input type="text" name="insurance_no"></div>
+        <div class="field"><label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
+        ${sel('rental_car', '대차', ['미정','대차제공','대차없음'])}
+        ${sel('accident_status', '종결여부', ['접수','처리중','수리중','종결'])}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -907,6 +935,14 @@ function renderForm() {
     }
   }
 
+  // btn-toggle (복수 선택) 바인딩
+  host.querySelectorAll('.btn-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('is-on');
+      btn.dataset.val = btn.classList.contains('is-on') ? 'Y' : '';
+    });
+  });
+
   // 거래처 datalist — 모든 vendor/업체 input에
   const vendorDl = document.createElement('datalist');
   vendorDl.id = 'opVendorList';
@@ -1031,6 +1067,11 @@ async function submitForm() {
     if (!data.title) data.title = rows.map(r => r.item).join(', ');
   }
 
+  // btn-toggle 값 수집
+  host.querySelectorAll('.btn-toggle.is-on').forEach(btn => {
+    data[btn.dataset.name] = 'Y';
+  });
+
   if (!data.date || !data.car_number) {
     showToast('일자, 차량번호는 필수입니다', 'error');
     return;
@@ -1074,6 +1115,9 @@ async function submitForm() {
       'from_location', 'to_location', 'transfer_reason',
       'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
+      'acc_single', 'acc_both', 'acc_offender', 'acc_victim',
+      'ins_car', 'ins_property', 'ins_person', 'ins_self', 'ins_uninsured',
+      'fault_pct', 'other_insurance', 'accident_status',
       'insurance_action', 'age_before', 'age_after',
       'insurance_type', 'insurance_start', 'insurance_end',
       'check_gps', 'check_insurance_age', 'check_payment',

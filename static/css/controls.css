@@ -126,6 +126,14 @@
   border-color: var(--c-primary);
   font-weight: var(--fw-medium);
 }
+/* 토글 버튼 (복수 선택) */
+.btn-group .btn-toggle { cursor: pointer; }
+.btn-group .btn-toggle.is-on {
+  background: var(--c-primary-bg);
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+  font-weight: var(--fw-medium);
+}
 
 .grid-table {
   width: 100%;
