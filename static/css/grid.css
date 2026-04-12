@@ -109,16 +109,17 @@
 .grid-filter-popup .gf-item:hover { background: var(--c-bg-hover); }
 .grid-filter-popup .gf-item.is-active { background: var(--c-primary-bg); color: var(--c-primary); font-weight: 500; }
 .grid-filter-popup .gf-count { color: var(--c-text-muted); font-size: var(--font-size-xs); }
-.grid-filter-popup .gf-clear {
-  display: block;
-  padding: 6px 10px;
+.grid-filter-popup .gf-footer {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
   border-top: 1px solid var(--c-border);
-  text-align: center;
-  cursor: pointer;
-  color: var(--c-text-muted);
-  font-size: var(--font-size-xs);
 }
-.grid-filter-popup .gf-clear:hover { background: var(--c-bg-hover); }
+.grid-filter-popup .gf-footer .btn {
+  flex: 1;
+  font-size: var(--font-size-xs);
+  justify-content: center;
+}
 
 /* 컬럼 리사이즈 핸들 숨김 (드래그는 작동) */
 .ag-theme-alpine .ag-header-cell-resize {

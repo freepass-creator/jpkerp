@@ -6,36 +6,35 @@
 
 let popup = null;
 
+let currentCol = null;
+
 export function initAllGridFilters() {
   document.addEventListener('click', (e) => {
     const headerCell = e.target.closest('.ag-header-cell');
-    if (!headerCell) { closePopup(); return; }
+    if (!headerCell) {
+      if (!e.target.closest('.grid-filter-popup')) closePopup();
+      return;
+    }
 
     const colId = headerCell.getAttribute('col-id');
     if (!colId || colId === '0') return;
 
-    // AG Grid element 찾기
     const gridEl = headerCell.closest('.ag-theme-alpine');
     if (!gridEl) return;
 
     e.stopPropagation();
 
-    // AG Grid API 접근 — 내부 속성
-    let api = null;
-    try {
-      const rows = gridEl.querySelectorAll('.ag-row');
-      if (!rows.length) return;
-      // getRowData를 직접 DOM에서 추출
-      api = gridEl.__agGridApi || gridEl._agApi;
-    } catch {}
+    // 토글: 같은 칸 다시 누르면 닫기
+    if (popup && currentCol === colId) { closePopup(); return; }
+
+    let api = gridEl.__agGridApi || gridEl._agApi || null;
 
     if (!api) {
-      // fallback: DOM에서 직접 데이터 추출
       showDomFilterPopup(gridEl, colId, headerCell);
-      return;
+    } else {
+      showFilterPopup(api, colId, headerCell);
     }
-
-    showFilterPopup(api, colId, headerCell);
+    currentCol = colId;
   });
 }
 
@@ -98,7 +97,7 @@ function showDomFilterPopup(gridEl, colId, headerEl) {
           <button class="btn" id="gfNumApply" style="font-size:var(--font-size-xs)">적용</button>
         </div>
       </div>
-      <div class="gf-clear">전체 (${total})</div>
+      <div class="gf-footer"><button class="btn gf-reset">초기화</button><button class="btn btn-primary gf-apply">적용</button></div>
     `;
     popup.querySelectorAll('.gf-sort').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -128,7 +127,7 @@ function showDomFilterPopup(gridEl, colId, headerEl) {
           `<div class="gf-item" data-val="${val}">${val}<span class="gf-count">${cnt}</span></div>`
         ).join('')}
       </div>
-      <div class="gf-clear">전체 (${total})</div>
+      <div class="gf-footer"><button class="btn gf-reset">초기화</button><button class="btn btn-primary gf-apply">적용</button></div>
     `;
     popup.querySelector('.gf-search').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
@@ -146,7 +145,7 @@ function showDomFilterPopup(gridEl, colId, headerEl) {
   } else {
     popup.innerHTML = `
       <input class="gf-search" placeholder="검색어 입력 후 Enter..." autofocus>
-      <div class="gf-clear">전체 (${total})</div>
+      <div class="gf-footer"><button class="btn gf-reset">초기화</button><button class="btn btn-primary gf-apply">적용</button></div>
     `;
     popup.querySelector('.gf-search').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -157,7 +156,17 @@ function showDomFilterPopup(gridEl, colId, headerEl) {
     });
   }
 
-  popup.querySelector('.gf-clear').addEventListener('click', () => { clearAll(); closePopup(); });
+  // 초기화/적용 바인딩
+  popup.querySelector('.gf-reset')?.addEventListener('click', () => { clearAll(); closePopup(); });
+  popup.querySelector('.gf-apply')?.addEventListener('click', () => {
+    const search = popup.querySelector('.gf-search');
+    if (search?.value) {
+      const q = search.value.toLowerCase();
+      filterRows(v => !q || v.toLowerCase().includes(q));
+    }
+    closePopup();
+  });
+
   document.body.appendChild(popup);
   popup.querySelector('.gf-search')?.focus();
 }
@@ -198,7 +207,7 @@ function showFilterPopup(api, colId, headerEl) {
           <button class="btn" id="gfNumApply" style="font-size:var(--font-size-xs)">적용</button>
         </div>
       </div>
-      <div class="gf-clear">전체 (${total})</div>
+      <div class="gf-footer"><button class="btn gf-reset">초기화</button><button class="btn btn-primary gf-apply">적용</button></div>
     `;
     popup.querySelectorAll('.gf-sort').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -227,7 +236,7 @@ function showFilterPopup(api, colId, headerEl) {
           return `<div class="gf-item${active}" data-val="${val === '(빈값)' ? '' : val}">${val}<span class="gf-count">${cnt}</span></div>`;
         }).join('')}
       </div>
-      <div class="gf-clear">전체 (${total})</div>
+      <div class="gf-footer"><button class="btn gf-reset">초기화</button><button class="btn btn-primary gf-apply">적용</button></div>
     `;
     popup.querySelector('.gf-search').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
@@ -245,7 +254,7 @@ function showFilterPopup(api, colId, headerEl) {
   } else {
     popup.innerHTML = `
       <input class="gf-search" placeholder="검색어 입력 후 Enter..." autofocus>
-      <div class="gf-clear">전체 (${total})</div>
+      <div class="gf-footer"><button class="btn gf-reset">초기화</button><button class="btn btn-primary gf-apply">적용</button></div>
     `;
     popup.querySelector('.gf-search').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -256,7 +265,12 @@ function showFilterPopup(api, colId, headerEl) {
     });
   }
 
-  popup.querySelector('.gf-clear').addEventListener('click', () => { applyFilter(null); closePopup(); });
+  popup.querySelector('.gf-reset')?.addEventListener('click', () => { applyFilter(null); closePopup(); });
+  popup.querySelector('.gf-apply')?.addEventListener('click', () => {
+    const search = popup.querySelector('.gf-search');
+    if (search?.value) applyFilter({ type: 'contains', filter: search.value.trim() });
+    closePopup();
+  });
   document.body.appendChild(popup);
   popup.querySelector('.gf-search')?.focus();
 }
