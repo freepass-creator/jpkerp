@@ -61,9 +61,9 @@ function detectColType(sorted) {
 function showFilterPopup(api, colId, headerEl) {
   closePopup();
 
-  // 데이터 수집
+  // 필터된 데이터 기준으로 수집
   const counts = {};
-  api.forEachNode(node => {
+  api.forEachNodeAfterFilterAndSort(node => {
     const raw = node.data?.[colId];
     const val = (raw == null || raw === '') ? '(빈값)' : String(raw).trim();
     counts[val] = (counts[val] || 0) + 1;
