@@ -43,6 +43,7 @@ ROUTES = [
     ('/admin/vendor',   'pages/admin-vendor.html',   '거래처관리',   'admin_vendor'),
     ('/admin/notice',   'pages/admin-notice.html',   '고지서업무',   'admin_notice'),
     ('/admin/approval', 'pages/admin-approval.html', '전자결재',     'admin_approval'),
+    ('/admin/leave',    'pages/admin-leave.html',    '휴가관리',     'admin_leave'),
     ('/admin/lease',    'pages/admin-lease.html',    '임대관리',     'admin_lease'),
     ('/admin/contract', 'pages/admin-contract.html', '계약서관리',   'admin_contract'),
     ('/admin/seal',     'pages/admin-seal.html',     '인감/도장',    'admin_seal'),

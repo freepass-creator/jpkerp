@@ -38,6 +38,7 @@ export const MENU = [
     { href: '/admin/seal',     label: '인감/도장',    icon: 'circlecheck' },
     { href: '/admin/notice',   label: '고지서업무',  icon: 'alert' },
     { href: '/admin/approval', label: '전자결재',    icon: 'clipcheck' },
+    { href: '/admin/leave',    label: '휴가관리',    icon: 'clock' },
   ]},
 ];
 

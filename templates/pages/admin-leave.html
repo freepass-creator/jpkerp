@@ -1,0 +1,21 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block topbar_extra %}<span class="topbar-status">휴가관리</span>{% endblock %}
+{% block workspace_layout %}layout-37{% endblock %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div><span class="panel-title">휴가 신청</span></div>
+    <div class="panel-actions">
+      {{ btn('check', '신청', cls='btn-primary', id='leaveSubmit') }}
+    </div>
+  </div>
+  <div class="panel-body is-pad" id="leaveFormHost" style="overflow-y:auto"></div>
+</section>
+<section class="panel">
+  <div class="panel-head">
+    <div><span class="panel-title">휴가 목록</span><span class="panel-subtitle" id="leaveInfo"></span></div>
+  </div>
+  <div id="leaveGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+{% endblock %}
