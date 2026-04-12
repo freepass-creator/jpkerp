@@ -78,6 +78,22 @@
 /* 헤더 클릭 가능 느낌 */
 .ag-theme-alpine .ag-header-cell-label { cursor: pointer; }
 
+/* 필터 활성 뱃지 */
+.gf-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--c-primary);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
 /* 커스텀 필터 드롭다운 */
 .grid-filter-popup {
   position: fixed;

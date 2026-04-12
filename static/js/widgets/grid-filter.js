@@ -82,7 +82,23 @@ function showFilterPopup(api, colId, headerEl) {
 
   const applyFilter = (model) => {
     try { api.setColumnFilterModel(colId, model).then(() => api.onFilterChanged()); } catch { try { api.setColumnFilterModel(colId, model); api.onFilterChanged(); } catch(e) { console.warn('[filter]', e); } }
+    updateBadge(headerEl, colId, model);
   };
+
+  function updateBadge(el, col, model) {
+    let badge = el.querySelector('.gf-badge');
+    if (!model) {
+      if (badge) badge.remove();
+      return;
+    }
+    const count = model.conditions ? model.conditions.length : 1;
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'gf-badge';
+      el.querySelector('.ag-header-cell-label')?.appendChild(badge);
+    }
+    badge.textContent = count;
+  }
 
   if (colType === 'number') {
     popup.innerHTML = `
@@ -154,14 +170,19 @@ function showFilterPopup(api, colId, headerEl) {
       });
     });
     const applySetFilter = (set) => {
-      if (set.size === 0 || set.size === sorted.length) { applyFilter(null); return; }
-      // AG Grid은 OR conditions 2개까지만 지원 → 외부 필터 사용
+      if (set.size === 0 || set.size === sorted.length) {
+        api.setGridOption('isExternalFilterPresent', () => false);
+        api.onFilterChanged();
+        updateBadge(headerEl, colId, null);
+        return;
+      }
       api.setGridOption('isExternalFilterPresent', () => set.size > 0 && set.size < sorted.length);
       api.setGridOption('doesExternalFilterPass', (node) => {
         const v = String(node.data?.[colId] ?? '').trim() || '';
         return set.has(v);
       });
       api.onFilterChanged();
+      updateBadge(headerEl, colId, { conditions: [...set] });
     };
 
     popup.querySelector('.gf-apply')?.addEventListener('click', () => { closePopup(); });
@@ -190,9 +211,9 @@ function showFilterPopup(api, colId, headerEl) {
   popup.querySelector('.gf-reset')?.addEventListener('click', () => {
     applyFilter(null);
     api.applyColumnState({ state: [{ colId, sort: null }] });
-    // 외부 필터 해제
     api.setGridOption('isExternalFilterPresent', () => false);
     api.onFilterChanged();
+    updateBadge(headerEl, colId, null);
     closePopup();
   });
 
