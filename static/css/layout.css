@@ -19,40 +19,32 @@
   padding: var(--sp-3);
 }
 
-.sidebar-link {
-  display: flex; align-items: center;
-  gap: var(--sp-3);
-  height: 36px;
-  padding: 0 var(--sp-3);
-  margin-bottom: 2px;
+/* 사이드바 — 링크/그룹헤드 통일 규격 */
+.sidebar-link,
+.sidebar-group-head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  height: 32px;
+  padding: 0 var(--sp-4);
   color: var(--c-text-sub);
   font-size: var(--font-size);
   font-weight: var(--fw);
   border: none; background: none; width: 100%;
   border-radius: 0;
   text-align: left; cursor: pointer;
-  transition: background var(--t-fast);
+  text-decoration: none;
+  user-select: none;
+  transition: background var(--t-fast), color var(--t-fast);
 }
-.sidebar-link:hover { background: var(--c-bg-hover); color: var(--c-text); }
-.sidebar-link.is-active { background: var(--c-bg-hover); color: var(--c-text); font-weight: var(--fw-medium); }
-.sidebar-link svg { width: var(--ctrl-icon); height: var(--ctrl-icon); flex-shrink: 0; color: var(--c-text-muted); }
+.sidebar-link:hover,
+.sidebar-group-head:hover { background: var(--c-bg-hover); color: var(--c-text); }
+.sidebar-link.is-active { background: var(--c-bg-active); color: var(--c-text); font-weight: var(--fw-medium); }
+.sidebar-link svg,
+.sidebar-group-head svg:first-child { width: var(--ctrl-icon); height: var(--ctrl-icon); flex-shrink: 0; color: var(--c-text-muted); }
 .sidebar-link-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* 아코디언 그룹 */
-.sidebar-group { margin: var(--sp-4) 0 0; }
-.sidebar-group-head {
-  display: flex; align-items: center; gap: var(--sp-2);
-  height: 32px;
-  padding: 0 var(--sp-4);
-  font-size: var(--font-size);
-  font-weight: var(--fw-bold);
-  color: var(--c-text-sub);
-  cursor: pointer;
-  transition: color var(--t-fast);
-  user-select: none;
-}
-.sidebar-group-head:hover { color: var(--c-text); background: var(--c-bg-hover); }
-.sidebar-group-head svg:first-child { width: 14px; height: 14px; flex-shrink: 0; color: var(--c-text-muted); }
+.sidebar-group { margin: var(--sp-3) 0 0; }
+.sidebar-group-head { font-weight: var(--fw-bold); }
 .sidebar-chevron {
   margin-left: auto;
   transition: transform var(--t-normal);
@@ -65,8 +57,7 @@
   transition: max-height var(--t-normal) ease;
 }
 .sidebar-group.is-open .sidebar-group-body { max-height: 500px; }
-.sidebar-child { padding-left: 34px !important; }
-.sidebar-group-body .sidebar-link { height: 30px; }
+.sidebar-child { padding-left: 36px !important; }
 
 .sidebar-bottom {
   border-top: 1px solid var(--c-border);
