@@ -62,7 +62,10 @@ function loadTypes() {
   try {
     const saved = JSON.parse(localStorage.getItem(ORDER_KEY));
     if (saved?.length) {
-      return saved.map(k => DEFAULT_TYPES.find(t => t.key === k)).filter(Boolean);
+      const ordered = saved.map(k => DEFAULT_TYPES.find(t => t.key === k)).filter(Boolean);
+      // 새로 추가된 항목도 뒤에 붙이기
+      const missing = DEFAULT_TYPES.filter(t => !saved.includes(t.key));
+      return [...ordered, ...missing];
     }
   } catch {}
   return [...DEFAULT_TYPES];
