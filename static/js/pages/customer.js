@@ -56,7 +56,7 @@ function initGrid() {
   const gridOptions = {
     columnDefs,
     rowData: [],
-    defaultColDef: { resizable: true, sortable: false, filter: false, minWidth: 60 },
+    defaultColDef: { resizable: true, sortable: false, filter: 'agTextColumnFilter', minWidth: 60 },
     rowHeight: 28,
     headerHeight: 28,
     animateRows: false,

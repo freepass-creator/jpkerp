@@ -143,7 +143,7 @@ function initGrid() {
     defaultColDef: {
       resizable: true,
       sortable: true,
-      filter: false,
+      filter: 'agTextColumnFilter',
       editable: false,
       minWidth: 60,
     },
