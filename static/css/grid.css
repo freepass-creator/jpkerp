@@ -68,6 +68,10 @@
   box-shadow: none !important;
 }
 
+/* 필터 아이콘 숨김 */
+.ag-theme-alpine .ag-header-cell-menu-button { display: none !important; }
+.ag-theme-alpine .ag-floating-filter-button { display: none !important; }
+
 /* 컬럼 리사이즈 핸들 숨김 (드래그는 작동) */
 .ag-theme-alpine .ag-header-cell-resize {
   opacity: 0;
