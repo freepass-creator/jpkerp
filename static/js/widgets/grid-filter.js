@@ -42,13 +42,11 @@ export function initAllGridFilters() {
 function showDomFilterPopup(gridEl, colId, headerEl) {
   closePopup();
 
-  // DOM에서 해당 컬럼 인덱스 찾기
   const headers = gridEl.querySelectorAll('.ag-header-cell');
   let colIdx = -1;
   headers.forEach((h, i) => { if (h.getAttribute('col-id') === colId) colIdx = i; });
   if (colIdx < 0) return;
 
-  // 행에서 해당 컬럼 값 수집
   const counts = {};
   gridEl.querySelectorAll('.ag-row').forEach(row => {
     const cells = row.querySelectorAll('.ag-cell');
@@ -59,6 +57,8 @@ function showDomFilterPopup(gridEl, colId, headerEl) {
 
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   const total = sorted.reduce((s, [, c]) => s + c, 0);
+  const uniqueCount = sorted.length;
+  const isSearchMode = uniqueCount > 10;
   const rect = headerEl.getBoundingClientRect();
 
   popup = document.createElement('div');
@@ -67,50 +67,53 @@ function showDomFilterPopup(gridEl, colId, headerEl) {
   popup.style.left = rect.left + 'px';
   popup.style.minWidth = Math.max(rect.width, 140) + 'px';
 
-  popup.innerHTML = `
-    <input class="gf-search" placeholder="검색..." autofocus>
-    <div class="gf-list">
-      ${sorted.map(([val, cnt]) =>
-        `<div class="gf-item" data-val="${val}">${val}<span class="gf-count">${cnt}</span></div>`
-      ).join('')}
-    </div>
-    <div class="gf-clear">전체 (${total})</div>
-  `;
-
-  document.body.appendChild(popup);
-
-  // 검색
-  popup.querySelector('.gf-search').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    popup.querySelectorAll('.gf-item').forEach(item => {
-      item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
-  });
-
-  // 항목 클릭 → 해당 값만 보이게 (DOM 기반 필터)
-  popup.querySelectorAll('.gf-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const val = item.dataset.val;
+  if (isSearchMode) {
+    popup.innerHTML = `
+      <input class="gf-search" placeholder="검색어 입력 후 Enter..." autofocus>
+      <div class="gf-clear">전체 (${total})</div>
+    `;
+    const searchInput = popup.querySelector('.gf-search');
+    const doSearch = () => {
+      const q = searchInput.value.toLowerCase();
       gridEl.querySelectorAll('.ag-row').forEach(row => {
         const cells = row.querySelectorAll('.ag-cell');
         const cell = cells[colIdx];
-        const cellVal = (cell?.textContent || '').trim() || '(빈값)';
-        row.style.display = cellVal === val ? '' : 'none';
+        const cellVal = (cell?.textContent || '').trim().toLowerCase();
+        row.style.display = !q || cellVal.includes(q) ? '' : 'none';
       });
-      // 선택 표시
-      popup.querySelectorAll('.gf-item').forEach(i => i.classList.remove('is-active'));
-      item.classList.add('is-active');
-      closePopup();
+      if (q) closePopup();
+    };
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+  } else {
+    popup.innerHTML = `
+      <div class="gf-list">
+        ${sorted.map(([val, cnt]) =>
+          `<div class="gf-item" data-val="${val}">${val}<span class="gf-count">${cnt}</span></div>`
+        ).join('')}
+      </div>
+      <div class="gf-clear">전체 (${total})</div>
+    `;
+    popup.querySelectorAll('.gf-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const val = item.dataset.val;
+        gridEl.querySelectorAll('.ag-row').forEach(row => {
+          const cells = row.querySelectorAll('.ag-cell');
+          const cell = cells[colIdx];
+          const cellVal = (cell?.textContent || '').trim() || '(빈값)';
+          row.style.display = cellVal === val ? '' : 'none';
+        });
+        closePopup();
+      });
     });
-  });
+  }
 
-  // 전체
   popup.querySelector('.gf-clear').addEventListener('click', () => {
     gridEl.querySelectorAll('.ag-row').forEach(row => { row.style.display = ''; });
     closePopup();
   });
 
-  popup.querySelector('.gf-search').focus();
+  document.body.appendChild(popup);
+  popup.querySelector('.gf-search')?.focus();
 }
 
 function showFilterPopup(api, colId, headerEl) {
@@ -123,7 +126,10 @@ function showFilterPopup(api, colId, headerEl) {
   });
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   const total = sorted.reduce((s, [, c]) => s + c, 0);
+  const uniqueCount = sorted.length;
+  const isSearchMode = uniqueCount > 10;
   const rect = headerEl.getBoundingClientRect();
+  const filterInstance = api.getFilterInstance(colId);
 
   popup = document.createElement('div');
   popup.className = 'grid-filter-popup';
@@ -131,46 +137,52 @@ function showFilterPopup(api, colId, headerEl) {
   popup.style.left = rect.left + 'px';
   popup.style.minWidth = Math.max(rect.width, 140) + 'px';
 
-  const filterInstance = api.getFilterInstance(colId);
-  const currentFilter = filterInstance?.getModel()?.filter || '';
-
-  popup.innerHTML = `
-    <input class="gf-search" placeholder="검색..." autofocus>
-    <div class="gf-list">
-      ${sorted.map(([val, cnt]) => {
-        const active = currentFilter === val ? ' is-active' : '';
-        return `<div class="gf-item${active}" data-val="${val === '(빈값)' ? '' : val}">${val}<span class="gf-count">${cnt}</span></div>`;
-      }).join('')}
-    </div>
-    <div class="gf-clear">전체 (${total})</div>
-  `;
-
-  document.body.appendChild(popup);
-
-  popup.querySelector('.gf-search').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    popup.querySelectorAll('.gf-item').forEach(item => {
-      item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
-  });
-
-  popup.querySelectorAll('.gf-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const val = item.dataset.val;
-      if (filterInstance) {
-        filterInstance.setModel(val ? { type: 'equals', filter: val } : null);
-        api.onFilterChanged();
+  if (isSearchMode) {
+    popup.innerHTML = `
+      <input class="gf-search" placeholder="검색어 입력 후 Enter..." autofocus>
+      <div class="gf-clear">전체 (${total})</div>
+    `;
+    const searchInput = popup.querySelector('.gf-search');
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const q = searchInput.value.trim();
+        if (filterInstance) {
+          filterInstance.setModel(q ? { type: 'contains', filter: q } : null);
+          api.onFilterChanged();
+        }
+        closePopup();
       }
-      closePopup();
     });
-  });
+  } else {
+    const currentFilter = filterInstance?.getModel()?.filter || '';
+    popup.innerHTML = `
+      <div class="gf-list">
+        ${sorted.map(([val, cnt]) => {
+          const active = currentFilter === val ? ' is-active' : '';
+          return `<div class="gf-item${active}" data-val="${val === '(빈값)' ? '' : val}">${val}<span class="gf-count">${cnt}</span></div>`;
+        }).join('')}
+      </div>
+      <div class="gf-clear">전체 (${total})</div>
+    `;
+    popup.querySelectorAll('.gf-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const val = item.dataset.val;
+        if (filterInstance) {
+          filterInstance.setModel(val ? { type: 'equals', filter: val } : null);
+          api.onFilterChanged();
+        }
+        closePopup();
+      });
+    });
+  }
 
   popup.querySelector('.gf-clear').addEventListener('click', () => {
     if (filterInstance) { filterInstance.setModel(null); api.onFilterChanged(); }
     closePopup();
   });
 
-  popup.querySelector('.gf-search').focus();
+  document.body.appendChild(popup);
+  popup.querySelector('.gf-search')?.focus();
 }
 
 function closePopup() {
