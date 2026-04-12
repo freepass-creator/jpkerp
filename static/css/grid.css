@@ -109,11 +109,20 @@
 .grid-filter-popup .gf-item:hover { background: var(--c-bg-hover); }
 .grid-filter-popup .gf-item.is-active { background: var(--c-primary-bg); color: var(--c-primary); font-weight: 500; }
 .grid-filter-popup .gf-count { color: var(--c-text-muted); font-size: var(--font-size-xs); }
+.grid-filter-popup {
+  display: flex;
+  flex-direction: column;
+}
+.grid-filter-popup .gf-list {
+  flex: 1;
+  overflow-y: auto;
+}
 .grid-filter-popup .gf-footer {
   display: flex;
   gap: 4px;
   padding: 6px 8px;
   border-top: 1px solid var(--c-border);
+  flex-shrink: 0;
 }
 .grid-filter-popup .gf-footer .btn {
   flex: 1;

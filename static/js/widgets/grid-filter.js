@@ -72,7 +72,7 @@ function showFilterPopup(api, colId, headerEl) {
   const total = sorted.reduce((s, [, c]) => s + c, 0);
   const colType = detectColType(sorted);
   const rect = headerEl.getBoundingClientRect();
-  const filterInstance = api.getFilterInstance(colId);
+  const filterInstance = null; // deprecated, use setColumnFilterModel
 
   popup = document.createElement('div');
   popup.className = 'grid-filter-popup';
@@ -81,7 +81,7 @@ function showFilterPopup(api, colId, headerEl) {
   popup.style.minWidth = Math.max(rect.width, 160) + 'px';
 
   const applyFilter = (model) => {
-    if (filterInstance) { filterInstance.setModel(model); api.onFilterChanged(); }
+    try { api.setColumnFilterModel(colId, model).then(() => api.onFilterChanged()); } catch { try { api.setColumnFilterModel(colId, model); api.onFilterChanged(); } catch(e) { console.warn('[filter]', e); } }
   };
 
   if (colType === 'number') {
@@ -120,7 +120,7 @@ function showFilterPopup(api, colId, headerEl) {
     });
 
   } else if (colType === 'select') {
-    const currentFilter = filterInstance?.getModel()?.filter || '';
+    let currentFilter = ''; try { const m = api.getColumnFilterModel(colId); currentFilter = m?.filter || ''; } catch {}
     popup.innerHTML = `
       <input class="gf-search" placeholder="검색..." autofocus>
       <div class="gf-list">
