@@ -68,9 +68,19 @@
   box-shadow: none !important;
 }
 
-/* 필터 아이콘 숨김 */
+/* 필터: 메뉴 버튼 숨김, 헤더 클릭으로 정렬/필터 */
 .ag-theme-alpine .ag-header-cell-menu-button { display: none !important; }
 .ag-theme-alpine .ag-floating-filter-button { display: none !important; }
+.ag-theme-alpine .ag-floating-filter-input {
+  height: 22px !important;
+  font-size: 11px !important;
+  padding: 0 4px !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: 2px !important;
+}
+.ag-theme-alpine .ag-floating-filter {
+  border-bottom: 1px solid var(--c-border) !important;
+}
 
 /* 컬럼 리사이즈 핸들 숨김 (드래그는 작동) */
 .ag-theme-alpine .ag-header-cell-resize {

@@ -61,7 +61,7 @@ export async function mount() {
         cellRenderer: p => `<span style="color:${STATUS_COLOR[p.value] || ''};font-weight:500">${STATUS[p.value] || p.value || '-'}</span>` },
     ],
     rowData: [],
-    defaultColDef: { resizable: true, sortable: true, filter: true, editable: false, minWidth: 40 },
+    defaultColDef: { resizable: true, sortable: true, filter: true, floatingFilter: true, editable: false, minWidth: 40 },
     rowHeight: 28, headerHeight: 28, animateRows: false, suppressContextMenu: true,
     onGridReady: p => p.api.autoSizeAllColumns(),
   });
