@@ -292,8 +292,13 @@ function renderForm() {
     </div>
     <div class="form-section">
       <div class="form-section-title">차량 사진</div>
-      <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><label>사진 첨부 (전면/후면/좌/우/실내)</label><input type="file" name="photos" multiple accept="image/*"></div>
+      <div class="photo-grid" id="photoGrid">
+        <div class="photo-slot" data-label="전면"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">전면</span><button type="button" class="photo-slot__del">✕</button></div>
+        <div class="photo-slot" data-label="후면"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">후면</span><button type="button" class="photo-slot__del">✕</button></div>
+        <div class="photo-slot" data-label="좌측"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">좌측</span><button type="button" class="photo-slot__del">✕</button></div>
+        <div class="photo-slot" data-label="우측"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">우측</span><button type="button" class="photo-slot__del">✕</button></div>
+        <div class="photo-slot" data-label="실내"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">📷</span><span class="photo-slot__label">실내</span><button type="button" class="photo-slot__del">✕</button></div>
+        <div class="photo-slot" data-label="기타"><input type="file" accept="image/*" capture="environment"><span class="photo-slot__icon">➕</span><span class="photo-slot__label">기타</span><button type="button" class="photo-slot__del">✕</button></div>
       </div>
     </div>
     <div class="form-section">
@@ -962,6 +967,35 @@ function renderForm() {
       titleInput.parentNode.appendChild(dl);
     }
   }
+
+  // 사진 슬롯
+  host.querySelectorAll('.photo-slot').forEach(slot => {
+    const input = slot.querySelector('input[type="file"]');
+    const del = slot.querySelector('.photo-slot__del');
+    slot.addEventListener('click', (e) => {
+      if (e.target === del || e.target.closest('.photo-slot__del')) return;
+      input.click();
+    });
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        let img = slot.querySelector('img');
+        if (!img) { img = document.createElement('img'); slot.appendChild(img); }
+        img.src = e.target.result;
+        slot.classList.add('has-photo');
+      };
+      reader.readAsDataURL(file);
+    });
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const img = slot.querySelector('img');
+      if (img) img.remove();
+      slot.classList.remove('has-photo');
+      input.value = '';
+    });
+  });
 
   // btn-toggle (복수 선택) 바인딩
   host.querySelectorAll('.btn-toggle').forEach(btn => {

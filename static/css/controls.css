@@ -135,6 +135,46 @@
   font-weight: var(--fw-medium);
 }
 
+/* ── 사진 업로드 위젯 ── */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+.photo-slot {
+  aspect-ratio: 4/3;
+  border: 2px dashed var(--c-border);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  position: relative;
+  overflow: hidden;
+  background: var(--c-bg-sub);
+}
+.photo-slot:hover { border-color: var(--c-primary); background: var(--c-primary-bg); }
+.photo-slot input { display: none; }
+.photo-slot__label { font-size: var(--font-size-xs); color: var(--c-text-muted); margin-top: 4px; }
+.photo-slot__icon { font-size: 24px; color: var(--c-text-muted); }
+.photo-slot.has-photo { border-style: solid; border-color: var(--c-border); }
+.photo-slot.has-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  position: absolute; top: 0; left: 0;
+}
+.photo-slot__del {
+  position: absolute; top: 2px; right: 2px;
+  width: 20px; height: 20px;
+  background: rgba(0,0,0,0.5); color: #fff;
+  border: none; border-radius: 50%;
+  font-size: 11px; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+}
+.photo-slot.has-photo .photo-slot__del { display: flex; }
+
 .grid-table {
   width: 100%;
   border-collapse: collapse;
