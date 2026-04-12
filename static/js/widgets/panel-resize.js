@@ -42,6 +42,12 @@ function setup(ws) {
     let leftW = 0;
     let rightW = 0;
 
+    handle.addEventListener('dblclick', () => {
+      const equal = 100 / panels.length;
+      panels.forEach(p => { p.style.flex = `${equal} 0 0`; });
+      localStorage.setItem(key, JSON.stringify(panels.map(() => equal)));
+    });
+
     handle.addEventListener('mousedown', (e) => {
       dragging = true;
       startX = e.clientX;
