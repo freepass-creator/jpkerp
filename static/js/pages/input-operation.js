@@ -152,7 +152,7 @@ async function submitForm() {
 
   const a = assets.find(x => x.car_number === data.car_number);
   try {
-    await saveEvent({
+    const event = {
       type: currentType,
       direction: t.direction,
       date: data.date,
@@ -162,7 +162,12 @@ async function submitForm() {
       vendor: data.vendor || '',
       amount: Number(String(data.amount || '').replace(/,/g, '')) || 0,
       note: data.note || '',
-    });
+    };
+    if (data.insurance_company) event.insurance_company = data.insurance_company;
+    if (data.insurance_no) event.insurance_no = data.insurance_no;
+    if (data.key_action) event.key_action = data.key_action;
+    if (data.key_info) event.key_info = data.key_info;
+    await saveEvent(event);
     showToast('등록 완료', 'success');
     renderForm();
   } catch (err) { showToast(err.message, 'error'); }
