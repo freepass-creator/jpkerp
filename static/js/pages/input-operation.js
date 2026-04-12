@@ -43,7 +43,8 @@ function saveTitle(type, title) {
 const DEFAULT_TYPES = [
   { key: 'contact',     label: '고객응대',       icon: '📞', sub: '통화/상담/컴플레인',       direction: 'out' },
   { key: 'delivery',    label: '출고(인도)',     icon: '🚗', sub: '차량 인도',                 direction: 'out' },
-  { key: 'return',      label: '반납(회수)',     icon: '🔙', sub: '차량 회수',                 direction: 'in' },
+  { key: 'return',      label: '정상반납',       icon: '🔙', sub: '계약만료/정상회수',          direction: 'in' },
+  { key: 'force',       label: '강제회수',       icon: '🚨', sub: '미납/연락두절/강제회수',     direction: 'in' },
   { key: 'transfer',    label: '차량이동',       icon: '🔄', sub: '이동/배차/탁송',            direction: 'out' },
   { key: 'key',         label: '차키관리',       icon: '🔑', sub: '키 수령/반납/분실',          direction: 'out' },
   { key: 'parts',       label: '소모품교체',     icon: '🔧', sub: '오일/타이어/배터리/와이퍼',  direction: 'out' },
@@ -321,6 +322,46 @@ function renderForm() {
     <div class="form-section">
       <div class="form-grid">
         <div class="field" style="grid-column:1/-1"></label>특이사항</label><textarea name="note" rows="2" placeholder="손상부위, 추가청구 사유 등"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'force') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">강제회수 정보</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>회수일</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 미납 3개월 강제회수"></div>
+        ${sel('force_reason', '회수사유', ['미납','연락두절','계약위반','사고방치','기타'])}
+        <div class="field"><label>회수장소</label><input type="text" name="return_location" placeholder="회수 위치"></div>
+        <div class="field"><label>회수담당</label><input type="text" name="handler"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">차량 상태</div>
+      <div class="form-grid">
+        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
+        ${sel('car_condition', '차량상태', ['양호','경미손상','수리필요','사고차','파손심함'])}
+        ${sel('exterior', '외관', ['양호','경미흠집','손상있음','심각손상'])}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">키 회수</div>
+      <div class="form-grid">
+        <div class="field"><label>메인키</label><input type="number" name="key_main_count" value="0" min="0"></div>
+        <div class="field"><label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
+        <div class="field"><label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">미수/정산</div>
+      <div class="form-grid">
+        <div class="field"><label>미납금액</label><input type="text" name="unpaid_amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>손해배상청구</label><input type="text" name="damage_claim" inputmode="numeric" placeholder="0"></div>
+        ${sel('legal_action', '법적조치', ['미진행','내용증명발송','소송진행','완료'])}
+        <div class="field" style="grid-column:1/-1"><label>상세내역</label><textarea name="note" rows="3" placeholder="회수 경위, 차량 상태, 고객 대응 등"></textarea></div>
       </div>
     </div>`;
 
@@ -746,6 +787,7 @@ async function submitForm() {
       'product_status', 'product_maint', 'maint_detail', 'maint_cost', 'maint_vendor', 'expected_delivery',
       'repair_type', 'repair_in_date', 'repair_out_date', 'repair_estimate', 'insurance_amount', 'self_pay', 'repair_status',
       'collect_action', 'collect_result', 'promise_date',
+      'force_reason', 'unpaid_amount', 'damage_claim', 'legal_action',
       'key_action', 'key_type', 'key_info',
       'customer_name', 'customer_phone', 'contact_type', 'contact_result', 'handler',
     ];
