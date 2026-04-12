@@ -102,7 +102,6 @@ function renderForm() {
   const host = $('#opFormHost');
   host.innerHTML = `
     <div class="form-section">
-      <div class="form-section-title">${t.label} 정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" placeholder="02무0357" list="opCarList" autocomplete="off"><datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">${a.car_model || ''}</option>`).join('')}</datalist></div>
