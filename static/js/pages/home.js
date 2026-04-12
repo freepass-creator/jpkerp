@@ -168,16 +168,13 @@ function render() {
     </div>`;
   };
 
-  // 최근 활동 (운영이벤트)
+  const allEvents = events;
+  const EVENT_ICONS = { maintenance:'🔧', maint:'🔧', accident:'💥', penalty:'🚫', delivery:'🚗', return:'🔙', force:'🚨', transfer:'🔄', key:'🔑', contact:'📞', wash:'🧼', fuel:'⛽', insurance:'🛡', repair:'🔨', product:'✨', collect:'📨', parts:'🔧', fix:'🛠' };
+
   const recentOps = allEvents
     .filter(e => e.type && e.created_at)
     .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
     .slice(0, 10);
-
-  const EVENT_ICONS = { maintenance:'🔧', maint:'🔧', accident:'💥', penalty:'🚫', delivery:'🚗', return:'🔙', force:'🚨', transfer:'🔄', key:'🔑', contact:'📞', wash:'🧼', fuel:'⛽', insurance:'🛡', repair:'🔨', product:'✨', collect:'📨', parts:'🔧', fix:'🛠' };
-
-  // allEvents → events 변수명
-  const allEvents = events;
   const miniCard = (label, value, color) => `<div style="text-align:center"><div style="font-size:20px;font-weight:700;${color ? `color:${color}` : ''}">${value}</div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">${label}</div></div>`;
 
   const progressBar = (label, value, max, color) => {
