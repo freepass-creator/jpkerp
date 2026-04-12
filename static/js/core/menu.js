@@ -8,6 +8,7 @@ export const MENU = [
     { href: '/upload/list',      label: '업로드내역', icon: 'listcheck' },
   ]},
   { group: '입력', icon: 'plus', children: [
+    { href: '/input/task',       label: '업무생성',   icon: 'plus' },
     { href: '/input/operation',  label: '운영업무',   icon: 'circleplus' },
     { href: '/input/asset',      label: '자산등록',   icon: 'gridplus' },
     { href: '/input/contract',   label: '계약등록',   icon: 'clipplus2' },

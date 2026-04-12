@@ -17,6 +17,7 @@ ROUTES = [
     ('/upload',          'pages/upload.html',          '업로드',     'upload'),
     ('/upload/list',     'pages/upload-list.html',     '업로드목록', 'upload_list'),
     # 입력
+    ('/input/task',      'pages/input-task.html',      '업무생성', 'input_task'),
     ('/input/operation', 'pages/input-operation.html', '운영등록', 'input_operation'),
     ('/input/asset',     'pages/input-asset.html',     '자산등록', 'input_asset'),
     ('/input/contract',  'pages/input-contract.html',  '계약등록', 'input_contract'),
