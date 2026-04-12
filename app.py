@@ -33,8 +33,12 @@ ROUTES = [
     ('/status/overdue',  'pages/status-overdue.html',  '미납현황', 'status_overdue'),
     ('/status/idle',     'pages/status-idle.html',     '휴차현황', 'status_idle'),
     ('/status/expiring', 'pages/status-expiring.html', '만기도래', 'status_expiring'),
-    # 기타
-    ('/settings',  'pages/settings.html',  '설정',   'settings'),
+    # 회사관리
+    ('/admin/company',  'pages/admin-company.html',  '회사정보',     'admin_company'),
+    ('/admin/staff',    'pages/admin-staff.html',    '직원관리',     'admin_staff'),
+    ('/admin/card',     'pages/admin-card.html',     '법인카드관리', 'admin_card'),
+    ('/admin/account',  'pages/admin-account.html',  '계좌관리',     'admin_account'),
+    ('/admin/vendor',   'pages/admin-vendor.html',   '거래처관리',   'admin_vendor'),
 ]
 
 def _make_view(tpl, title):

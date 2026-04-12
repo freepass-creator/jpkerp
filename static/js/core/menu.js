@@ -28,7 +28,13 @@ export const MENU = [
     { href: '/status/idle',     label: '휴차현황', icon: 'pause' },
     { href: '/status/expiring', label: '만기도래', icon: 'clock' },
   ]},
-  { href: '/settings', label: '설정', icon: 'settings' },
+  { group: '회사관리', icon: 'settings', children: [
+    { href: '/admin/company',  label: '회사정보',     icon: 'settings' },
+    { href: '/admin/staff',    label: '직원관리',     icon: 'users' },
+    { href: '/admin/card',     label: '법인카드관리', icon: 'wallet' },
+    { href: '/admin/account',  label: '계좌관리',     icon: 'fund' },
+    { href: '/admin/vendor',   label: '거래처관리',   icon: 'contract' },
+  ]},
 ];
 
 const ICONS = {
