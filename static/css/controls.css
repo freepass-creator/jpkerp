@@ -98,7 +98,7 @@
   transition: background var(--t-fast);
 }
 .op-type:hover { background: var(--c-bg-hover); }
-.op-type.is-active { background: var(--c-bg-active); border-left: 3px solid var(--c-primary); }
+.op-type.is-active { background: var(--c-bg-active); }
 .op-type__icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
 .op-type__label { font-weight: var(--fw-medium); font-size: var(--font-size); }
 .op-type__sub { font-size: var(--font-size-xs); color: var(--c-text-muted); margin-left: auto; }
