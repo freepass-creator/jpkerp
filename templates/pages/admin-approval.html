@@ -1,0 +1,24 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block topbar_extra %}<span class="topbar-status">전자결재</span>{% endblock %}
+{% block workspace_layout %}layout-37{% endblock %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div><span class="panel-title">결재 목록</span></div>
+    <div class="panel-actions">
+      {{ btn('plus', '기안작성', cls='btn-primary', id='newApproval') }}
+    </div>
+  </div>
+  <div id="approvalList" style="flex:1;min-height:0;overflow:auto"></div>
+</section>
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <span class="panel-title" id="approvalDetailTitle">상세</span>
+    </div>
+    <div class="panel-actions" id="approvalActions"></div>
+  </div>
+  <div id="approvalDetail" style="flex:1;min-height:0;overflow:auto;padding:16px"></div>
+</section>
+{% endblock %}

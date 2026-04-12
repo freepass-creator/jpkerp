@@ -38,6 +38,7 @@ export const MENU = [
     { href: '/admin/contract', label: '계약서관리',   icon: 'fileplus' },
     { href: '/admin/seal',     label: '인감/도장',    icon: 'circlecheck' },
     { href: '/admin/notice',   label: '고지서업무',  icon: 'alert' },
+    { href: '/admin/approval', label: '전자결재',    icon: 'clipcheck' },
   ]},
 ];
 
