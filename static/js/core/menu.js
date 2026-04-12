@@ -3,7 +3,6 @@
  */
 
 export const MENU = [
-  { href: '/home', label: '대시보드', icon: 'home' },
   { group: '업로드센터', icon: 'fileup', children: [
     { href: '/upload',           label: '업로드하기', icon: 'uploadicon' },
     { href: '/upload/list',      label: '업로드내역', icon: 'listcheck' },

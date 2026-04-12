@@ -29,6 +29,11 @@
   background: var(--c-primary);
   opacity: 0.3;
 }
+.sidebar-top {
+  flex-shrink: 0;
+  padding: var(--sp-3) var(--sp-3) 0;
+  border-bottom: 1px solid var(--c-border);
+}
 .sidebar-menu {
   flex: 1; overflow-y: auto; overflow-x: hidden;
   padding: var(--sp-3);

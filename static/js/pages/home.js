@@ -253,26 +253,54 @@ function render() {
     `).join('')}
   `;
 
-  // ─── 내할일 ─────────────────────────
-  // TODO: 로그인 사용자 기준 필터 (지금은 전체)
-  my.innerHTML = `
-    <div class="dash-card" style="text-align:center;padding:16px">
-      <div style="font-size:24px;font-weight:800;color:var(--c-primary)">0</div>
-      <div style="font-size:var(--font-size-sm);color:var(--c-text-muted)">내 미결 업무</div>
-    </div>
-    <div class="dash-card" style="text-align:center;padding:16px">
-      <div style="font-size:24px;font-weight:800">0</div>
-      <div style="font-size:var(--font-size-sm);color:var(--c-text-muted)">새 메시지</div>
-    </div>
-    <div style="font-size:var(--font-size-sm);font-weight:600;margin-top:4px">배정된 업무</div>
-    <div style="padding:12px;text-align:center;color:var(--c-text-muted);font-size:var(--font-size-sm)">
-      로그인 후 배정된 업무가 여기에 표시됩니다
-    </div>
-    <div style="font-size:var(--font-size-sm);font-weight:600;margin-top:4px">수신 메시지</div>
-    <div style="padding:12px;text-align:center;color:var(--c-text-muted);font-size:var(--font-size-sm)">
-      새 메시지가 없습니다
-    </div>
-  `;
+  // ─── 최근업무 (실시간 타임라인) ─────────
+  const allRecentOps = allEvents
+    .filter(e => e.created_at)
+    .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
+    .slice(0, 30);
+
+  const timeAgo = (ts) => {
+    if (!ts) return '';
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if (diff < 60) return '방금';
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+    const d = new Date(ts);
+    return `${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  };
+
+  if (!allRecentOps.length) {
+    my.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted);font-size:var(--font-size-sm)">아직 업무 기록이 없습니다</div>';
+  } else {
+    my.innerHTML = allRecentOps.map(e => `
+      <div class="recent-item" data-id="${e.event_id || ''}" style="display:flex;gap:8px;padding:8px 4px;border-bottom:1px solid var(--c-border);font-size:var(--font-size-sm);cursor:pointer;transition:background var(--t-fast)">
+        <span style="flex-shrink:0;font-size:14px">${EVENT_ICONS[e.type] || '📝'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;gap:4px">
+            <span style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.title || e.type || '-'}</span>
+            <span style="flex-shrink:0;color:var(--c-text-muted);font-size:var(--font-size-xs)">${timeAgo(e.created_at)}</span>
+          </div>
+          <div style="color:var(--c-text-muted);font-size:var(--font-size-xs)">
+            ${e.car_number || ''} ${e.assignee ? `· 담당: ${e.assignee}` : ''}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <span class="like-btn" data-id="${e.event_id || ''}" style="font-size:var(--font-size-xs);color:var(--c-text-muted);cursor:pointer">👍 ${e.likes || 0}</span>
+            <span style="font-size:var(--font-size-xs);color:var(--c-text-muted)">💬 ${e.comment_count || 0}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // 클릭 → 운영관리 상세
+    my.querySelectorAll('.recent-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.like-btn')) return;
+        navigateTo('/operation');
+      });
+      el.addEventListener('mouseenter', () => { el.style.background = 'var(--c-bg-hover)'; });
+      el.addEventListener('mouseleave', () => { el.style.background = ''; });
+    });
+  }
 }
 
 export async function mount() {
