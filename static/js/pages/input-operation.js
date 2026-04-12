@@ -480,7 +480,6 @@ function renderForm() {
     </div>`;
 
   } else if (currentType === 'product') {
-    const prodVendors = vendors.filter(v => ['정비소','세차장','도색/판금'].includes(v.vendor_type)).map(v => `<option value="${v.vendor_name}">`).join('');
     sections = `
     <div class="form-section">
       <div class="form-section-title">상품화 기본</div>
@@ -494,9 +493,37 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">작업 항목 <button type="button" class="btn" id="addProductRow" style="margin-left:auto">+ 항목추가</button></div>
-      <table class="grid-table" id="productTable">
-        <thead><tr><th>작업내용</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+      <div class="form-section-title">부속품 설치 <button type="button" class="btn prod-add" data-table="prodAccessory" style="margin-left:auto">+ 추가</button></div>
+      <table class="grid-table prod-table" id="prodAccessory">
+        <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">세차/광택 <button type="button" class="btn prod-add" data-table="prodWash" style="margin-left:auto">+ 추가</button></div>
+      <table class="grid-table prod-table" id="prodWash">
+        <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">외판수리 <button type="button" class="btn prod-add" data-table="prodBody" style="margin-left:auto">+ 추가</button></div>
+      <table class="grid-table prod-table" id="prodBody">
+        <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">소모품교체 <button type="button" class="btn prod-add" data-table="prodParts" style="margin-left:auto">+ 추가</button></div>
+      <table class="grid-table prod-table" id="prodParts">
+        <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">기능수리 <button type="button" class="btn prod-add" data-table="prodFix" style="margin-left:auto">+ 추가</button></div>
+      <table class="grid-table prod-table" id="prodFix">
+        <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -511,7 +538,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-grid">
         <div class="field"><label>총 비용</label><input type="text" name="amount" inputmode="numeric" placeholder="자동 계산" readonly id="productTotal"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="상품화 상세 기록"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -838,23 +865,23 @@ function renderForm() {
     });
   }
 
-  // 상품화: 행 추가
+  // 상품화: 5개 섹션별 행 추가
   if (currentType === 'product') {
-    const prodOpts = [
-      '── 부속품 ──','블랙박스','전면썬팅','후면썬팅','하이패스','네비','매트','방향제',
-      '── 세차/광택 ──','외부세차','실내크리닝','광택','냄새제거','시트세정',
-      '── 외판수리 ──','판금','도색','범퍼','펜더','도어','유리',
-      '── 소모품 ──','엔진오일','와이퍼','에어컨필터','타이어','배터리','브레이크패드',
-      '── 기능수리 ──','에어컨','전기장치','시동','잠금장치',
-      '기타',
-    ].filter(o => !o.startsWith('──'));
-    const addProductRow = () => {
-      const tbody = host.querySelector('#productTable tbody');
+    const PROD_OPTS = {
+      prodAccessory: ['블랙박스','전면썬팅','후면썬팅','측면썬팅','하이패스','네비','매트','방향제','충전케이블','기타'],
+      prodWash: ['외부세차','실내크리닝','광택','냄새제거','시트세정','코팅','기타'],
+      prodBody: ['판금','도색','범퍼','펜더','도어','유리','후드','트렁크','기타'],
+      prodParts: ['엔진오일','미션오일','에어필터','에어컨필터','와이퍼','배터리','타이어','브레이크패드','냉각수','기타'],
+      prodFix: ['에어컨','히터','전기장치','시동','잠금장치','오디오','계기판','누유/누수','기타'],
+    };
+    const addProdRow = (tableId) => {
+      const tbody = host.querySelector(`#${tableId} tbody`);
+      const opts = PROD_OPTS[tableId] || [];
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><input type="text" name="productTable_item" placeholder="작업내용" style="width:100%;border:none;outline:none" list="prodOpts"><datalist id="prodOpts">${prodOpts.map(o => `<option value="${o}">`).join('')}</datalist></td>
-        <td><input type="text" name="productTable_vendor" placeholder="업체" style="width:100%;border:none;outline:none" list="opVendorList"></td>
-        <td><input type="text" name="productTable_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
+        <td><input type="text" name="${tableId}_item" placeholder="항목" style="width:100%;border:none;outline:none" list="${tableId}Opts"><datalist id="${tableId}Opts">${opts.map(o => `<option value="${o}">`).join('')}</datalist></td>
+        <td><input type="text" name="${tableId}_vendor" placeholder="업체" style="width:100%;border:none;outline:none" list="opVendorList"></td>
+        <td><input type="text" name="${tableId}_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
         <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('product-calc'))">✕</button></td>`;
       tbody.appendChild(tr);
       tr.querySelector('input').focus();
@@ -866,11 +893,12 @@ function renderForm() {
         });
       });
     };
-    host.querySelector('#addProductRow')?.addEventListener('click', addProductRow);
-    addProductRow();
+    host.querySelectorAll('.prod-add').forEach(btn => {
+      btn.addEventListener('click', () => addProdRow(btn.dataset.table));
+    });
     document.addEventListener('product-calc', () => {
       let total = 0;
-      host.querySelectorAll('#productTable [name$="_cost"]').forEach(inp => {
+      host.querySelectorAll('.prod-table [name$="_cost"]').forEach(inp => {
         total += Number(String(inp.value).replace(/,/g, '')) || 0;
       });
       const el = host.querySelector('#productTotal');
@@ -1043,17 +1071,22 @@ async function submitForm() {
     });
     if (rows.length) data.repair_list = rows;
   }
-  // 상품화: 행 수집
+  // 상품화: 섹션별 행 수집
   if (currentType === 'product') {
-    const rows = [];
-    host.querySelectorAll('#productTable tbody tr').forEach(tr => {
-      const item = tr.querySelector('[name="productTable_item"]')?.value.trim();
-      const vendor = tr.querySelector('[name="productTable_vendor"]')?.value.trim();
-      const cost = Number(String(tr.querySelector('[name="productTable_cost"]')?.value || '').replace(/,/g, '')) || 0;
-      if (item) rows.push({ item, vendor, cost });
+    const sections = {};
+    ['prodAccessory','prodWash','prodBody','prodParts','prodFix'].forEach(tableId => {
+      const rows = [];
+      host.querySelectorAll(`#${tableId} tbody tr`).forEach(tr => {
+        const item = tr.querySelector(`[name="${tableId}_item"]`)?.value.trim();
+        const vendor = tr.querySelector(`[name="${tableId}_vendor"]`)?.value.trim();
+        const cost = Number(String(tr.querySelector(`[name="${tableId}_cost"]`)?.value || '').replace(/,/g, '')) || 0;
+        if (item) rows.push({ item, vendor, cost });
+      });
+      if (rows.length) sections[tableId] = rows;
     });
-    if (rows.length) data.product_list = rows;
-    if (!data.title) data.title = rows.map(r => r.item).join(', ');
+    data.product_sections = sections;
+    const allItems = Object.values(sections).flat();
+    if (!data.title && allItems.length) data.title = allItems.map(r => r.item).join(', ');
   }
   // 세차: 행 수집
   if (currentType === 'wash') {
