@@ -86,10 +86,10 @@
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: var(--r-lg);
   background: var(--c-primary);
   color: #fff;
-  font-size: 9px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   margin-left: 4px;
 }
