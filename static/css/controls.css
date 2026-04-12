@@ -89,6 +89,21 @@
 }
 
 /* ── 그리드 테이블 (AG Grid 아닌 일반 테이블) ── */
+/* ── 운영등록 유형 버튼 ── */
+.op-type {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 10px var(--sp-4);
+  border-bottom: 1px solid var(--c-border);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.op-type:hover { background: var(--c-bg-hover); }
+.op-type.is-active { background: var(--c-bg-active); border-left: 3px solid var(--c-primary); }
+.op-type__icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+.op-type__label { font-weight: var(--fw-medium); font-size: var(--font-size); }
+.op-type__sub { font-size: var(--font-size-xs); color: var(--c-text-muted); margin-left: auto; }
+.op-type__handle { color: var(--c-text-muted); font-size: 10px; cursor: grab; margin-left: var(--sp-2); }
+
 .grid-table {
   width: 100%;
   border-collapse: collapse;

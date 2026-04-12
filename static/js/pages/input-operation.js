@@ -38,13 +38,11 @@ let currentType = null;
 function renderList() {
   const host = $('#opList');
   host.innerHTML = TYPES.map(t => `
-    <div class="sidebar-link op-type${currentType === t.key ? ' is-active' : ''}" data-type="${t.key}" draggable="true" style="cursor:grab">
-      <span style="font-size:16px;flex-shrink:0">${t.icon}</span>
-      <span class="sidebar-link-label">
-        <div style="font-weight:500">${t.label}</div>
-        <div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">${t.sub}</div>
-      </span>
-      <span style="color:var(--c-text-muted);font-size:10px;cursor:grab">⠿</span>
+    <div class="op-type${currentType === t.key ? ' is-active' : ''}" data-type="${t.key}" draggable="true">
+      <span class="op-type__icon">${t.icon}</span>
+      <span class="op-type__label">${t.label}</span>
+      <span class="op-type__sub">${t.sub}</span>
+      <span class="op-type__handle">⠿</span>
     </div>
   `).join('');
 
