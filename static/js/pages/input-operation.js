@@ -7,6 +7,7 @@
 import { saveEvent, watchEvents } from '../firebase/events.js';
 import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
+import { watchVendors } from '../firebase/vendors.js';
 import { showToast } from '../core/toast.js';
 
 const $ = (s) => document.querySelector(s);
@@ -79,6 +80,7 @@ let TYPES = loadTypes();
 let assets = [];
 let contracts = [];
 let allEvents = [];
+let vendors = [];
 let currentType = null;
 let lastCarNumber = '';
 
@@ -415,35 +417,35 @@ function renderForm() {
     </div>`;
 
   } else if (currentType === 'maint') {
-    const PARTS = ['엔진오일','미션오일','브레이크오일','에어필터','에어컨필터','와이퍼','배터리','타이어','브레이크패드','냉각수','부동액','점화플러그','벨트류','기타'];
-    const FIX_ITEMS = ['에어컨','히터','시동불량','엔진이상','미션이상','전기장치','계기판','오디오/네비','창문/선루프','잠금장치','누유/누수','소음/진동','조향장치','서스펜션','배기장치','기타'];
+    const vendorList = vendors.filter(v => ['정비소','타이어','부품','도색/판금'].includes(v.vendor_type)).map(v => `<option value="${v.vendor_name}">`).join('');
     sections = `
     <div class="form-section">
       <div class="form-section-title">정비 기본</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field"><label>정비업체</label><input type="text" name="vendor" placeholder="업체명"></div>
+        <div class="field"><label>정비업체</label><input type="text" name="vendor" list="vendorMaintList" placeholder="업체명"><datalist id="vendorMaintList">${vendorList}</datalist></div>
         <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">소모품 교체 (해당 항목 체크)</div>
-      <div class="form-grid" style="grid-template-columns:repeat(3,1fr)">
-        ${PARTS.map(p => chk('parts_' + p.replace(/[\/\s]/g,'_'), p)).join('')}
-      </div>
+      <div class="form-section-title">소모품 교체 <button type="button" class="btn" id="addPartsRow" style="margin-left:auto">+ 항목추가</button></div>
+      <table class="grid-table" id="partsTable">
+        <thead><tr><th>항목</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
     <div class="form-section">
-      <div class="form-section-title">기능수리 (해당 시)</div>
-      <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><label>수리내용</label><input type="text" name="fix_detail" placeholder="예: 에어컨 가스 충전, 배터리 교체"></div>
-        <div class="field"><label>수리비</label><input type="text" name="fix_cost" inputmode="numeric" placeholder="0"></div>
-      </div>
+      <div class="form-section-title">기능수리 <button type="button" class="btn" id="addFixRow" style="margin-left:auto">+ 항목추가</button></div>
+      <table class="grid-table" id="fixTable">
+        <thead><tr><th>수리내용</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
     <div class="form-section">
       <div class="form-section-title">합계</div>
       <div class="form-grid">
-        <div class="field"><label>총 금액</label><input type="text" name="amount" inputmode="numeric" placeholder="소모품+수리 합계"></div>
+        <div class="field"><label>총 금액</label><input type="text" name="amount" inputmode="numeric" placeholder="자동 계산" readonly id="maintTotal"></div>
         <div class="field"><label>다음정비예정</label><input type="date" name="next_maint_date"></div>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
@@ -699,6 +701,45 @@ function renderForm() {
 
   host.innerHTML = sections;
 
+  // 정비: 행 추가/삭제/합계
+  if (currentType === 'maint') {
+    const partsOpts = ['엔진오일','미션오일','브레이크오일','에어필터','에어컨필터','와이퍼','배터리','타이어','브레이크패드','냉각수','부동액','점화플러그','벨트류','기타'];
+    const addRow = (tableId, opts) => {
+      const tbody = host.querySelector(`#${tableId} tbody`);
+      const tr = document.createElement('tr');
+      const optHtml = opts ? `<datalist id="${tableId}Opts">${opts.map(o => `<option value="${o}">`).join('')}</datalist>` : '';
+      tr.innerHTML = `
+        <td><input type="text" name="${tableId}_item" placeholder="항목" style="width:100%;border:none;outline:none" ${opts ? `list="${tableId}Opts"` : ''}>${optHtml}</td>
+        <td><input type="text" name="${tableId}_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
+        <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('maint-calc'))">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+      tr.querySelector('input').focus();
+      // 금액 콤마 + 합계 계산
+      tr.querySelectorAll('[name$="_cost"]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const d = inp.value.replace(/[^\d]/g, '');
+          inp.value = d ? Number(d).toLocaleString() : '';
+          document.dispatchEvent(new Event('maint-calc'));
+        });
+      });
+    };
+    host.querySelector('#addPartsRow')?.addEventListener('click', () => addRow('partsTable', partsOpts));
+    host.querySelector('#addFixRow')?.addEventListener('click', () => addRow('fixTable'));
+    // 기본 1행 추가
+    addRow('partsTable', partsOpts);
+
+    // 합계 자동 계산
+    document.addEventListener('maint-calc', () => {
+      let total = 0;
+      host.querySelectorAll('[name$="_cost"]').forEach(inp => {
+        total += Number(String(inp.value).replace(/,/g, '')) || 0;
+      });
+      const totalEl = host.querySelector('#maintTotal');
+      if (totalEl) totalEl.value = total ? total.toLocaleString() : '';
+    });
+  }
+
   // 키관리: 메인키 기본 체크
   if (currentType === 'key') {
     const mainKey = host.querySelector('[name="key_main"]');
@@ -755,6 +796,15 @@ function renderForm() {
       titleInput.parentNode.appendChild(dl);
     }
   }
+
+  // 거래처 datalist — 모든 vendor/업체 input에
+  const vendorDl = document.createElement('datalist');
+  vendorDl.id = 'opVendorList';
+  vendorDl.innerHTML = vendors.map(v => `<option value="${v.vendor_name}">${v.vendor_type || ''}</option>`).join('');
+  host.appendChild(vendorDl);
+  host.querySelectorAll('[name="vendor"],[name="wash_vendor"],[name="maint_vendor"],[name="repair_shop"]').forEach(inp => {
+    if (!inp.getAttribute('list')) inp.setAttribute('list', 'opVendorList');
+  });
 
   // 즐겨찾기 장소
   const vendorInput = host.querySelector('[name="vendor"]') || host.querySelector('[name="delivery_location"]') || host.querySelector('[name="return_location"]');
@@ -815,17 +865,27 @@ async function submitForm() {
   const data = {};
   host.querySelectorAll('[name]').forEach(el => { data[el.name] = el.value.trim(); });
 
-  // 정비: 소모품 체크 + 기능수리 내용 → title 자동 생성
-  if (currentType === 'maint' && !data.title) {
-    const parts = [];
-    host.querySelectorAll('[name^="parts_"]:checked').forEach(cb => {
-      parts.push(cb.name.replace('parts_', '').replace(/_/g, '/'));
+  // 정비: 행 데이터 수집 → title 자동 생성
+  if (currentType === 'maint') {
+    const partsRows = [];
+    host.querySelectorAll('#partsTable tbody tr').forEach(tr => {
+      const item = tr.querySelector('[name="partsTable_item"]')?.value.trim();
+      const cost = Number(String(tr.querySelector('[name="partsTable_cost"]')?.value || '').replace(/,/g, '')) || 0;
+      if (item) partsRows.push({ item, cost });
     });
-    const fix = data.fix_detail || '';
-    const items = [...parts];
-    if (fix) items.push(fix);
-    data.title = items.length ? items.join(', ') : '';
-    if (parts.length) data.parts_items = parts.join(', ');
+    const fixRows = [];
+    host.querySelectorAll('#fixTable tbody tr').forEach(tr => {
+      const item = tr.querySelector('[name="fixTable_item"]')?.value.trim();
+      const cost = Number(String(tr.querySelector('[name="fixTable_cost"]')?.value || '').replace(/,/g, '')) || 0;
+      if (item) fixRows.push({ item, cost });
+    });
+    if (partsRows.length) data.parts_list = partsRows;
+    if (fixRows.length) data.fix_list = fixRows;
+    if (!data.title) {
+      const names = [...partsRows.map(r => r.item), ...fixRows.map(r => r.item)];
+      data.title = names.length ? names.join(', ') : '';
+    }
+    data.parts_items = partsRows.map(r => r.item).join(', ');
   }
 
   if (!data.date || !data.car_number) {
@@ -901,6 +961,7 @@ export async function mount() {
   watchAssets((items) => { assets = items; });
   watchContracts((items) => { contracts = items; });
   watchEvents((items) => { allEvents = items; });
+  watchVendors((items) => { vendors = items; });
   renderList();
   $('#opReset')?.addEventListener('click', resetForm);
   $('#opSubmit')?.addEventListener('click', submitForm);
