@@ -13,6 +13,21 @@
   border-right: 1px solid var(--c-border);
   display: flex; flex-direction: column;
   overflow: hidden;
+  position: relative;
+  min-width: 180px;
+  max-width: 400px;
+}
+.sidebar-resize {
+  position: absolute;
+  top: 0; right: -3px; bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+}
+.sidebar-resize:hover,
+.sidebar-resize.is-dragging {
+  background: var(--c-primary);
+  opacity: 0.3;
 }
 .sidebar-menu {
   flex: 1; overflow-y: auto; overflow-x: hidden;

@@ -15,6 +15,7 @@ async function bootstrap() {
 
   initToast();
   initPanelResize();
+  initSidebarResize();
 
   // command palette
   const cpHost = document.getElementById('cpHost');
@@ -33,6 +34,8 @@ async function bootstrap() {
     await signOut(auth);
     location.href = '/login';
   });
+
+  // 로그아웃 아래, 초기 페이지 로드 위
 
   // 초기 페이지 로드
   await loadPage(window.location.pathname);
@@ -120,4 +123,58 @@ async function loadPage(pathname) {
     const mod = await import(`/static/js/pages/${slug}.js?v=${Date.now()}`);
     if (mod?.mount) await mod.mount();
   } catch (e) { console.warn(`[page ${slug}]`, e); }
+}
+
+function initSidebarResize() {
+  const sidebar = document.querySelector('.sidebar');
+  const shell = document.getElementById('shell');
+  if (!sidebar || !shell) return;
+
+  const handle = document.createElement('div');
+  handle.className = 'sidebar-resize';
+  sidebar.appendChild(handle);
+
+  // 저장된 너비 복원
+  const savedW = localStorage.getItem('jpk.sidebar.w');
+  if (savedW) {
+    sidebar.style.width = savedW + 'px';
+    shell.style.gridTemplateColumns = savedW + 'px minmax(0,1fr)';
+  }
+
+  let dragging = false;
+  let startX = 0;
+  let startW = 0;
+
+  handle.addEventListener('mousedown', (e) => {
+    dragging = true;
+    startX = e.clientX;
+    startW = sidebar.getBoundingClientRect().width;
+    handle.classList.add('is-dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const w = Math.max(180, Math.min(400, startW + e.clientX - startX));
+    sidebar.style.width = w + 'px';
+    shell.style.gridTemplateColumns = w + 'px minmax(0,1fr)';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('is-dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem('jpk.sidebar.w', Math.round(sidebar.getBoundingClientRect().width));
+  });
+
+  // 더블클릭 → 기본 너비 복원
+  handle.addEventListener('dblclick', () => {
+    sidebar.style.width = '';
+    shell.style.gridTemplateColumns = 'var(--sidebar-w) minmax(0,1fr)';
+    localStorage.removeItem('jpk.sidebar.w');
+  });
 }
