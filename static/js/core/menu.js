@@ -3,25 +3,28 @@
  */
 
 export const MENU = [
-  { href: '/home',     label: '대시보드',   icon: 'home' },
-  { divider: true, label: '입력' },
-  { href: '/input/operation', label: '운영등록', icon: 'check' },
-  { href: '/input/asset',    label: '자산등록', icon: 'asset' },
-  { href: '/input/contract', label: '계약등록', icon: 'contract' },
-  { href: '/fund',           label: '입출금등록', icon: 'fund' },
-  { divider: true, label: '조회' },
-  { href: '/operation', label: '운영관리', icon: 'check' },
-  { href: '/asset',     label: '자산관리', icon: 'asset' },
-  { href: '/contract',  label: '계약관리', icon: 'contract' },
-  { href: '/customer',  label: '고객관리', icon: 'users' },
-  { href: '/billing',   label: '수납관리', icon: 'fund' },
-  { href: '/ledger',    label: '입출금관리', icon: 'fund' },
-  { divider: true, label: '현황' },
-  { href: '/status/overdue',  label: '미납현황', icon: 'fund' },
-  { href: '/status/idle',     label: '휴차현황', icon: 'asset' },
-  { href: '/status/expiring', label: '만기도래', icon: 'contract' },
-  { divider: true },
-  { href: '/settings', label: '설정',   icon: 'settings' },
+  { href: '/home', label: '대시보드', icon: 'home' },
+  { group: '입력', icon: 'upload', children: [
+    { href: '/upload',           label: '업로드센터', icon: 'upload' },
+    { href: '/input/operation',  label: '운영등록',   icon: 'check' },
+    { href: '/input/asset',      label: '자산등록',   icon: 'asset' },
+    { href: '/input/contract',   label: '계약등록',   icon: 'contract' },
+    { href: '/fund',             label: '입출금등록', icon: 'fund' },
+  ]},
+  { group: '조회', icon: 'search', children: [
+    { href: '/operation', label: '운영관리',   icon: 'check' },
+    { href: '/asset',     label: '자산관리',   icon: 'asset' },
+    { href: '/contract',  label: '계약관리',   icon: 'contract' },
+    { href: '/customer',  label: '고객관리',   icon: 'users' },
+    { href: '/billing',   label: '수납관리',   icon: 'fund' },
+    { href: '/ledger',    label: '입출금관리', icon: 'fund' },
+  ]},
+  { group: '현황', icon: 'accident', children: [
+    { href: '/status/overdue',  label: '미납현황', icon: 'fund' },
+    { href: '/status/idle',     label: '휴차현황', icon: 'asset' },
+    { href: '/status/expiring', label: '만기도래', icon: 'contract' },
+  ]},
+  { href: '/settings', label: '설정', icon: 'settings' },
 ];
 
 const ICONS = {
@@ -44,7 +47,28 @@ export function renderMenu(container, items) {
   const fullUrl = window.location.pathname;
   let html = '';
   items.forEach(it => {
-    if (it.divider) {
+    if (it.group) {
+      const hasActive = it.children?.some(c => c.href === fullUrl);
+      const openKey = `menu_${it.group}`;
+      const savedOpen = localStorage.getItem(openKey);
+      const isOpen = savedOpen !== null ? savedOpen === '1' : hasActive;
+      html += `<div class="sidebar-group${isOpen ? ' is-open' : ''}" data-group="${it.group}">
+        <div class="sidebar-group-head" data-key="${openKey}">
+          ${svg(it.icon || 'dot')}
+          <span>${it.group}</span>
+          <svg class="sidebar-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sidebar-group-body">
+          ${it.children.map(c => {
+            const active = c.href === fullUrl ? ' is-active' : '';
+            return `<a class="sidebar-link sidebar-child${active}" href="${c.href}">
+              ${svg(c.icon || 'dot')}
+              <span class="sidebar-link-label">${c.label}</span>
+            </a>`;
+          }).join('')}
+        </div>
+      </div>`;
+    } else if (it.divider) {
       html += `<div class="sidebar-divider">${it.label ? `<span>${it.label}</span>` : ''}</div>`;
     } else {
       const active = it.href === fullUrl ? ' is-active' : '';
@@ -55,4 +79,13 @@ export function renderMenu(container, items) {
     }
   });
   container.innerHTML = html;
+
+  // 아코디언 토글
+  container.querySelectorAll('.sidebar-group-head').forEach(head => {
+    head.addEventListener('click', () => {
+      const group = head.parentElement;
+      const isOpen = group.classList.toggle('is-open');
+      localStorage.setItem(head.dataset.key, isOpen ? '1' : '0');
+    });
+  });
 }

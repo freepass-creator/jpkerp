@@ -38,6 +38,35 @@
 .sidebar-link svg { width: var(--ctrl-icon); height: var(--ctrl-icon); flex-shrink: 0; color: var(--c-text-muted); }
 .sidebar-link-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* 아코디언 그룹 */
+.sidebar-group { margin: var(--sp-1) 0; }
+.sidebar-group-head {
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: 32px;
+  padding: 0 var(--sp-4);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  color: var(--c-text-sub);
+  cursor: pointer;
+  transition: color var(--t-fast);
+  user-select: none;
+}
+.sidebar-group-head:hover { color: var(--c-text); }
+.sidebar-group-head svg:first-child { width: 14px; height: 14px; flex-shrink: 0; color: var(--c-text-muted); }
+.sidebar-chevron {
+  margin-left: auto;
+  transition: transform var(--t-normal);
+  color: var(--c-text-muted);
+}
+.sidebar-group.is-open .sidebar-chevron { transform: rotate(180deg); }
+.sidebar-group-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--t-normal) ease;
+}
+.sidebar-group.is-open .sidebar-group-body { max-height: 500px; }
+.sidebar-child { padding-left: 32px !important; }
+
 .sidebar-bottom {
   border-top: 1px solid var(--c-border);
   padding: var(--sp-3);
