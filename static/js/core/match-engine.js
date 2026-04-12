@@ -49,15 +49,31 @@ function parseCounterparty(text) {
 
 // ─── 출금 항목 분류 ─────────────────────────────────────────
 const EXPENSE_RULES = [
-  { pattern: /할부|캐피탈|저축은행|리스|오릭스|하나캐|KB캐|현대캐|BNK캐|JB우리/i, category: '할부금', type: 'loan' },
-  { pattern: /보험|삼성화재|현대해상|DB손해|KB손보|메리츠|한화손해/i, category: '보험료', type: 'insurance' },
-  { pattern: /정비|오일|타이어|세차|광택|수리|부품/i, category: '정비비', type: 'maintenance' },
+  // 차량 관련
+  { pattern: /할부|캐피탈|저축은행|리스|오릭스|하나캐|KB캐|현대캐|BNK캐|JB우리|우리캐/i, category: '할부금', type: 'loan' },
+  { pattern: /보험|삼성화재|현대해상|DB손해|KB손보|메리츠|한화손해|AXA|악사/i, category: '보험료', type: 'insurance' },
+  { pattern: /정비|카센터|오토|부품|엔진|브레이크|배터리|에어컨|냉각/i, category: '정비비', type: 'maintenance' },
+  { pattern: /세차|광택|코팅|폴리싱/i, category: '세차비', type: 'carwash' },
+  { pattern: /타이어|금호|한국|넥센|미쉐린|브릿지/i, category: '타이어', type: 'tire' },
+  { pattern: /주유|충전|SK에너지|GS칼텍스|S-OIL|현대오일|오일뱅크/i, category: '유류비', type: 'fuel' },
+  { pattern: /도로공사|고속도로|통행료|하이패스/i, category: '통행료', type: 'toll' },
+  { pattern: /주차|파킹/i, category: '주차비', type: 'parking' },
   { pattern: /과태료|범칙금|주정차|교통/i, category: '과태료', type: 'penalty' },
-  { pattern: /주유|충전|SK에너지|GS칼텍스|S-OIL|현대오일/i, category: '유류비', type: 'fuel' },
+  { pattern: /탁송|운송|이동/i, category: '탁송비', type: 'transport' },
+  { pattern: /대리|대리운전|대리의신/i, category: '대리운전', type: 'driver' },
+  // 일반 경비
   { pattern: /CMS|수수료|이체수수료|자동이체/i, category: '수수료', type: 'fee' },
   { pattern: /급여|월급|상여|인건비/i, category: '인건비', type: 'salary' },
   { pattern: /임대|월세|관리비|공과금|전기|수도|가스/i, category: '임차료', type: 'rent' },
   { pattern: /세금|국세|지방세|부가세|원천/i, category: '세금', type: 'tax' },
+  { pattern: /법원|등기|인지|송달/i, category: '법무비', type: 'legal' },
+  { pattern: /우체국|우정|택배|배송/i, category: '우편/택배', type: 'postal' },
+  { pattern: /카카오택시|택시/i, category: '교통비', type: 'taxi' },
+  { pattern: /식당|음식|치킨|피자|커피|카페|빵|베이커리|다방|곰치|향기/i, category: '식대/접대', type: 'meal' },
+  { pattern: /다이소|쿠팡|마트|편의점|GS25|CU|세븐/i, category: '소모품', type: 'supplies' },
+  { pattern: /가비아|호스팅|도메인|서버|클라우드/i, category: 'IT비용', type: 'it' },
+  { pattern: /네이버|페이|결제/i, category: '온라인결제', type: 'online' },
+  { pattern: /골프|레저|컨트리/i, category: '접대비', type: 'entertainment' },
 ];
 
 function classifyExpense(event) {

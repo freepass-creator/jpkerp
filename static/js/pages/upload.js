@@ -20,6 +20,8 @@ import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
 import { watchCustomers } from '../firebase/customers.js';
 import { watchEvents } from '../firebase/events.js';
+import { watchBillings } from '../firebase/billings.js';
+import { saveUpload, updateUpload, fileFingerprint } from '../firebase/uploads.js';
 import { showToast } from '../core/toast.js';
 
 const $ = (s) => document.querySelector(s);
@@ -35,8 +37,9 @@ let detectedType = null;
 let parsedRows = [];
 let saveFn = null;
 
-// 기존 데이터 (중복 체크용)
-let existingData = { events: [], assets: [], contracts: [], customers: [] };
+// 기존 데이터 (중복 체크 + 매칭용)
+let existingData = { events: [], assets: [], contracts: [], customers: [], billings: [] };
+let currentUploadId = null;
 
 const DETECTORS = [
   {
@@ -64,11 +67,14 @@ const DETECTORS = [
     parse: (rows, headers) => rows.map(r => shinhanCard.parseRow(r, headers)).filter(Boolean),
     columns: () => [
       { headerName: '일자', field: 'date', width: 85, valueFormatter: p => fmtDate(p.value) },
+      { headerName: '사용자', field: 'card_user', width: 80 },
       { headerName: '가맹점', field: 'counterparty', width: 150 },
       { headerName: '금액', field: 'amount', width: 100, type: 'numericColumn', valueFormatter: p => fmt(p.value),
         cellStyle: { color: 'var(--c-danger)' } },
-      { headerName: '카드', field: 'card_no', width: 100 },
-      { headerName: '메모', field: 'memo', flex: 1 },
+      { headerName: '분류', field: 'expense_category', width: 75,
+        cellStyle: { fontWeight: 500, color: 'var(--c-text-sub)' } },
+      { headerName: '카드', field: 'card_no', width: 110 },
+      { headerName: '결제예정', field: 'pay_date', width: 85, valueFormatter: p => fmtDate(p.value) },
     ],
     save: (row) => upsertEventByRawKey(row),
     isDup: (row) => existingData.events.some(e => e.raw_key && e.raw_key === row.raw_key),
@@ -214,6 +220,20 @@ function applyDetector(detector, dataRows, headers, filename) {
     </div>
   </div>`;
 
+  // 원본 데이터 통합 저장소에 보관
+  try {
+    const upload = await saveUpload({
+      filename,
+      file_type: 'csv',
+      detected_type: detector.name,
+      detected_label: detector.name,
+      row_count: dataRows.length,
+      status: 'pending',
+      fingerprint: fileFingerprint(filename, dataRows.length, dataRows[0]),
+    });
+    currentUploadId = upload.upload_id;
+  } catch (e) { console.warn('[upload save]', e); }
+
   // 파싱 + 중복 체크 + 매칭
   const rawRows = detector.parse(dataRows, headers);
   if (!rawRows.length) { showToast('파싱된 데이터가 없습니다', 'error'); return; }
@@ -308,6 +328,17 @@ async function confirmUpload() {
   }
   showToast(`반영 ${ok}건${fail ? ` · 실패 ${fail}` : ''}${dupSkip ? ` · 중복 제외 ${dupSkip}` : ''}`, ok ? 'success' : 'error');
   $('#uploadConfirm').disabled = false;
+
+  // 업로드 이력 업데이트
+  if (currentUploadId) {
+    try {
+      await updateUpload(currentUploadId, {
+        status: fail ? 'partial' : 'processed',
+        processed_at: Date.now(),
+        results: { ok, fail, skip: dupSkip },
+      });
+    } catch (e) { console.warn('[upload update]', e); }
+  }
 }
 
 export async function mount() {
@@ -315,6 +346,7 @@ export async function mount() {
   watchAssets((items) => { existingData.assets = items; });
   watchContracts((items) => { existingData.contracts = items; });
   watchCustomers((items) => { existingData.customers = items; });
+  watchBillings((items) => { existingData.billings = items; });
 
   const drop = $('#uploadDrop');
   const file = $('#uploadFile');
