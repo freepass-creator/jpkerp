@@ -47,7 +47,7 @@ const DEFAULT_TYPES = [
   { key: 'force',       label: '강제회수',       icon: '🚨', sub: '미납/연락두절/강제회수',     direction: 'in' },
   { key: 'transfer',    label: '차량이동',       icon: '🔄', sub: '이동/배차/탁송',            direction: 'out' },
   { key: 'key',         label: '차키관리',       icon: '🔑', sub: '키 수령/반납/분실',          direction: 'out' },
-  { key: 'parts',       label: '소모품교체',     icon: '🔧', sub: '오일/타이어/배터리/와이퍼',  direction: 'out' },
+  { key: 'maint',       label: '정비',           icon: '🔧', sub: '소모품교체 + 기능수리',      direction: 'out' },
   { key: 'product',     label: '상품화',         icon: '✨', sub: '반납 후 재상품화',           direction: 'out' },
   { key: 'accident',    label: '사고접수 및 처리', icon: '💥', sub: '사고 발생/보험접수',        direction: 'out' },
   { key: 'repair',      label: '사고수리',       icon: '🔨', sub: '판금/도색/수리',             direction: 'out' },
@@ -397,20 +397,37 @@ function renderForm() {
       </div>
     </div>`;
 
-  } else if (currentType === 'parts') {
+  } else if (currentType === 'maint') {
+    const PARTS = ['엔진오일','미션오일','브레이크오일','에어필터','에어컨필터','와이퍼','배터리','타이어','브레이크패드','냉각수','부동액','점화플러그','벨트류','기타'];
+    const FIX_ITEMS = ['에어컨','히터','시동불량','엔진이상','미션이상','전기장치','계기판','오디오/네비','창문/선루프','잠금장치','누유/누수','소음/진동','조향장치','서스펜션','배기장치','기타'];
     sections = `
     <div class="form-section">
-      <div class="form-section-title">소모품 교체</div>
+      <div class="form-section-title">정비 기본</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>교체내용</label><input type="text" name="title" placeholder="예: 엔진오일+에어필터"></div>
-        ${sel('parts_type', '품목', ['엔진오일','미션오일','브레이크오일','에어필터','에어컨필터','와이퍼','배터리','타이어','브레이크패드','냉각수','기타'])}
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
-        <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>정비업체</label><input type="text" name="vendor" placeholder="업체명"></div>
-        <div class="field"><label>다음교체예정</label><input type="date" name="next_maint_date"></div>
-        <div class="field"><label>다음교체km</label><input type="text" name="next_maint_km" inputmode="numeric" placeholder="km"></div>
+        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">소모품 교체 (해당 항목 체크)</div>
+      <div class="form-grid" style="grid-template-columns:repeat(3,1fr)">
+        ${PARTS.map(p => chk('parts_' + p.replace(/[\/\s]/g,'_'), p)).join('')}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">기능수리 (해당 시)</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>수리내용</label><input type="text" name="fix_detail" placeholder="예: 에어컨 가스 충전, 배터리 교체"></div>
+        <div class="field"><label>수리비</label><input type="text" name="fix_cost" inputmode="numeric" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">합계</div>
+      <div class="form-grid">
+        <div class="field"><label>총 금액</label><input type="text" name="amount" inputmode="numeric" placeholder="소모품+수리 합계"></div>
+        <div class="field"><label>다음정비예정</label><input type="date" name="next_maint_date"></div>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
@@ -747,8 +764,29 @@ async function submitForm() {
   const data = {};
   host.querySelectorAll('[name]').forEach(el => { data[el.name] = el.value.trim(); });
 
-  if (!data.date || !data.car_number || !data.title) {
-    showToast('일자, 차량번호, 제목은 필수입니다', 'error');
+  // 정비: 소모품 체크 + 기능수리 내용 → title 자동 생성
+  if (currentType === 'maint' && !data.title) {
+    const parts = [];
+    host.querySelectorAll('[name^="parts_"]:checked').forEach(cb => {
+      parts.push(cb.name.replace('parts_', '').replace(/_/g, '/'));
+    });
+    const fix = data.fix_detail || '';
+    const items = [...parts];
+    if (fix) items.push(fix);
+    data.title = items.length ? items.join(', ') : '';
+    if (parts.length) data.parts_items = parts.join(', ');
+  }
+
+  if (!data.date || !data.car_number) {
+    showToast('일자, 차량번호는 필수입니다', 'error');
+    return;
+  }
+  if (!data.title) {
+    if (currentType === 'maint') {
+      showToast('교체 항목을 선택하거나 수리내용을 입력하세요', 'error');
+    } else {
+      showToast('제목을 입력하세요', 'error');
+    }
     return;
   }
 
@@ -783,7 +821,7 @@ async function submitForm() {
       'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
       'insurance_type', 'insurance_start', 'insurance_end',
-      'parts_type', 'next_maint_km',
+      'parts_items', 'next_maint_km', 'fix_detail', 'fix_cost', 'symptom',
       'product_status', 'product_maint', 'maint_detail', 'maint_cost', 'maint_vendor', 'expected_delivery',
       'repair_type', 'repair_in_date', 'repair_out_date', 'repair_estimate', 'insurance_amount', 'self_pay', 'repair_status',
       'collect_action', 'collect_result', 'promise_date',

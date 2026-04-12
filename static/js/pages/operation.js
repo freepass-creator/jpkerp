@@ -22,7 +22,7 @@ const TYPES = [
   { key: 'force',       label: '강제회수',       icon: '🚨' },
   { key: 'transfer',    label: '차량이동',       icon: '🔄' },
   { key: 'key',         label: '차키관리',       icon: '🔑' },
-  { key: 'parts',       label: '소모품교체',     icon: '🔧' },
+  { key: 'maint',       label: '정비',           icon: '🔧' },
   { key: 'product',     label: '상품화',         icon: '✨' },
   { key: 'accident',    label: '사고접수/처리',  icon: '💥' },
   { key: 'repair',      label: '사고수리',       icon: '🔨' },
@@ -32,7 +32,7 @@ const TYPES = [
   { key: 'fuel',        label: '연료보충',       icon: '⛽' },
 ];
 
-const OP_TYPES = ['contact', 'delivery', 'return', 'force', 'transfer', 'key', 'parts', 'product', 'accident', 'repair', 'penalty', 'collect', 'wash', 'fuel'];
+const OP_TYPES = ['contact', 'delivery', 'return', 'force', 'transfer', 'key', 'maint', 'product', 'accident', 'repair', 'penalty', 'collect', 'wash', 'fuel'];
 
 let allEvents = [];
 let activeType = 'all';
