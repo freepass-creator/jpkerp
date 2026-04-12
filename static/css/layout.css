@@ -17,7 +17,14 @@
 .sidebar-menu {
   flex: 1; overflow-y: auto; overflow-x: hidden;
   padding: var(--sp-3);
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
+.sidebar-menu:hover { scrollbar-color: rgba(0,0,0,0.15) transparent; }
+.sidebar-menu::-webkit-scrollbar { width: 4px; }
+.sidebar-menu::-webkit-scrollbar-track { background: transparent; }
+.sidebar-menu::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; }
+.sidebar-menu:hover::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
 
 /* 사이드바 — 링크/그룹헤드 통일 규격 */
 .sidebar-link,
