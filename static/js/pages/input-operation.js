@@ -299,7 +299,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">비품 확인</div>
       <div class="form-grid">
-        ${chk('equip_navi', '네비')}
+        ${chk('equip_navi', '내비게이션')}
         ${chk('equip_blackbox', '블랙박스')}
         ${chk('equip_hipass', '하이패스')}
         ${chk('equip_charger', '충전케이블')}
@@ -680,7 +680,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title">비품 확인</div>
       <div class="form-grid">
-        ${chk('equip_navi', '네비')}
+        ${chk('equip_navi', '내비게이션')}
         ${chk('equip_blackbox', '블랙박스')}
         ${chk('equip_hipass', '하이패스')}
         ${chk('equip_charger', '충전케이블')}
@@ -868,7 +868,7 @@ function renderForm() {
   // 상품화: 5개 섹션별 행 추가
   if (currentType === 'product') {
     const PROD_OPTS = {
-      prodAccessory: ['블랙박스','전면썬팅','후면썬팅','측면썬팅','하이패스','네비','매트','방향제','충전케이블','기타'],
+      prodAccessory: ['블랙박스','전면썬팅','후면썬팅','측면썬팅','하이패스','내비게이션','매트','방향제','충전케이블','기타'],
       prodWash: ['외부세차','실내크리닝','광택','냄새제거','시트세정','코팅','기타'],
       prodBody: ['판금','도색','범퍼','펜더','도어','유리','후드','트렁크','기타'],
       prodParts: ['엔진오일','미션오일','에어필터','에어컨필터','와이퍼','배터리','타이어','브레이크패드','냉각수','기타'],

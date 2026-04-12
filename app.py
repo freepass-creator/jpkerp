@@ -33,6 +33,8 @@ ROUTES = [
     ('/status/overdue',  'pages/status-overdue.html',  '미납현황', 'status_overdue'),
     ('/status/idle',     'pages/status-idle.html',     '휴차현황', 'status_idle'),
     ('/status/expiring', 'pages/status-expiring.html', '만기도래', 'status_expiring'),
+    # 고객용
+    ('/my',              'pages/my.html',             '계약조회',     'my'),
     # 회사관리
     ('/admin/company',  'pages/admin-company.html',  '회사정보',     'admin_company'),
     ('/admin/staff',    'pages/admin-staff.html',    '직원관리',     'admin_staff'),

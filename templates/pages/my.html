@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>계약조회 - JPK</title>
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/controls.css">
+  <style>
+    body { font-family: var(--font-sans); background: #f5f5f4; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .my-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); width: 100%; max-width: 420px; padding: 32px; }
+    .my-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 24px; }
+    .my-field { margin-bottom: 14px; }
+    .my-field label { display: block; font-size: 12px; color: var(--c-text-sub); margin-bottom: 4px; }
+    .my-field input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--c-border); border-radius: 4px; font-size: 14px; outline: none; box-sizing: border-box; }
+    .my-field input:focus { border-color: var(--c-primary); box-shadow: 0 0 0 3px var(--c-primary-bg); }
+    .my-btn { width: 100%; height: 42px; background: var(--c-text); color: #fff; border: none; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .my-btn:hover { background: #555; }
+    .my-result { margin-top: 20px; }
+    .my-result-card { background: var(--c-bg-sub); border: 1px solid var(--c-border); border-radius: 6px; padding: 16px; }
+    .my-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--c-border); font-size: 13px; }
+    .my-row:last-child { border-bottom: none; }
+    .my-row-label { color: var(--c-text-muted); }
+    .my-row-value { font-weight: 500; }
+    .my-error { color: var(--c-danger); text-align: center; margin-top: 12px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="my-card">
+    <div class="my-title">계약 조회</div>
+    <form id="myForm">
+      <div class="my-field">
+        <label>차량번호</label>
+        <input type="text" id="myCarNo" placeholder="예: 02무0357" required>
+      </div>
+      <div class="my-field">
+        <label>계약자 등록번호 (생년월일 6자리 또는 사업자등록번호)</label>
+        <input type="text" id="myRegNo" placeholder="예: 900101 또는 123-45-67890" required>
+      </div>
+      <button type="submit" class="my-btn">조회하기</button>
+    </form>
+    <div id="myResult" class="my-result"></div>
+  </div>
+  <script type="module">
+    import { db } from '/static/js/firebase/config.js';
+    import { ref, get } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js';
+
+    document.getElementById('myForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const carNo = document.getElementById('myCarNo').value.trim();
+      const regNo = document.getElementById('myRegNo').value.trim().replace(/-/g, '');
+      const result = document.getElementById('myResult');
+      result.innerHTML = '<div style="text-align:center;color:var(--c-text-muted)">조회 중...</div>';
+
+      try {
+        const snap = await get(ref(db, 'contracts'));
+        const all = Object.values(snap.val() || {});
+        const match = all.find(c => {
+          if (c.car_number !== carNo) return false;
+          const cReg = String(c.contractor_reg_no || '').replace(/-/g, '');
+          return cReg === regNo || cReg.startsWith(regNo) || cReg.endsWith(regNo);
+        });
+
+        if (!match) {
+          result.innerHTML = '<div class="my-error">일치하는 계약을 찾을 수 없습니다.</div>';
+          return;
+        }
+
+        const fmt = (v) => v ? Number(v).toLocaleString('ko-KR') : '-';
+        const endDate = (() => {
+          if (match.end_date) return match.end_date;
+          if (!match.start_date || !match.rent_months) return '-';
+          let s = String(match.start_date).replace(/[./]/g, '-');
+          const m = s.match(/^(\d{2})-/);
+          if (m) s = (Number(m[1]) < 50 ? '20' : '19') + s;
+          const d = new Date(s);
+          d.setMonth(d.getMonth() + Number(match.rent_months));
+          d.setDate(d.getDate() - 1);
+          return d.toISOString().slice(0, 10);
+        })();
+
+        // 수납 조회
+        const billSnap = await get(ref(db, 'billings'));
+        const bills = Object.values(billSnap.val() || {}).filter(b => b.contract_code === match.contract_code);
+        const totalDue = bills.reduce((s, b) => s + (Number(b.amount) || 0), 0);
+        const totalPaid = bills.reduce((s, b) => s + (Number(b.paid_total) || 0), 0);
+
+        result.innerHTML = `
+          <div class="my-result-card">
+            <div class="my-row"><span class="my-row-label">계약번호</span><span class="my-row-value">${match.contract_code}</span></div>
+            <div class="my-row"><span class="my-row-label">계약자</span><span class="my-row-value">${match.contractor_name || '-'}</span></div>
+            <div class="my-row"><span class="my-row-label">차량번호</span><span class="my-row-value">${match.car_number}</span></div>
+            <div class="my-row"><span class="my-row-label">시작일</span><span class="my-row-value">${match.start_date || '-'}</span></div>
+            <div class="my-row"><span class="my-row-label">종료일</span><span class="my-row-value">${endDate}</span></div>
+            <div class="my-row"><span class="my-row-label">기간</span><span class="my-row-value">${match.rent_months || '-'}개월</span></div>
+            <div class="my-row"><span class="my-row-label">월 대여료</span><span class="my-row-value">${fmt(match.rent_amount)}원</span></div>
+            <div class="my-row"><span class="my-row-label">보증금</span><span class="my-row-value">${fmt(match.deposit_amount)}원</span></div>
+            <div class="my-row"><span class="my-row-label">결제일</span><span class="my-row-value">매월 ${match.auto_debit_day || '-'}일</span></div>
+            <div class="my-row"><span class="my-row-label">계약상태</span><span class="my-row-value">${match.contract_status || '-'}</span></div>
+            <div class="my-row" style="margin-top:8px;padding-top:8px;border-top:2px solid var(--c-border)">
+              <span class="my-row-label">총 청구</span><span class="my-row-value">${fmt(totalDue)}원</span></div>
+            <div class="my-row"><span class="my-row-label">총 납부</span><span class="my-row-value" style="color:var(--c-success)">${fmt(totalPaid)}원</span></div>
+            <div class="my-row"><span class="my-row-label">미수</span><span class="my-row-value" style="color:${totalDue - totalPaid > 0 ? 'var(--c-danger)' : 'var(--c-success)'}; font-weight:700">${fmt(totalDue - totalPaid)}원</span></div>
+          </div>
+        `;
+      } catch (err) {
+        result.innerHTML = '<div class="my-error">조회 중 오류가 발생했습니다.</div>';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
