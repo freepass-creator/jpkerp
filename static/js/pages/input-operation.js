@@ -46,13 +46,14 @@ const DEFAULT_TYPES = [
   { key: 'return',      label: '정상반납',       icon: '🔙', sub: '계약만료/정상회수',          direction: 'in' },
   { key: 'force',       label: '강제회수',       icon: '🚨', sub: '미납/연락두절/강제회수',     direction: 'in' },
   { key: 'transfer',    label: '차량이동',       icon: '🔄', sub: '이동/배차/탁송',            direction: 'out' },
-  { key: 'key',         label: '차키관리',       icon: '🔑', sub: '키 수령/반납/분실',          direction: 'out' },
+  { key: 'key',         label: '차키 전달/분출', icon: '🔑', sub: '키 전달/회수/분실',          direction: 'out' },
   { key: 'maint',       label: '정비',           icon: '🔧', sub: '소모품교체 + 기능수리',      direction: 'out' },
   { key: 'product',     label: '상품화',         icon: '✨', sub: '반납 후 재상품화',           direction: 'out' },
   { key: 'accident',    label: '사고접수 및 처리', icon: '💥', sub: '사고 발생/보험접수',        direction: 'out' },
   { key: 'repair',      label: '사고수리',       icon: '🔨', sub: '판금/도색/수리',             direction: 'out' },
   { key: 'penalty',     label: '과태료',         icon: '🚫', sub: '교통 과태료/위반',           direction: 'out' },
   { key: 'collect',     label: '미수관리',       icon: '📨', sub: '독촉/내용증명/법적조치',     direction: 'out' },
+  { key: 'insurance',   label: '보험관리',       icon: '🛡', sub: '보험배서/연령변경/갱신',     direction: 'out' },
   { key: 'wash',        label: '세차',           icon: '🧼', sub: '세차/실내크리닝',           direction: 'out' },
   { key: 'fuel',        label: '연료보충',       icon: '⛽', sub: '주유/전기충전',              direction: 'out' },
 ];
@@ -241,18 +242,28 @@ function renderForm() {
     </div>
     <div class="form-section">
       <div class="form-section-title">키 인도</div>
-      <div class="form-grid">
-        <div class="field"></label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
-        <div class="field"></label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
-        <div class="field"></label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
+      <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+        ${chk('key_main', '메인키')}
+        ${chk('key_sub', '보조키')}
+        ${chk('key_card', '카드키')}
+        ${chk('key_etc', '기타')}
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">서류 확인</div>
-      <div class="form-grid">
-        ${chk('check_contract', '계약서 수령')}
+      <div class="form-section-title">출고 필수 확인</div>
+      <div class="form-grid" style="grid-template-columns:repeat(3,1fr)">
+        ${chk('check_gps', 'GPS 확인')}
+        ${chk('check_contract', '계약서 확인')}
+        ${chk('check_insurance_age', '보험연령 확인')}
+        ${chk('check_payment', '잔금/입금 확인')}
         ${chk('check_license', '면허증 확인')}
-        ${chk('check_insurance', '보험 확인')}
+        ${chk('check_insurance', '보험가입 확인')}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">차량 사진</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>사진 첨부 (전면/후면/좌/우/실내)</label><input type="file" name="photos" multiple accept="image/*"></div>
       </div>
     </div>
     <div class="form-section">
@@ -296,21 +307,11 @@ function renderForm() {
     </div>
     <div class="form-section">
       <div class="form-section-title">키 회수</div>
-      <div class="form-grid">
-        <div class="field"></label>메인키</label><input type="number" name="key_main_count" value="1" min="0"></div>
-        <div class="field"></label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
-        <div class="field"></label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="form-section-title">비품 확인</div>
-      <div class="form-grid">
-        ${chk('equip_navi', '네비')}
-        ${chk('equip_blackbox', '블랙박스')}
-        ${chk('equip_hipass', '하이패스')}
-        ${chk('equip_charger', '충전케이블')}
-        ${chk('equip_triangle', '삼각대')}
-        ${chk('equip_fire', '소화기')}
+      <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+        ${chk('key_main', '메인키')}
+        ${chk('key_sub', '보조키')}
+        ${chk('key_card', '카드키')}
+        ${chk('key_etc', '기타')}
       </div>
     </div>
     <div class="form-section">
@@ -352,10 +353,11 @@ function renderForm() {
     </div>
     <div class="form-section">
       <div class="form-section-title">키 회수</div>
-      <div class="form-grid">
-        <div class="field"><label>메인키</label><input type="number" name="key_main_count" value="0" min="0"></div>
-        <div class="field"><label>보조키</label><input type="number" name="key_sub_count" value="0" min="0"></div>
-        <div class="field"><label>카드키</label><input type="number" name="key_card_count" value="0" min="0"></div>
+      <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+        ${chk('key_main', '메인키')}
+        ${chk('key_sub', '보조키')}
+        ${chk('key_card', '카드키')}
+        ${chk('key_etc', '기타')}
       </div>
     </div>
     <div class="form-section">
@@ -388,15 +390,27 @@ function renderForm() {
   } else if (currentType === 'key') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">키 관리</div>
+      <div class="form-section-title">차키 전달/분출</div>
       <div class="form-grid">
-        <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 메인키 수령"></div>
-        ${sel('key_action', '구분', ['수령','반납','분실','복제'])}
-        ${sel('key_type', '키종류', ['메인키','보조키','카드키','기타'])}
-        <div class="field"></label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
-        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 메인키 전달"></div>
+        ${sel('key_action', '구분', ['전달','회수','분실','복제'])}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">키 종류 (해당 체크, 메인키 기본)</div>
+      <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+        ${chk('key_main', '메인키')}
+        ${chk('key_sub', '보조키')}
+        ${chk('key_card', '카드키')}
+        ${chk('key_etc', '기타')}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="field"><label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -535,6 +549,34 @@ function renderForm() {
       </div>
     </div>`;
 
+  } else if (currentType === 'insurance') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">보험관리</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 보험연령 21세→26세 변경"></div>
+        ${sel('insurance_action', '업무구분', ['배서(연령변경)','신규가입','갱신','해지','보험청구','기타'])}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">배서 정보</div>
+      <div class="form-grid">
+        ${sel('age_before', '변경 전 연령', ['21세','26세','만30세','만35세','전연령'])}
+        ${sel('age_after', '변경 후 연령', ['21세','26세','만30세','만35세','전연령'])}
+        <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
+        <div class="field"><label>증권번호</label><input type="text" name="insurance_no"></div>
+        <div class="field"><label>추가/환급 보험료</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>적용일</label><input type="date" name="insurance_start"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="출고 고객명, 변경 사유 등"></textarea></div>
+      </div>
+    </div>`;
+
   } else if (currentType === 'wash') {
     sections = `
     <div class="form-section">
@@ -656,6 +698,12 @@ function renderForm() {
   }
 
   host.innerHTML = sections;
+
+  // 키관리: 메인키 기본 체크
+  if (currentType === 'key') {
+    const mainKey = host.querySelector('[name="key_main"]');
+    if (mainKey) mainKey.checked = true;
+  }
 
   // 최근 차량 바로 선택
   const recentCars = loadRecent();
@@ -823,7 +871,9 @@ async function submitForm() {
       'from_location', 'to_location', 'transfer_reason',
       'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
+      'insurance_action', 'age_before', 'age_after',
       'insurance_type', 'insurance_start', 'insurance_end',
+      'check_gps', 'check_insurance_age', 'check_payment',
       'parts_items', 'next_maint_km', 'fix_detail', 'fix_cost', 'symptom',
       'product_status', 'product_maint', 'maint_detail', 'maint_cost', 'maint_vendor', 'expected_delivery',
       'repair_type', 'repair_in_date', 'repair_out_date', 'repair_estimate', 'insurance_amount', 'self_pay', 'repair_status',
