@@ -101,7 +101,7 @@ function refreshGrid() {
     headerHeight: 28,
     animateRows: false,
     suppressContextMenu: true,
-    onGridReady: (p) => p.api.autoSizeAllColumns(),
+    onGridReady: (p) => { p.api.autoSizeAllColumns(); p.api.gridOptionsService?.eGridDiv && (p.api.gridOptionsService.eGridDiv._agApi = p.api); },
     onRowClicked: (e) => {
       if (e.data) showDetail(e.data);
     },

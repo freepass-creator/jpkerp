@@ -63,7 +63,7 @@ export async function mount() {
     rowData: [],
     defaultColDef: { resizable: true, sortable: true, filter: true, suppressHeaderMenuButton: true, editable: false, minWidth: 40 },
     rowHeight: 28, headerHeight: 28, animateRows: false, suppressContextMenu: true,
-    onGridReady: p => p.api.autoSizeAllColumns(),
+    onGridReady: p => { p.api.autoSizeAllColumns(); },
   });
 
   watchTasks((items) => {

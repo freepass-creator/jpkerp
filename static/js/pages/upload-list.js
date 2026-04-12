@@ -48,7 +48,7 @@ export async function mount() {
     onRowClicked: (e) => {
       if (e.data) showDetail(e.data);
     },
-    onGridReady: (p) => p.api.autoSizeAllColumns(),
+    onGridReady: (p) => { p.api.autoSizeAllColumns(); p.api.gridOptionsService?.eGridDiv && (p.api.gridOptionsService.eGridDiv._agApi = p.api); },
   });
 
   watchUploads((items) => {
@@ -83,7 +83,7 @@ function showDetail(u) {
       headerHeight: 28,
       animateRows: false,
       suppressContextMenu: true,
-      onGridReady: (p) => p.api.autoSizeAllColumns(),
+      onGridReady: (p) => { p.api.autoSizeAllColumns(); p.api.gridOptionsService?.eGridDiv && (p.api.gridOptionsService.eGridDiv._agApi = p.api); },
     });
   } else {
     if (detailGrid) { detailGrid.destroy(); detailGrid = null; }
