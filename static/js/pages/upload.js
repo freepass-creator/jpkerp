@@ -20,7 +20,7 @@ import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
 import { watchCustomers } from '../firebase/customers.js';
 import { watchEvents } from '../firebase/events.js';
-import { watchBillings } from '../firebase/billings.js';
+import { watchBillings, addPaymentToBilling } from '../firebase/billings.js';
 import { saveUpload, updateUpload, fileFingerprint } from '../firebase/uploads.js';
 import { showToast } from '../core/toast.js';
 
@@ -350,7 +350,19 @@ async function confirmUpload() {
   let ok = 0, fail = 0;
   for (const row of newRows) {
     try {
-      await saveFn(row._erp);
+      const saved = await saveFn(row._erp);
+      // 자동매칭된 입금 → billings에 payment 추가
+      if (row._matchStatus === 'auto' && row._matchBest?.billing_id && row._erp?.direction === 'in') {
+        try {
+          await addPaymentToBilling(row._matchBest.billing_id, {
+            date: row._erp.date,
+            method: row._erp.summary || '자동매칭',
+            amount: row._erp.amount,
+            source_event_id: saved?.event_id || '',
+            note: `통장 자동매칭: ${row._erp.counterparty || ''}`,
+          });
+        } catch (e) { console.warn('[billing payment]', e); }
+      }
       ok++;
     } catch (e) { console.error('[upload]', e); fail++; }
   }

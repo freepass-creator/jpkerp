@@ -43,6 +43,7 @@ ROUTES = [
     ('/admin/card',     'pages/admin-card.html',     '법인카드관리', 'admin_card'),
     ('/admin/account',  'pages/admin-account.html',  '계좌관리',     'admin_account'),
     ('/admin/vendor',   'pages/admin-vendor.html',   '거래처관리',   'admin_vendor'),
+    ('/admin/member',   'pages/admin-member.html',   '회원사관리',   'admin_member'),
     ('/admin/notice',   'pages/admin-notice.html',   '고지서업무',   'admin_notice'),
     ('/admin/approval', 'pages/admin-approval.html', '전자결재',     'admin_approval'),
     ('/admin/leave',    'pages/admin-leave.html',    '휴가관리',     'admin_leave'),

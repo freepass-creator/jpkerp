@@ -8,6 +8,7 @@ import {
   watchCollection, fetchOne, setRecord, updateRecord, softDelete, nextSequence,
 } from './db.js';
 import { upsertByRegNo } from './customers.js';
+import { generateBillingsForContract } from './billings.js';
 
 const PATH = 'contracts';
 
@@ -63,6 +64,12 @@ export async function saveContract(data) {
     updated_at: now,
   };
   await setRecord(`${PATH}/${code}`, record);
+
+  // 회차 자동 생성
+  if (record.start_date && record.rent_months && record.rent_amount) {
+    try { await generateBillingsForContract(record); } catch (e) { console.warn('[contract] billing gen failed', e); }
+  }
+
   return record;
 }
 
