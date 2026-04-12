@@ -116,7 +116,7 @@ function refresh() {
       { headerName: '회차수', field: 'billing_count', width: 55 },
     ],
     rowData: rows,
-    defaultColDef: { resizable: true, sortable: true, filter: true, floatingFilter: true, editable: false, minWidth: 45 },
+    defaultColDef: { resizable: true, sortable: true, filter: true, editable: false, minWidth: 45 },
     rowHeight: 28,
     headerHeight: 28,
     animateRows: false,

@@ -6,6 +6,7 @@
 import { renderMenu, MENU } from './core/menu.js';
 import { initToast } from './core/toast.js';
 import { initPanelResize } from './widgets/panel-resize.js';
+import { initGridFilter } from './widgets/grid-filter.js';
 
 if (document.getElementById('shell')) bootstrap();
 
@@ -209,6 +210,11 @@ async function loadPage(pathname) {
     const mod = await import(`/static/js/pages/${slug}.js?v=${Date.now()}`);
     if (mod?.mount) await mod.mount();
   } catch (e) { console.warn(`[page ${slug}]`, e); }
+
+  // AG Grid 필터 — 페이지 모듈에서 gridApi export하면 자동 연결
+  if (typeof window._jpkGridApi !== 'undefined' && window._jpkGridEl) {
+    initGridFilter(window._jpkGridApi, window._jpkGridEl);
+  }
 }
 
 function initSidebarResize() {

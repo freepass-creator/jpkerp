@@ -8,7 +8,7 @@ export const MENU = [
     { href: '/upload/list',      label: '업로드내역', icon: 'listcheck' },
   ]},
   { group: '입력', icon: 'plus', children: [
-    { href: '/input/task',       label: '업무생성',   icon: 'plus' },
+    { href: '/input/task',       label: '업무생성',   icon: 'userplus' },
     { href: '/input/operation',  label: '운영업무',   icon: 'circleplus' },
     { href: '/input/asset',      label: '자산등록',   icon: 'gridplus' },
     { href: '/input/contract',   label: '계약등록',   icon: 'clipplus2' },
@@ -16,6 +16,7 @@ export const MENU = [
   ]},
   { group: '조회', icon: 'searchck', children: [
     { href: '/total',     label: '통합관리',   icon: 'monitorck' },
+    { href: '/tasks',     label: '업무관리',   icon: 'usercheck' },
     { href: '/operation', label: '운영관리',   icon: 'circlecheck' },
     { href: '/asset',     label: '자산관리',   icon: 'gridcheck' },
     { href: '/contract',  label: '계약관리',   icon: 'clipcheck' },
@@ -56,6 +57,8 @@ const ICONS = {
   users:    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   chevron:  '<polyline points="6 9 12 15 18 9"/>',
   plus:     '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  userplus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
+  usercheck:'<path d="m16 11 2 2 4-4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',
   uploadicon:'<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
   building: '<path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/>',
   info:     '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',

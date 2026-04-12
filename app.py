@@ -24,6 +24,7 @@ ROUTES = [
     ('/fund',            'pages/fund.html',            '입출금등록', 'fund'),
     # 조회
     ('/total',     'pages/total.html',     '통합관리', 'total'),
+    ('/tasks',     'pages/tasks.html',     '업무관리', 'tasks_view'),
     ('/operation', 'pages/operation.html', '운영관리', 'operation'),
     ('/asset',     'pages/asset.html',     '자산관리', 'asset'),
     ('/contract',  'pages/contract.html',  '계약관리', 'contract'),

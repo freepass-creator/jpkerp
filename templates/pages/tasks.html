@@ -1,7 +1,6 @@
 {% extends 'workspace.html' %}
+{% block topbar_extra %}<span class="topbar-status">업무관리</span>{% endblock %}
 {% block workspace %}
-<section class="panel">
-  <div class="panel-head"><div><span class="panel-title">해야할 일</span></div></div>
-  <div class="panel-body is-pad" id="tasksHost"><div class="empty">미완료 업무가 없습니다</div></div>
-</section>
+<div id="tasksGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>
+<div id="tasksDetailView" hidden style="width:100%;height:100%;overflow:auto"></div>
 {% endblock %}

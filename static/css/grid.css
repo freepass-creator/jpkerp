@@ -68,19 +68,54 @@
   box-shadow: none !important;
 }
 
-/* 필터: 메뉴 버튼 숨김, 헤더 클릭으로 정렬/필터 */
+/* 필터: AG Grid 기본 필터 UI 숨김 */
 .ag-theme-alpine .ag-header-cell-menu-button { display: none !important; }
-.ag-theme-alpine .ag-floating-filter-button { display: none !important; }
-.ag-theme-alpine .ag-floating-filter-input {
-  height: 22px !important;
-  font-size: 11px !important;
-  padding: 0 4px !important;
-  border: 1px solid var(--c-border) !important;
-  border-radius: 2px !important;
+.ag-theme-alpine .ag-floating-filter { display: none !important; }
+
+/* 헤더 클릭 가능 느낌 */
+.ag-theme-alpine .ag-header-cell-label { cursor: pointer; }
+
+/* 커스텀 필터 드롭다운 */
+.grid-filter-popup {
+  position: fixed;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 160px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: var(--z-modal);
+  font-size: var(--font-size-sm);
 }
-.ag-theme-alpine .ag-floating-filter {
-  border-bottom: 1px solid var(--c-border) !important;
+.grid-filter-popup .gf-search {
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--font-size-sm);
+  outline: none;
 }
+.grid-filter-popup .gf-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.grid-filter-popup .gf-item:hover { background: var(--c-bg-hover); }
+.grid-filter-popup .gf-item.is-active { background: var(--c-primary-bg); color: var(--c-primary); font-weight: 500; }
+.grid-filter-popup .gf-count { color: var(--c-text-muted); font-size: var(--font-size-xs); }
+.grid-filter-popup .gf-clear {
+  display: block;
+  padding: 6px 10px;
+  border-top: 1px solid var(--c-border);
+  text-align: center;
+  cursor: pointer;
+  color: var(--c-text-muted);
+  font-size: var(--font-size-xs);
+}
+.grid-filter-popup .gf-clear:hover { background: var(--c-bg-hover); }
 
 /* 컬럼 리사이즈 핸들 숨김 (드래그는 작동) */
 .ag-theme-alpine .ag-header-cell-resize {
