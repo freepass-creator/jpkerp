@@ -37,6 +37,7 @@ ROUTES = [
     ('/status/expiring', 'pages/status-expiring.html', '만기도래', 'status_expiring'),
     # 고객용
     ('/my',              'pages/my.html',             '계약조회',     'my'),
+    ('/profile',         'pages/profile.html',        '내 정보',      'profile'),
     # 회사관리
     ('/admin/company',  'pages/admin-company.html',  '회사정보',     'admin_company'),
     ('/admin/staff',    'pages/admin-staff.html',    '직원관리',     'admin_staff'),

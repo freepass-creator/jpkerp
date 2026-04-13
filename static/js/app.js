@@ -115,15 +115,44 @@ async function bootstrap() {
     if (href) navigateTo(href);
   });
 
-  // 로그아웃
-  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-    const { auth } = await import('./firebase/config.js');
-    const { signOut } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
-    await signOut(auth);
-    location.href = '/login';
+  // 프로필 버튼 → 드롭다운 (이벤트 위임)
+  const { showContextMenu } = await import('./core/context-menu.js');
+  document.addEventListener('click', (e) => {
+    const profileBtn = e.target.closest('#profileBtn');
+    if (!profileBtn) return;
+    showContextMenu(e, [
+      { label: '내 정보 / 설정', icon: '👤', action: () => { location.href = '/profile'; } },
+      'sep',
+      { label: '로그아웃', icon: '🚪', danger: true, action: async () => {
+        const { auth } = await import('./firebase/config.js');
+        const { signOut } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+        await signOut(auth);
+        location.href = '/login';
+      }},
+    ]);
   });
 
-  // 로그아웃 아래, 초기 페이지 로드 위
+  // 로그인 상태 + 권한 체크
+  const { auth: fbAuth } = await import('./firebase/config.js');
+  const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+  const { ref, get } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js');
+  const { db: fbDb } = await import('./firebase/config.js');
+
+  onAuthStateChanged(fbAuth, async (user) => {
+    const nameEl = document.getElementById('profileName');
+    if (!user) {
+      if (nameEl) nameEl.textContent = '';
+      return;
+    }
+    if (nameEl) nameEl.textContent = user.displayName || user.email;
+
+    // 권한 로드
+    try {
+      const snap = await get(ref(fbDb, 'users/' + user.uid));
+      const data = snap.val();
+      window.__userRole = data?.role || 'staff';
+    } catch {}
+  });
 
   // 초기 페이지 로드
   await loadPage(window.location.pathname);

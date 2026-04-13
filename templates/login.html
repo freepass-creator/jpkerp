@@ -3,39 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JPK ERP — 로그인</title>
+  <title>JPK ERP</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/controls.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
   <style>
-    body { display:flex; align-items:center; justify-content:center; background:var(--c-bg-sub); }
-    .login-box { width:320px; padding:32px; background:var(--c-bg); border-radius:var(--r-md); box-shadow:0 4px 24px rgba(0,0,0,0.08); }
-    .login-box h1 { font-size:var(--font-size-lg); font-weight:var(--fw-heavy); margin-bottom:20px; text-align:center; }
-    .login-box .field { margin-bottom:12px; }
-    .login-box .btn { width:100%; margin-top:8px; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f8f9fa; gap:24px; padding:40px 16px; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; }
+    .auth-brand { font-size:20px; font-weight:300; letter-spacing:0.18em; color:#1b2a4a; text-transform:uppercase; }
+    .auth-card { width:100%; max-width:400px; background:#fff; border-radius:2px; padding:40px 32px; box-shadow:0 2px 10px rgba(0,0,0,0.04), 0 10px 30px rgba(0,0,0,0.06); display:flex; flex-direction:column; gap:24px; }
+    .auth-head { display:flex; flex-direction:column; gap:6px; }
+    .auth-head h2 { font-size:18px; font-weight:600; color:#1f1f1f; }
+    .auth-head p { font-size:13px; color:#5f6368; }
+    .auth-form { display:flex; flex-direction:column; gap:14px; }
+    .auth-field { display:flex; flex-direction:column; gap:4px; }
+    .auth-field label { font-size:12px; font-weight:500; color:#5f6368; }
+    .auth-field input { height:40px; padding:0 12px; border:1px solid #dadce0; border-radius:2px; font-size:14px; outline:none; font-family:inherit; }
+    .auth-field input:focus { border-color:#1b2a4a; box-shadow:0 0 0 3px rgba(27,42,74,0.08); }
+    .auth-btn { height:42px; background:#1b2a4a; color:#fff; border:none; border-radius:2px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .auth-btn:hover { background:#2a3d5e; }
+    .auth-footer { display:flex; justify-content:center; gap:8px; font-size:12px; color:#5f6368; }
+    .auth-footer a { color:#1b2a4a; text-decoration:none; font-weight:500; }
+    .auth-footer a:hover { text-decoration:underline; }
+    .auth-msg { font-size:12px; text-align:center; min-height:18px; }
+    .auth-msg.is-error { color:#e03e3e; }
+    .auth-msg.is-success { color:#0f7b0f; }
+    .auth-copyright { font-size:11px; color:#9ca3af; }
+    .auth-panel { display:none; }
+    .auth-panel.is-active { display:flex; flex-direction:column; gap:24px; }
   </style>
 </head>
 <body>
-  <form class="login-box" id="loginForm">
-    <h1>JPK ERP</h1>
-    <div class="field"><label>이메일</label><input type="email" id="loginEmail" required></div>
-    <div class="field"><label>비밀번호</label><input type="password" id="loginPassword" required></div>
-    <button type="submit" class="btn btn-primary">로그인</button>
-    <div id="loginMsg" style="font-size:var(--font-size-sm);color:var(--c-text-muted);text-align:center;min-height:18px;margin-top:8px"></div>
-  </form>
+  <div class="auth-brand">JPK ERP</div>
+  <section class="auth-card">
+    <!-- 로그인 -->
+    <form class="auth-panel is-active" id="loginPanel">
+      <div class="auth-head">
+        <h2>로그인</h2>
+        <p>이메일과 비밀번호를 입력해주세요.</p>
+      </div>
+      <div class="auth-form">
+        <div class="auth-field"><label>이메일</label><input type="email" id="loginEmail" placeholder="name@company.com" required></div>
+        <div class="auth-field"><label>비밀번호</label><input type="password" id="loginPassword" placeholder="비밀번호 입력" required></div>
+        <button type="submit" class="auth-btn">로그인</button>
+      </div>
+      <div class="auth-footer">
+        <a href="#" id="goSignup">계정 만들기</a>
+        <span style="color:#dadce0">·</span>
+        <a href="#" id="goReset">비밀번호 재설정</a>
+      </div>
+      <p class="auth-msg" id="loginMsg"></p>
+    </form>
+
+    <!-- 회원가입 -->
+    <form class="auth-panel" id="signupPanel">
+      <div class="auth-head">
+        <h2>계정 만들기</h2>
+        <p>정보를 입력하고 계정을 생성하세요.</p>
+      </div>
+      <div class="auth-form">
+        <div class="auth-field"><label>이름</label><input type="text" id="signupName" placeholder="홍길동" required></div>
+        <div class="auth-field"><label>이메일</label><input type="email" id="signupEmail" placeholder="name@company.com" required></div>
+        <div class="auth-field"><label>비밀번호</label><input type="password" id="signupPassword" placeholder="6자 이상" minlength="6" required></div>
+        <div class="auth-field"><label>비밀번호 확인</label><input type="password" id="signupPasswordConfirm" minlength="6" required></div>
+        <button type="submit" class="auth-btn">계정 만들기</button>
+      </div>
+      <div class="auth-footer"><a href="#" id="backLogin1">로그인으로 돌아가기</a></div>
+      <p class="auth-msg" id="signupMsg"></p>
+    </form>
+
+    <!-- 비밀번호 재설정 -->
+    <form class="auth-panel" id="resetPanel">
+      <div class="auth-head">
+        <h2>비밀번호 재설정</h2>
+        <p>가입한 이메일을 입력하면 재설정 링크를 보내드립니다.</p>
+      </div>
+      <div class="auth-form">
+        <div class="auth-field"><label>이메일</label><input type="email" id="resetEmail" placeholder="name@company.com" required></div>
+        <button type="submit" class="auth-btn">재설정 링크 보내기</button>
+      </div>
+      <div class="auth-footer"><a href="#" id="backLogin2">로그인으로 돌아가기</a></div>
+      <p class="auth-msg" id="resetMsg"></p>
+    </form>
+  </section>
+  <div class="auth-copyright">&copy; 2026 teamjpk. All Rights Reserved.</div>
+
   <script type="module">
-    import { auth } from './static/js/firebase/config.js';
-    import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    document.getElementById('loginForm').addEventListener('submit', async e => {
+    import { auth, db } from './static/js/firebase/config.js';
+    import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { ref, set } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js';
+
+    const show = id => { document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('is-active')); document.getElementById(id).classList.add('is-active'); };
+    document.getElementById('goSignup').addEventListener('click', e => { e.preventDefault(); show('signupPanel'); });
+    document.getElementById('goReset').addEventListener('click', e => { e.preventDefault(); show('resetPanel'); });
+    document.getElementById('backLogin1').addEventListener('click', e => { e.preventDefault(); show('loginPanel'); });
+    document.getElementById('backLogin2').addEventListener('click', e => { e.preventDefault(); show('loginPanel'); });
+
+    document.getElementById('loginPanel').addEventListener('submit', async e => {
       e.preventDefault();
       const msg = document.getElementById('loginMsg');
+      msg.className = 'auth-msg';
       try {
         msg.textContent = '로그인 중...';
         await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
         location.href = '/';
-      } catch (err) { msg.textContent = '로그인 실패: ' + err.message; }
+      } catch (err) {
+        msg.className = 'auth-msg is-error';
+        msg.textContent = err.code === 'auth/invalid-credential' ? '이메일 또는 비밀번호가 틀렸습니다' : err.message;
+      }
+    });
+
+    document.getElementById('signupPanel').addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = document.getElementById('signupMsg');
+      msg.className = 'auth-msg';
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const pw = document.getElementById('signupPassword').value;
+      if (pw !== document.getElementById('signupPasswordConfirm').value) { msg.className = 'auth-msg is-error'; msg.textContent = '비밀번호가 일치하지 않습니다'; return; }
+      try {
+        msg.textContent = '가입 처리 중...';
+        const cred = await createUserWithEmailAndPassword(auth, email, pw);
+        await updateProfile(cred.user, { displayName: name });
+        const role = email === 'dudguq@gmail.com' ? 'superadmin' : 'staff';
+        await set(ref(db, 'users/' + cred.user.uid), { name, email, role, created_at: new Date().toISOString() });
+        msg.className = 'auth-msg is-success';
+        msg.textContent = '가입 완료!';
+        setTimeout(() => { location.href = '/'; }, 500);
+      } catch (err) {
+        msg.className = 'auth-msg is-error';
+        if (err.code === 'auth/email-already-in-use') msg.textContent = '이미 사용 중인 이메일입니다';
+        else if (err.code === 'auth/weak-password') msg.textContent = '비밀번호가 너무 짧습니다 (6자 이상)';
+        else msg.textContent = err.message;
+      }
+    });
+
+    document.getElementById('resetPanel').addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = document.getElementById('resetMsg');
+      msg.className = 'auth-msg';
+      try {
+        msg.textContent = '전송 중...';
+        await sendPasswordResetEmail(auth, document.getElementById('resetEmail').value);
+        msg.className = 'auth-msg is-success';
+        msg.textContent = '재설정 링크를 이메일로 보냈습니다.';
+      } catch (err) {
+        msg.className = 'auth-msg is-error';
+        msg.textContent = err.code === 'auth/user-not-found' ? '등록되지 않은 이메일입니다' : err.message;
+      }
     });
   </script>
 </body>
