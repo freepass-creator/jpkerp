@@ -116,8 +116,27 @@ function stageCurrent() {
   resetForm();
 }
 
+function normalizeDate(s) {
+  if (!s) return '';
+  let v = String(s).trim().replace(/년|월/g, '-').replace(/일/g, '').replace(/[./]/g, '-').replace(/\s+/g, '');
+  if (/^\d{8}$/.test(v)) v = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6)}`;
+  if (/^\d{6}$/.test(v)) { const y = Number(v.slice(0,2)); v = `${y<50?2000+y:1900+y}-${v.slice(2,4)}-${v.slice(4)}`; }
+  const m2 = v.match(/^(\d{2})-(\d{1,2})-(\d{1,2})$/);
+  if (m2) { const y = Number(m2[1]); v = `${y<50?2000+y:1900+y}-${String(m2[2]).padStart(2,'0')}-${String(m2[3]).padStart(2,'0')}`; }
+  const m4 = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m4) v = `${m4[1]}-${String(m4[2]).padStart(2,'0')}-${String(m4[3]).padStart(2,'0')}`;
+  return v;
+}
+
 function addToStage(row) {
   const { schema, validate, context } = _state;
+  // 날짜/숫자 정규화
+  schema.forEach(s => {
+    if (row[s.col]) {
+      if (s.type === 'date') row[s.col] = normalizeDate(row[s.col]);
+      if (s.num || s.type === 'number') row[s.col] = String(row[s.col]).replace(/,/g, '').trim();
+    }
+  });
   // 필수 체크
   const missing = schema.filter(s => s.required && !row[s.col]).map(s => s.label);
   const entry = { ...row, _id: ++_state.stageSeq, _status: 'pending', _message: '' };
@@ -181,10 +200,11 @@ function bindButtons() {
   document.getElementById('stageCommitAll')?.addEventListener('click', commitAll);
   // 업로드 (CSV/구글시트/엑셀/이미지 — 스키마 기준 매핑)
   document.getElementById('inputUpload')?.addEventListener('click', () => {
-    const { schema, label, csvSchema } = _state;
+    const { schema, label, csvSchema, transform } = _state;
     openCsvUpload({
       title: `${label || '일괄'} 업로드`,
       schema: csvSchema || schema,
+      transform,
       onRow: async (row) => {
         addToStage(row);
       },

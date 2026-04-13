@@ -23,6 +23,7 @@ export const MENU = [
     { href: '/customer',  label: '고객관리',   icon: 'users' },
     { href: '/billing',   label: '수납관리',   icon: 'dollar' },
     { href: '/ledger',    label: '입출금관리', icon: 'listcheck' },
+    { href: '/loan',      label: '할부관리',   icon: 'dollar' },
   ]},
   { group: '현황', icon: 'trending', children: [
     { href: '/status/overdue',  label: '미납현황', icon: 'alert' },
@@ -42,6 +43,8 @@ export const MENU = [
     { href: '/admin/notice',   label: '고지서업무',  icon: 'alert' },
     { href: '/admin/approval', label: '전자결재',    icon: 'clipcheck' },
     { href: '/admin/leave',    label: '휴가관리',    icon: 'clock' },
+    { href: '/dev',            label: '개발도구',    icon: 'settings' },
+    { href: '/dev/car-master', label: '차종마스터',  icon: 'gridplus' },
   ]},
 ];
 

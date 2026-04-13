@@ -61,6 +61,92 @@
 .ctx-menu-item.is-danger:hover { background: var(--c-danger-bg); }
 .ctx-menu-sep { height: 1px; background: var(--c-border); margin: 4px 0; }
 
+/* ── 상세 슬라이드 패널 (우측) ── */
+.detail-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.15);
+  z-index: var(--z-modal);
+  display: none;
+}
+.detail-overlay.is-open { display: block; }
+
+.detail-popup {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 480px; max-width: 90vw;
+  background: var(--c-bg);
+  border-left: 1px solid var(--c-border);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+  z-index: calc(var(--z-modal) + 1);
+  display: none;
+  flex-direction: column;
+}
+.detail-popup.is-open { display: flex; }
+
+.detail-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
+}
+.detail-title { font-size: var(--font-size); font-weight: var(--fw-bold); }
+.detail-subtitle { font-size: var(--font-size-sm); color: var(--c-text-muted); margin-top: 2px; }
+.detail-actions { display: flex; gap: var(--sp-2); align-items: center; }
+
+.detail-body {
+  flex: 1; overflow-y: auto;
+  padding: var(--sp-5);
+}
+
+.detail-section { margin-bottom: var(--sp-5); }
+.detail-section:last-child { margin-bottom: 0; }
+.detail-section-title {
+  font-size: var(--font-size);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.detail-table { width: 100%; border-collapse: collapse; }
+.detail-td-label {
+  padding: var(--sp-2) 0;
+  color: var(--c-text-muted);
+  width: 120px;
+  vertical-align: top;
+  font-size: var(--font-size);
+}
+.detail-td-value {
+  padding: var(--sp-2) 0;
+  font-size: var(--font-size);
+  font-weight: var(--fw-medium);
+}
+
+/* ── 모달 (업로드 등) ── */
+.modal-host {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex; align-items: center; justify-content: center;
+  z-index: var(--z-modal);
+}
+.modal-host[hidden] { display: none; }
+.modal {
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.modal > .panel-head {
+  height: var(--panel-head-h);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--panel-head-px);
+  border-bottom: 1px solid var(--c-border);
+}
+.modal > .panel-body { flex: 1; overflow-y: auto; }
+
 .cp-host {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.25);

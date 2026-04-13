@@ -1,9 +1,16 @@
 {% extends 'workspace.html' %}
 {% from '_macros/ui.html' import btn %}
 {% block topbar_extra %}
+  <div class="search-box">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" id="assetSearch" placeholder="검색">
+  </div>
   <span class="topbar-status" id="assetStatus">자산관리 · <span id="assetCount">0</span>건</span>
+  <span style="flex:1"></span>
+  {{ btn('plus', '행 추가', id='assetAddRow') }}
+  {{ btn('upload', '업로드', id='assetUpload') }}
+  {{ btn('save', '저장', cls='btn-primary', id='assetSaveAll') }}
 {% endblock %}
 {% block workspace %}
 <div id="assetGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>
-<div id="assetDetailView" hidden style="width:100%;height:100%;overflow:auto"></div>
 {% endblock %}

@@ -14,6 +14,37 @@
  * - 미리보기 → 확인 → 결과 표시
  */
 
+/**
+ * 날짜 문자열 자동 정규화 → YYYY-MM-DD
+ * 지원: 2024-03-15, 2024.03.15, 2024/03/15, 20240315,
+ *       24-3-15, 24.3.15, 240315, 2024년3월15일 등
+ */
+function _normalizeDate(s) {
+  if (!s) return '';
+  let v = String(s).trim()
+    .replace(/년|월/g, '-').replace(/일/g, '')  // 한글
+    .replace(/[./]/g, '-')                       // 구분자 통일
+    .replace(/\s+/g, '')                         // 공백 제거
+    .trim();
+  // 숫자만 8자리: 20240315
+  if (/^\d{8}$/.test(v)) v = `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6)}`;
+  // 숫자만 6자리: 240315
+  if (/^\d{6}$/.test(v)) {
+    const y = Number(v.slice(0, 2));
+    v = `${y < 50 ? 2000 + y : 1900 + y}-${v.slice(2, 4)}-${v.slice(4)}`;
+  }
+  // YY-M-D or YY-MM-DD
+  const m2 = v.match(/^(\d{2})-(\d{1,2})-(\d{1,2})$/);
+  if (m2) {
+    const y = Number(m2[1]);
+    v = `${y < 50 ? 2000 + y : 1900 + y}-${m2[2].padStart(2, '0')}-${m2[3].padStart(2, '0')}`;
+  }
+  // YYYY-M-D → YYYY-MM-DD
+  const m4 = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m4) v = `${m4[1]}-${m4[2].padStart(2, '0')}-${m4[3].padStart(2, '0')}`;
+  return v;
+}
+
 import { showToast } from '../core/toast.js';
 
 // ─── CSV 파서 (RFC 4180 최소) ─────────────────────────────
@@ -189,29 +220,109 @@ function resetState() {
 }
 
 function renderSchemaInfo(schema) {
-  const required = schema.filter(s => s.required).map(s => s.label || s.col);
-  const optional = schema.filter(s => !s.required).map(s => s.label || s.col);
-  return `
-    <div style="margin-bottom:4px"><b>필수</b>: ${required.join(', ') || '-'}</div>
-    <div><b>선택</b>: ${optional.slice(0, 12).join(', ')}${optional.length > 12 ? ' ...' : ''}</div>
-  `;
+  const cols = schema.map(s => s.required ? `${s.label || s.col} *` : (s.label || s.col));
+  return `<div>${cols.join(', ')}</div>`;
 }
 
 function copyHeaders() {
-  const headers = _state.schema.map(s => `${s.label || s.col} (${s.col})`);
-  navigator.clipboard.writeText(headers.join('\t'))
-    .then(() => showToast(`${headers.length}개 컬럼 복사됨 — 시트 1행에 붙여넣기`, 'success'))
-    .catch(() => showToast('클립보드 접근 실패', 'error'));
+  const schema = _state.schema.filter(s => s.type !== 'file');
+  const headers = schema.map(s => s.label || s.col);
+  const samples = schema.map(s => s.sample || '');
+  // plain text (탭 구분 2행)
+  const plain = headers.join('\t') + '\n' + samples.join('\t');
+  // HTML: 1행 헤더(굵게), 2행 샘플(연한 파랑 배경)
+  const thCells = headers.map(h => `<td style="font-weight:bold;background:#1b2a4a;color:#fff;padding:4px 8px">${h}</td>`).join('');
+  const tdCells = samples.map(v => `<td style="background:#e8f0fe;color:#666;padding:4px 8px">${v}</td>`).join('');
+  const html = `<table><tr>${thCells}</tr><tr>${tdCells}</tr></table>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const plainBlob = new Blob([plain], { type: 'text/plain' });
+  navigator.clipboard.write([new ClipboardItem({ 'text/html': blob, 'text/plain': plainBlob })])
+    .then(() => showToast(`${headers.length}개 컬럼 + 샘플행 복사됨`, 'success'))
+    .catch(() => {
+      // fallback: plain text만
+      navigator.clipboard.writeText(plain)
+        .then(() => showToast(`${headers.length}개 컬럼 + 샘플행 복사됨`, 'success'))
+        .catch(() => showToast('클립보드 접근 실패', 'error'));
+    });
 }
 
-function downloadSample() {
-  const headers = _state.schema.map(s => `"${s.label || s.col} (${s.col})"`).join(',');
-  const blob = new Blob(['\uFEFF' + headers + '\n'], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'sample.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
+/** SheetJS 동적 로드 */
+let _xlsxReady = null;
+function loadXlsx() {
+  if (_xlsxReady) return _xlsxReady;
+  _xlsxReady = new Promise((resolve, reject) => {
+    if (window.XLSX) { resolve(window.XLSX); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = () => resolve(window.XLSX);
+    s.onerror = () => { _xlsxReady = null; reject(new Error('XLSX 로드 실패')); };
+    document.head.appendChild(s);
+  });
+  return _xlsxReady;
+}
+
+async function downloadSample() {
+  const schema = _state.schema.filter(s => s.type !== 'file');
+  const headers = schema.map(s => s.label || s.col);
+  const samples = schema.map(s => s.sample || '');
+
+  let XLSX;
+  try { XLSX = await loadXlsx(); } catch {
+    const csv = headers.join(',') + '\n' + samples.join(',');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'sample.csv'; a.click();
+    return;
+  }
+
+  // 차량 데이터 (동적 import — 있을 때만)
+  let carData = null;
+  try { carData = await import('../data/car-models.js'); } catch { /* 없으면 무시 */ }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers, samples]);
+  ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 12) }));
+
+  // ── 목록 시트 생성 (제조사 / 모델 / 세부모델 / 차종) ──
+  if (carData) {
+    const makers = carData.getMakers();
+    const allModels = [...new Set(carData.CAR_MODELS.map(m => m.model))];
+    const allSubs = [...new Set(carData.CAR_MODELS.map(m => m.sub))];
+    const allCategories = [...new Set(carData.CAR_MODELS.map(m => m.category).filter(Boolean))];
+    const maxLen = Math.max(makers.length, allModels.length, allSubs.length, allCategories.length);
+    const listData = [['제조사', '모델', '세부모델', '차종']];
+    for (let i = 0; i < maxLen; i++) {
+      listData.push([makers[i] || '', allModels[i] || '', allSubs[i] || '', allCategories[i] || '']);
+    }
+    const wsList = XLSX.utils.aoa_to_sheet(listData);
+    wsList['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 36 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, wsList, '목록');
+  }
+
+  // ── 드롭다운 (데이터 유효성) ──
+  const validations = [];
+  schema.forEach((s, ci) => {
+    const ref = XLSX.utils.encode_range({ s: { r: 2, c: ci }, e: { r: 999, c: ci } });
+    // select 옵션이 있는 컬럼
+    if (s.type === 'select' && s.options?.length) {
+      validations.push({ sqref: ref, type: 'list', formula1: `"${s.options.join(',')}"`, allowBlank: true });
+    }
+    // 차량 데이터 기반 드롭다운 (목록 시트 참조)
+    if (carData) {
+      const makers = carData.getMakers();
+      const allModels = [...new Set(carData.CAR_MODELS.map(m => m.model))];
+      const allSubs = [...new Set(carData.CAR_MODELS.map(m => m.sub))];
+      const allCategories = [...new Set(carData.CAR_MODELS.map(m => m.category).filter(Boolean))];
+      if (s.col === 'manufacturer') validations.push({ sqref: ref, type: 'list', formula1: `목록!$A$2:$A$${makers.length + 1}`, allowBlank: true });
+      if (s.col === 'car_model')    validations.push({ sqref: ref, type: 'list', formula1: `목록!$B$2:$B$${allModels.length + 1}`, allowBlank: true });
+      if (s.col === 'detail_model') validations.push({ sqref: ref, type: 'list', formula1: `목록!$C$2:$C$${allSubs.length + 1}`, allowBlank: true });
+      if (s.col === 'vehicle_class')validations.push({ sqref: ref, type: 'list', formula1: `목록!$D$2:$D$${allCategories.length + 1}`, allowBlank: true });
+    }
+  });
+  if (validations.length) ws['!dataValidation'] = validations;
+
+  XLSX.utils.book_append_sheet(wb, ws, '입력');
+  XLSX.writeFile(wb, 'sample_template.xlsx');
+  showToast('샘플 Excel 다운로드 완료 (드롭다운 포함)', 'success');
 }
 
 function parseSheetUrl(url) {
@@ -268,9 +379,15 @@ function handleText(text) {
 async function runUpload() {
   const { parsed, mapping, schema, onRow, transform, validate } = _state;
   const result = { ok: 0, fail: 0, errors: [] };
+  const dateCols = new Set(schema.filter(s => s.type === 'date').map(s => s.col));
   let records = parsed.map(row => {
     const obj = {};
-    mapping.forEach((col, i) => { if (col) obj[col] = String(row[i] || '').trim(); });
+    mapping.forEach((col, i) => {
+      if (!col) return;
+      let v = String(row[i] || '').trim();
+      if (v && dateCols.has(col)) v = _normalizeDate(v);
+      obj[col] = v;
+    });
     return obj;
   });
 

@@ -1,61 +1,45 @@
 {% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
 {% block topbar_extra %}
   <span class="topbar-status">내 정보</span>
 {% endblock %}
 {% block workspace %}
 <section class="panel">
-  <div class="panel-body is-pad" style="max-width:480px;margin:0 auto">
-    <div style="display:flex;flex-direction:column;gap:16px;padding:20px 0">
-      <div style="text-align:center;margin-bottom:8px">
-        <div style="width:64px;height:64px;border-radius:50%;background:var(--c-bg-active);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">
+  <div class="panel-body" style="overflow-y:auto">
+    <div class="profile-page">
+
+      <div class="profile-header">
+        <div class="profile-avatar">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
-        <div style="font-weight:var(--fw-bold);font-size:var(--font-size-lg)" id="myName">-</div>
-        <div style="color:var(--c-text-muted);font-size:var(--font-size-sm)" id="myEmail">-</div>
+        <div class="profile-name" id="myName">-</div>
+        <div class="profile-email" id="myEmail">-</div>
       </div>
 
-      <div style="border-top:1px solid var(--c-border);padding-top:16px">
-        <div class="field" style="margin-bottom:12px">
-          <label>이름</label>
-          <input type="text" id="myNameInput">
+      <div class="profile-section">
+        <div class="profile-section-title">기본 정보</div>
+        <div class="form-grid">
+          <div class="field"><label>이름</label><input type="text" id="myNameInput"></div>
+          <div class="field"><label>이메일</label><input type="email" id="myEmailInput" disabled></div>
+          <div class="field"><label>연락처</label><input type="tel" id="myPhone" placeholder="010-0000-0000"></div>
+          <div class="field"><label>권한</label><input type="text" id="myRole" disabled></div>
         </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>이메일</label>
-          <input type="email" id="myEmailInput" disabled>
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>연락처</label>
-          <input type="tel" id="myPhone" placeholder="010-0000-0000">
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>권한</label>
-          <input type="text" id="myRole" disabled>
-        </div>
-        <button class="btn btn-outline" id="myUpdate" style="width:100%;justify-content:center">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-          저장
-        </button>
+        {{ btn('save', '저장', cls='btn-primary', id='myUpdate') }}
       </div>
 
-      <div style="border-top:1px solid var(--c-border);padding-top:16px">
-        <div style="font-weight:var(--fw-medium);margin-bottom:8px">비밀번호 변경</div>
-        <div class="field" style="margin-bottom:12px">
-          <label>새 비밀번호</label>
-          <input type="password" id="myNewPw" minlength="6">
+      <div class="profile-section">
+        <div class="profile-section-title">비밀번호 변경</div>
+        <div class="form-grid">
+          <div class="field"><label>새 비밀번호</label><input type="password" id="myNewPw" minlength="6"></div>
+          <div class="field"><label>새 비밀번호 확인</label><input type="password" id="myNewPwConfirm" minlength="6"></div>
         </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>새 비밀번호 확인</label>
-          <input type="password" id="myNewPwConfirm" minlength="6">
-        </div>
-        <button class="btn btn-outline" id="myChangePw" style="width:100%;justify-content:center">비밀번호 변경</button>
+        {{ btn('check', '비밀번호 변경', id='myChangePw') }}
       </div>
 
-      <div style="border-top:1px solid var(--c-border);padding-top:16px">
-        <button class="btn btn-danger" id="myLogout" style="width:100%;justify-content:center">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          로그아웃
-        </button>
+      <div class="profile-section">
+        {{ btn('logout', '로그아웃', cls='btn-danger', id='myLogout') }}
       </div>
+
     </div>
   </div>
 </section>

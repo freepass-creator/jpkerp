@@ -3,8 +3,9 @@
  */
 import { showToast } from '../core/toast.js';
 import { showContextMenu } from '../core/context-menu.js';
+import { openDetail, schemaToSections } from '../core/detail-panel.js';
 import { watchCustomers, saveCustomer, updateCustomer } from '../firebase/customers.js';
-import { CUSTOMER_SCHEMA } from '../data/schemas/customer.js';
+import { CUSTOMER_SCHEMA, CUSTOMER_SECTIONS } from '../data/schemas/customer.js';
 
 let gridApi = null;
 let allData = [];
@@ -116,6 +117,20 @@ function initGrid() {
         showToast('복사 완료', 'success');
       }},
     ]);
+  });
+
+  // 행 더블클릭 → 상세
+  el.addEventListener('dblclick', (e) => {
+    const rowEl = e.target.closest('[row-index]');
+    if (!rowEl) return;
+    const node = gridApi.getDisplayedRowAtIndex(parseInt(rowEl.getAttribute('row-index')));
+    if (!node || node.data._tempId) return;
+    const d = node.data;
+    openDetail({
+      title: d.code_name || d.customer_code || '',
+      subtitle: d.phone || '',
+      sections: schemaToSections(CUSTOMER_SCHEMA, d, CUSTOMER_SECTIONS),
+    });
   });
 }
 

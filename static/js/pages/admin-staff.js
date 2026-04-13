@@ -3,6 +3,7 @@
  */
 import { showContextMenu } from '../core/context-menu.js';
 import { showToast } from '../core/toast.js';
+import { openDetail } from '../core/detail-panel.js';
 
 let gridApi;
 
@@ -29,7 +30,11 @@ export async function mount() {
         }
       },
       { headerName: '가입일', field: 'created_at', width: 120,
-        valueFormatter: (p) => p.value ? p.value.slice(0, 10) : '-'
+        valueFormatter: (p) => {
+          if (!p.value) return '-';
+          if (typeof p.value === 'number') return new Date(p.value).toISOString().slice(0, 10);
+          return String(p.value).slice(0, 10);
+        }
       },
     ],
     rowData: [],
@@ -63,6 +68,30 @@ export async function mount() {
         loadUsers();
       }},
     ]);
+  });
+
+  // 행 더블클릭 → 상세
+  document.getElementById('adminGrid').addEventListener('dblclick', (e) => {
+    const rowEl = e.target.closest('[row-index]');
+    if (!rowEl) return;
+    const node = gridApi.getDisplayedRowAtIndex(parseInt(rowEl.getAttribute('row-index')));
+    if (!node) return;
+    const d = node.data;
+    const roleMap = { superadmin: '최고관리자', admin: '관리자', staff: '직원', pending: '승인대기' };
+    openDetail({
+      title: d.name || '-',
+      subtitle: d.email || '',
+      sections: [{
+        label: '기본 정보',
+        rows: [
+          { label: '이름', value: d.name },
+          { label: '이메일', value: d.email },
+          { label: '연락처', value: d.phone },
+          { label: '권한', value: roleMap[d.role] || d.role },
+          { label: '가입일', value: typeof d.created_at === 'number' ? new Date(d.created_at).toISOString().slice(0,10) : (d.created_at || '').slice(0,10) },
+        ],
+      }],
+    });
   });
 
   loadUsers();

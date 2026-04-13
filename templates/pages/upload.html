@@ -7,16 +7,35 @@
   <div class="panel-head">
     <div><span class="panel-title">업로드</span></div>
     <div class="panel-actions">
-      {{ btn('refresh', '초기화', id='uploadReset') }}
+      {{ btn('reset', '초기화', id='uploadReset') }}
     </div>
   </div>
   <div class="panel-body is-pad" style="overflow-y:auto;display:flex;flex-direction:column;gap:14px">
+    <!-- 데이터 종류 -->
+    <div class="form-section">
+      <div class="form-section-title">데이터 종류</div>
+      <select id="uploadType" class="ctrl" style="width:100%">
+        <option value="auto">자동감지</option>
+        <option value="asset">자산(차량)</option>
+        <option value="contract">계약</option>
+        <option value="customer">고객</option>
+        <option value="member">회원사</option>
+        <option value="vendor">거래처</option>
+      </select>
+    </div>
+
+    <!-- 스키마 안내 -->
+    <div id="uploadSchemaInfo" style="background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:var(--r-sm);padding:10px 12px;font-size:var(--font-size-sm);line-height:1.8;max-height:120px;overflow-y:auto"></div>
+
+    <!-- 파일 업로드 -->
     <label id="uploadDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:24px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-text-muted);transition:background var(--t-fast)">
-      <input type="file" id="uploadFile" multiple accept=".csv,.pdf,.png,.jpg,.jpeg,.xlsx,.xls" hidden>
+      <input type="file" id="uploadFile" multiple accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.heic,.webp" hidden>
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>
       <div style="font-size:12px;font-weight:600;color:var(--c-text)">파일 업로드</div>
-      <div style="font-size:10px">PDF · 이미지 · CSV · 엑셀</div>
+      <div style="font-size:10px">CSV · 엑셀 · PDF · 이미지</div>
     </label>
+
+    <!-- 또는 구글시트 -->
     <div style="display:flex;align-items:center;gap:8px;color:var(--c-text-muted);font-size:10px">
       <div style="flex:1;height:1px;background:var(--c-border)"></div>또는<div style="flex:1;height:1px;background:var(--c-border)"></div>
     </div>
@@ -25,12 +44,18 @@
       <button class="btn btn-primary" id="uploadUrlLoad">불러오기</button>
     </div>
     <div style="font-size:10px;color:var(--c-text-muted);line-height:1.6;background:var(--c-bg-sub);padding:8px 10px;border-radius:var(--r-sm)">
-      <div style="font-weight:600;margin-bottom:2px">구글시트 조건</div>
       · 공유 → 링크가 있는 모든 사용자: 뷰어<br>
       · 1행은 헤더 (컬럼명)<br>
-      · 탭이 여러 개면 URL에서 해당 탭 선택 후 붙여넣기<br>
       · 헤더로 데이터 유형을 자동 감지합니다
     </div>
+
+    <!-- 헤더 복사 / 샘플 -->
+    <div style="display:flex;gap:6px">
+      <button class="btn" id="uploadCopyHead" style="flex:1">헤더 복사</button>
+      <button class="btn" id="uploadSample" style="flex:1">샘플 다운로드</button>
+    </div>
+
+    <!-- 감지 결과 -->
     <div id="uploadDetect" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
 </section>
@@ -45,7 +70,7 @@
       {{ btn('check', '반영', cls='btn-primary', id='uploadConfirm') }}
     </div>
   </div>
-  <div id="uploadDetectBar" hidden style="flex-shrink:0;padding:8px 16px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:12px;background:var(--c-bg-sub)"></div>
+  <div id="uploadSummaryBar" hidden style="flex-shrink:0;padding:8px 16px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:12px;background:var(--c-bg-sub);font-size:var(--font-size-sm)"></div>
   <div id="uploadGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
 </section>
 {% endblock %}

@@ -8,6 +8,8 @@
 import { watchContracts } from '../firebase/contracts.js';
 import { watchBillings, computeTotalDue, generateBillingsForContract } from '../firebase/billings.js';
 import { showToast } from '../core/toast.js';
+import { showContextMenu } from '../core/context-menu.js';
+import { openDetail } from '../core/detail-panel.js';
 
 const fmt = (v) => Number(v || 0).toLocaleString('ko-KR');
 const fmtDate = (s) => {
@@ -163,6 +165,41 @@ function initGrid() {
 
   const el = document.getElementById('billingGrid');
   gridApi = agGrid.createGrid(el, gridOptions);
+
+  // 우클릭 → 상세보기
+  el.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const rowEl = e.target.closest('[row-index]');
+    if (!rowEl) return;
+    const node = gridApi.getDisplayedRowAtIndex(parseInt(rowEl.getAttribute('row-index')));
+    if (!node) return;
+    const d = node.data;
+    showContextMenu(e, [
+      { label: '상세보기', icon: '📄', action: () => {
+        const months = [];
+        for (let m = 1; m <= 12; m++) {
+          const key = 'm' + m;
+          if (d[key] !== undefined && d[key] !== null) {
+            months.push({ label: `${m}월`, value: d[key] === 0 ? '완납' : fmt(d[key]) + '원' });
+          }
+        }
+        openDetail({
+          title: d.customer_name || d.contract_code || '',
+          subtitle: `${d.car_number || ''} · ${selectedYear}년`,
+          sections: [
+            { label: '계약 정보', rows: [
+              { label: '계약번호', value: d.contract_code },
+              { label: '고객명', value: d.customer_name },
+              { label: '차량번호', value: d.car_number },
+              { label: '차종', value: d.car_model },
+              { label: '연 미수합계', value: fmt(d.yearTotal) + '원' },
+            ]},
+            { label: `${selectedYear}년 월별 현황`, rows: months },
+          ],
+        });
+      }},
+    ]);
+  });
 }
 
 function refreshGrid() {

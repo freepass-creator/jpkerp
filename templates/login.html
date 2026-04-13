@@ -103,7 +103,15 @@
       msg.className = 'auth-msg';
       try {
         msg.textContent = '로그인 중...';
-        await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
+        const email = document.getElementById('loginEmail').value;
+        const cred = await signInWithEmailAndPassword(auth, email, document.getElementById('loginPassword').value);
+        // users DB에 없으면 자동 생성
+        const { ref: dbRef, get, set: dbSet } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js');
+        const snap = await get(dbRef(db, 'users/' + cred.user.uid));
+        if (!snap.exists()) {
+          const role = email === 'dudguq@gmail.com' ? 'superadmin' : 'staff';
+          await dbSet(dbRef(db, 'users/' + cred.user.uid), { name: cred.user.displayName || '', email, role, created_at: new Date().toISOString() });
+        }
         location.href = '/';
       } catch (err) {
         msg.className = 'auth-msg is-error';

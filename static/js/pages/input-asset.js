@@ -3,6 +3,7 @@
  */
 import { mountInputPage } from '../core/input-page.js';
 import { ASSET_SCHEMA, ASSET_SECTIONS } from '../data/schemas/asset.js';
+import { normalizeAsset } from '../data/asset-normalize.js';
 import { saveAsset, watchAssets } from '../firebase/assets.js';
 
 let existingVins = [];
@@ -32,6 +33,7 @@ export async function mount() {
     keyField: 'vin',
     label: '자산',
     saveFn: saveAsset,
+    transform: normalizeAsset,
     validate: validateAsset,
     context: () => ({ vins: existingVins }),
   });

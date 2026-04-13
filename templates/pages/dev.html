@@ -1,0 +1,11 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block topbar_extra %}<span class="topbar-status">개발도구</span>{% endblock %}
+{% block workspace %}
+<section class="panel" style="max-width:700px;margin:0 auto">
+  <div class="panel-head">
+    <div><span class="panel-title">데이터 관리</span></div>
+  </div>
+  <div class="panel-body is-pad" id="devHost" style="overflow-y:auto"></div>
+</section>
+{% endblock %}

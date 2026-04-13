@@ -2,6 +2,7 @@
  * schemas/customer.js — 고객 스키마
  */
 export const CUSTOMER_SCHEMA = [
+  { col: 'partner_code',    label: '회원사코드',   section: '기본' },
   { col: 'customer_reg_no', label: '고객등록번호', section: '기본', required: true, gridShow: true },
   { col: 'code_name',       label: '이름/상호',   section: '기본', required: true, gridShow: true },
   { col: 'phone',           label: '연락처',       section: '기본', required: true, gridShow: true },

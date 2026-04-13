@@ -6,6 +6,8 @@
  */
 
 export const CONTRACT_SCHEMA = [
+  // ── 회원사 ──
+  { col: 'partner_code', label: '회원사코드', section: '차량' },
   // ── 차량 ──
   { col: 'car_number',   label: '차량번호',   section: '차량',   required: true, gridShow: true, autocomplete: 'asset' },
   { col: 'vin',          label: '차대번호',   section: '차량' },

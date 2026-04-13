@@ -220,6 +220,39 @@ body.is-resizing { cursor: col-resize; user-select: none; }
 body.is-resizing * { pointer-events: none; }
 body.is-resizing .panel-resize-handle { pointer-events: auto; }
 
+/* ── 프로필 페이지 ── */
+.profile-page {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+.profile-header {
+  text-align: center;
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--c-border);
+}
+.profile-avatar {
+  width: 56px; height: 56px;
+  background: var(--c-bg-active);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto var(--sp-3);
+}
+.profile-name { font-size: var(--font-size); font-weight: var(--fw-bold); }
+.profile-email { font-size: var(--font-size); color: var(--c-text-muted); margin-top: 2px; }
+.profile-section {
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.profile-section:last-child { border-bottom: none; }
+.profile-section-title { font-size: var(--font-size); font-weight: var(--fw-bold); }
+.profile-section .btn { width: 100%; justify-content: center; }
+
 /* ── 빈 상태 ── */
 .empty {
   display: flex; flex-direction: column;

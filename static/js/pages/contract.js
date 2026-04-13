@@ -3,8 +3,9 @@
  */
 import { showToast } from '../core/toast.js';
 import { showContextMenu } from '../core/context-menu.js';
+import { openDetail, schemaToSections } from '../core/detail-panel.js';
 import { watchContracts, saveContract, updateContract } from '../firebase/contracts.js';
-import { CONTRACT_SCHEMA } from '../data/schemas/contract.js';
+import { CONTRACT_SCHEMA, CONTRACT_SECTIONS } from '../data/schemas/contract.js';
 
 let gridApi = null;
 let allData = [];
@@ -116,6 +117,20 @@ function initGrid() {
         showToast('복사 완료', 'success');
       }},
     ]);
+  });
+
+  // 행 더블클릭 → 상세
+  el.addEventListener('dblclick', (e) => {
+    const rowEl = e.target.closest('[row-index]');
+    if (!rowEl) return;
+    const node = gridApi.getDisplayedRowAtIndex(parseInt(rowEl.getAttribute('row-index')));
+    if (!node || node.data._tempId) return;
+    const d = node.data;
+    openDetail({
+      title: `${d.contractor_name || d.contract_code || ''}`,
+      subtitle: `${d.car_number || ''} · ${d.start_date || ''}`,
+      sections: schemaToSections(CONTRACT_SCHEMA, d, CONTRACT_SECTIONS),
+    });
   });
 }
 

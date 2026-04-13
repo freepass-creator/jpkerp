@@ -1,0 +1,49 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block topbar_extra %}<span class="topbar-status">차종 마스터</span>{% endblock %}
+{% block workspace_layout %}layout-37{% endblock %}
+{% block workspace %}
+<!-- 좌: 등록 폼 -->
+<section class="panel">
+  <div class="panel-head">
+    <div><span class="panel-title">차종 추가</span></div>
+    <div class="panel-actions">
+      {{ btn('reset', '초기화', id='cmReset') }}
+      {{ btn('save', '저장', cls='btn-primary', id='cmSave') }}
+    </div>
+  </div>
+  <div class="panel-body is-pad" style="overflow-y:auto">
+    <div class="form-section">
+      <div class="form-section-title">차종 정보</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>제조사</label><input type="text" name="maker" list="cmMakerList" autocomplete="off"><datalist id="cmMakerList"></datalist></div>
+        <div class="field is-required"><label>모델</label><input type="text" name="model" list="cmModelList" autocomplete="off"><datalist id="cmModelList"></datalist></div>
+        <div class="field is-required"><label>세부모델</label><input type="text" name="sub" placeholder="아반떼 CN7 20~"></div>
+        <div class="field"><label>개발코드</label><input type="text" name="code" placeholder="CN7"></div>
+        <div class="field is-required"><label>생산시작</label><input type="text" name="year_start" placeholder="20" maxlength="2"></div>
+        <div class="field"><label>생산종료</label><input type="text" name="year_end" placeholder="현재" maxlength="4"></div>
+        <div class="field"><label>차종구분</label><input type="text" name="category" list="cmCatList" placeholder="준중형 세단"><datalist id="cmCatList"></datalist></div>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:10px 12px;background:var(--c-bg-sub);border-radius:var(--r-sm);font-size:var(--font-size-xs);color:var(--c-text-muted);line-height:1.8">
+      <b>세부모델 형식:</b> 모델명 + 개발코드 + 생산시작년도~<br>
+      예: <code>아반떼 CN7 20~</code>, <code>더 뉴 아반떼 CN7 (페리) 23~</code><br>
+      예: <code>머스탱 S550 14~</code>, <code>기블리 M157 13~</code>
+    </div>
+  </div>
+</section>
+
+<!-- 우: 목록 -->
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <span class="panel-title">차종 목록</span>
+      <span class="panel-subtitle" id="cmCount">0건</span>
+    </div>
+    <div class="panel-actions">
+      <input type="text" id="cmSearch" class="ctrl" placeholder="검색" style="width:160px;height:28px">
+    </div>
+  </div>
+  <div id="cmGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+{% endblock %}

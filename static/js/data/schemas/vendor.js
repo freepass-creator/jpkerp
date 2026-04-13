@@ -2,6 +2,7 @@
  * schemas/vendor.js — 거래처 스키마
  */
 export const VENDOR_SCHEMA = [
+  { col: 'partner_code', label: '회원사코드', section: '기본' },
   { col: 'vendor_name',  label: '거래처명',   section: '기본', required: true, gridShow: true },
   { col: 'vendor_type',  label: '업종',       section: '기본', type: 'select', options: ['정비소','세차장','타이어','주유소','탁송','보험사','캐피탈','부품','도색/판금','렌터카','기타'], required: true, gridShow: true },
   { col: 'contact_name', label: '담당자',     section: '기본', gridShow: true },

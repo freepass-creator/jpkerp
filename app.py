@@ -31,6 +31,7 @@ ROUTES = [
     ('/customer',  'pages/customer.html',  '고객관리', 'customer'),
     ('/billing',   'pages/billing.html',   '수납관리', 'billing'),
     ('/ledger',    'pages/ledger.html',    '입출금관리', 'ledger'),
+    ('/loan',      'pages/loan.html',      '할부관리',   'loan'),
     # 현황
     ('/status/overdue',  'pages/status-overdue.html',  '미납현황', 'status_overdue'),
     ('/status/idle',     'pages/status-idle.html',     '휴차현황', 'status_idle'),
@@ -51,6 +52,8 @@ ROUTES = [
     ('/admin/lease',    'pages/admin-lease.html',    '임대관리',     'admin_lease'),
     ('/admin/contract', 'pages/admin-contract.html', '계약서관리',   'admin_contract'),
     ('/admin/seal',     'pages/admin-seal.html',     '인감/도장',    'admin_seal'),
+    ('/dev',            'pages/dev.html',            '개발도구',     'dev'),
+    ('/dev/car-master', 'pages/dev-car-master.html', '차종마스터',   'dev_car_master'),
 ]
 
 def _make_view(tpl, title):

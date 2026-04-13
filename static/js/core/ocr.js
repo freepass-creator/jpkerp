@@ -1,37 +1,104 @@
 /**
  * ocr.js — Google Vision OCR
  *
- * 이미지/PDF → 텍스트 추출
+ * 이미지 → Vision API TEXT_DETECTION
+ * PDF → pdf.js로 페이지별 이미지 변환 → OCR
  */
 
 const API_KEY = 'AIzaSyBSPo1kZOefX-6NuHoQdUF1htqQDSxXsCs';
 const ENDPOINT = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
 
+// ─── pdf.js 동적 로드 ─────────────────────────────────────
+let _pdfjsReady = null;
+function loadPdfjs() {
+  if (_pdfjsReady) return _pdfjsReady;
+  _pdfjsReady = new Promise((resolve, reject) => {
+    if (window.pdfjsLib) { resolve(window.pdfjsLib); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs';
+    s.type = 'module';
+    // pdf.js ESM은 script 태그로 안 됨 → dynamic import 사용
+    s.onerror = () => { _pdfjsReady = null; reject(new Error('pdf.js 로드 실패')); };
+    // dynamic import 방식
+    import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs')
+      .then(mod => {
+        const lib = mod;
+        lib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+        resolve(lib);
+      })
+      .catch(reject);
+  });
+  return _pdfjsReady;
+}
+
 /**
- * 파일 → base64 → Vision API → 텍스트
- * @param {File} file
- * @returns {Promise<{text: string, lines: string[]}>}
+ * PDF 파일 → 페이지별 base64 이미지 배열
  */
-export async function ocrFile(file) {
-  const base64 = await fileToBase64(file);
+async function pdfToImages(file, scale = 2.0) {
+  const pdfjsLib = await loadPdfjs();
+  const arrayBuf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+  const images = [];
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    // canvas → base64 (JPEG, 품질 0.92)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    images.push(dataUrl.split(',')[1]);
+  }
+
+  return images;
+}
+
+/**
+ * base64 이미지 → Vision API OCR
+ */
+async function ocrBase64(base64) {
   const body = {
     requests: [{
       image: { content: base64 },
       features: [{ type: 'TEXT_DETECTION', maxResults: 1 }],
     }],
   };
-
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-
   if (!res.ok) throw new Error(`Vision API: ${res.status}`);
   const data = await res.json();
-  const fullText = data.responses?.[0]?.fullTextAnnotation?.text || '';
-  const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
+  return data.responses?.[0]?.fullTextAnnotation?.text || '';
+}
 
+/**
+ * 파일 → OCR 텍스트
+ * PDF: 페이지별 이미지 변환 후 각각 OCR → 합침
+ * 이미지: 그대로 OCR
+ */
+export async function ocrFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  let fullText = '';
+
+  if (ext === 'pdf') {
+    const images = await pdfToImages(file);
+    const texts = [];
+    for (const img of images) {
+      const t = await ocrBase64(img);
+      texts.push(t);
+    }
+    fullText = texts.join('\n\n--- 페이지 구분 ---\n\n');
+  } else {
+    const base64 = await fileToBase64(file);
+    fullText = await ocrBase64(base64);
+  }
+
+  const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
   return { text: fullText, lines };
 }
 
@@ -55,8 +122,8 @@ export async function ocrFiles(files) {
  * OCR 텍스트에서 차량번호 추출
  */
 export function extractCarNumber(text) {
-  const m = text.match(/\d{2,3}[가-힣]\d{4}/g);
-  return m ? m[0] : null;
+  const m = text.match(/\d{2,3}[가-힣]\s?\d{4}/g);
+  return m ? m[0].replace(/\s/g, '') : null;
 }
 
 /**
@@ -97,10 +164,7 @@ export function extractDate(text) {
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      resolve(base64);
-    };
+    reader.onload = () => resolve(reader.result.split(',')[1]);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });

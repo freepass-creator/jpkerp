@@ -1,62 +1,180 @@
-{% extends 'workspace.html' %}
-{% block topbar_extra %}
-  <span class="topbar-status">내 정보</span>
-{% endblock %}
-{% block workspace %}
-<section class="panel">
-  <div class="panel-body is-pad" style="max-width:480px;margin:0 auto">
-    <div style="display:flex;flex-direction:column;gap:16px;padding:20px 0">
-      <div style="text-align:center;margin-bottom:8px">
-        <div style="width:64px;height:64px;border-radius:50%;background:var(--c-bg-active);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <div style="font-weight:var(--fw-bold);font-size:var(--font-size-lg)" id="myName">-</div>
-        <div style="color:var(--c-text-muted);font-size:var(--font-size-sm)" id="myEmail">-</div>
-      </div>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>계약조회 - JPK</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/controls.css') }}?v={{ v }}">
+  <style>
+    body { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f8f9fa; gap:24px; padding:40px 16px; overflow:auto; }
+    .auth-brand { font-size:20px; font-weight:300; letter-spacing:0.18em; color:#1b2a4a; text-transform:uppercase; }
+    .my-wrap { width:100%; max-width:400px; display:flex; flex-direction:column; gap:24px; }
 
-      <div style="border-top:1px solid var(--c-border);padding-top:16px">
-        <div class="field" style="margin-bottom:12px">
-          <label>이름</label>
-          <input type="text" id="myNameInput">
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>이메일</label>
-          <input type="email" id="myEmailInput" disabled>
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>연락처</label>
-          <input type="tel" id="myPhone" placeholder="010-0000-0000">
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>권한</label>
-          <input type="text" id="myRole" disabled>
-        </div>
-        <button class="btn btn-outline" id="myUpdate" style="width:100%;justify-content:center">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-          저장
-        </button>
-      </div>
+    /* 조회 폼 */
+    .my-search { background:#fff; border-radius:2px; padding:40px 32px; box-shadow:0 2px 10px rgba(0,0,0,0.04), 0 10px 30px rgba(0,0,0,0.06); display:flex; flex-direction:column; gap:24px; }
+    .my-search .auth-head { display:flex; flex-direction:column; gap:6px; }
+    .my-search .auth-head h2 { font-size:18px; font-weight:600; color:#1f1f1f; margin:0; }
+    .my-search .auth-head p { font-size:13px; color:#5f6368; margin:0; }
+    .my-search .auth-field { display:flex; flex-direction:column; gap:4px; }
+    .my-search .auth-field label { font-size:12px; font-weight:500; color:#5f6368; }
+    .my-search .auth-field input { height:40px; padding:0 12px; border:1px solid #dadce0; border-radius:2px; font-size:14px; outline:none; font-family:inherit; width:100%; }
+    .my-search .auth-field input:focus { border-color:#1b2a4a; box-shadow:0 0 0 3px rgba(27,42,74,0.08); }
+    .my-search .auth-btn { height:42px; background:#1b2a4a; color:#fff; border:none; border-radius:2px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
 
-      <div style="border-top:1px solid var(--c-border);padding-top:16px">
-        <div style="font-weight:var(--fw-medium);margin-bottom:8px">비밀번호 변경</div>
-        <div class="field" style="margin-bottom:12px">
-          <label>새 비밀번호</label>
-          <input type="password" id="myNewPw" minlength="6">
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>새 비밀번호 확인</label>
-          <input type="password" id="myNewPwConfirm" minlength="6">
-        </div>
-        <button class="btn btn-outline" id="myChangePw" style="width:100%;justify-content:center">비밀번호 변경</button>
-      </div>
+    /* 결과 */
+    .my-result { display:flex; flex-direction:column; gap:var(--sp-4); }
+    .my-card { background:var(--c-bg); border:1px solid var(--c-border); }
+    .my-card-head { padding:var(--sp-3) var(--sp-4); border-bottom:1px solid var(--c-border); font-weight:var(--fw-bold); font-size:var(--font-size); }
+    .my-card-body { padding:var(--sp-4); }
 
-      <div style="border-top:1px solid var(--c-border);padding-top:16px">
-        <button class="btn btn-danger" id="myLogout" style="width:100%;justify-content:center">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          로그아웃
-        </button>
+    .my-table { width:100%; border-collapse:collapse; font-size:var(--font-size); }
+    .my-table td { padding:var(--sp-2) 0; }
+    .my-table td:first-child { color:var(--c-text-muted); width:100px; }
+    .my-table td:last-child { font-weight:var(--fw-medium); }
+
+    /* 청구 목록 */
+    .my-bill { display:flex; justify-content:space-between; align-items:center; padding:var(--sp-3) var(--sp-4); border-bottom:1px solid var(--c-border); font-size:var(--font-size); }
+    .my-bill:last-child { border-bottom:none; }
+    .my-bill-label { color:var(--c-text-sub); }
+    .my-bill-amount { font-weight:var(--fw-bold); }
+    .my-bill-status { font-size:var(--font-size-sm); padding:2px 6px; }
+    .my-bill-status.paid { background:var(--c-success-bg); color:var(--c-success); }
+    .my-bill-status.unpaid { background:var(--c-danger-bg); color:var(--c-danger); }
+
+    .my-msg { font-size:var(--font-size-sm); text-align:center; color:var(--c-text-muted); min-height:20px; }
+    .my-msg.is-error { color:var(--c-danger); }
+
+    .my-footer { text-align:center; font-size:10px; color:var(--c-text-muted); padding:var(--sp-5) 0; }
+  </style>
+</head>
+<body>
+  <div class="auth-brand">JPK ERP</div>
+
+  <div class="my-wrap">
+    <div class="my-search" id="mySearch">
+      <div class="auth-head">
+        <h2>계약조회</h2>
+        <p>차량번호와 등록번호를 입력해주세요.</p>
       </div>
+      <div class="auth-field"><label>차량번호</label><input type="text" id="myCarNumber" placeholder="12가3456"></div>
+      <div class="auth-field"><label>등록번호</label><input type="text" id="myRegNo" placeholder="생년월일 / 사업자번호 / 법인번호 / 전화번호"></div>
+      <button class="auth-btn" id="myLookup">조회하기</button>
+      <div class="my-msg" id="myMsg"></div>
     </div>
+
+    <!-- 결과 -->
+    <div class="my-result" id="myResult" hidden></div>
   </div>
-</section>
-{% endblock %}
+
+  <div style="font-size:11px;color:#9ca3af">&copy; 2026 teamjpk. All Rights Reserved.</div>
+
+  <script type="module">
+    import { db } from '/static/js/firebase/config.js';
+    import { ref, get } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js';
+
+    const msg = document.getElementById('myMsg');
+    const result = document.getElementById('myResult');
+
+    document.getElementById('myLookup').addEventListener('click', async () => {
+      const carNumber = document.getElementById('myCarNumber').value.trim();
+      const regNo = document.getElementById('myRegNo').value.trim().replace(/[^0-9]/g, '');
+      msg.className = 'my-msg';
+      msg.textContent = '';
+      result.hidden = true;
+
+      if (!carNumber) { msg.className = 'my-msg is-error'; msg.textContent = '차량번호를 입력해주세요'; return; }
+      if (!regNo) { msg.className = 'my-msg is-error'; msg.textContent = '등록번호를 입력해주세요'; return; }
+
+      msg.textContent = '조회 중...';
+
+      try {
+        // 전체 계약에서 차량번호로 검색
+        const snap = await get(ref(db, 'contracts'));
+        if (!snap.exists()) { msg.className = 'my-msg is-error'; msg.textContent = '계약을 찾을 수 없습니다'; return; }
+
+        const all = snap.val();
+        let ct = null;
+        let code = null;
+
+        for (const [k, v] of Object.entries(all)) {
+          if ((v.car_number || '').replace(/\s/g, '') !== carNumber.replace(/\s/g, '')) continue;
+          // 등록번호 매칭 (주민/사업자/법인 어느 것이든)
+          const nums = [
+            (v.contractor_reg_no || '').replace(/[^0-9]/g, ''),
+            (v.contractor_biz_no || '').replace(/[^0-9]/g, ''),
+            (v.contractor_corp_no || '').replace(/[^0-9]/g, ''),
+            (v.contractor_birth || '').replace(/[^0-9]/g, ''),
+            (v.contractor_phone || '').replace(/[^0-9]/g, ''),
+          ];
+          if (nums.some(n => n && n === regNo)) {
+            ct = v;
+            code = k;
+            break;
+          }
+        }
+
+        if (!ct) { msg.className = 'my-msg is-error'; msg.textContent = '일치하는 계약을 찾을 수 없습니다'; return; }
+
+        msg.textContent = '';
+
+        // 청구 조회
+        const billSnap = await get(ref(db, 'billings'));
+        const bills = [];
+        if (billSnap.exists()) {
+          Object.values(billSnap.val()).forEach(b => {
+            if (b.contract_code === code) bills.push(b);
+          });
+          bills.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''));
+        }
+
+        const fmt = v => v ? Number(v).toLocaleString() + '원' : '-';
+        const fmtD = s => s || '-';
+        // 개인정보 마스킹
+        const maskName = (n) => { if (!n || n.length < 2) return n || '-'; return n[0] + '*'.repeat(n.length - 1); };
+        const maskCar = (c) => { if (!c) return '-'; return c.slice(0, 2) + '**' + c.slice(-2); };
+
+        result.innerHTML = `
+          <div class="my-card">
+            <div class="my-card-head">계약 정보</div>
+            <div class="my-card-body">
+              <table class="my-table">
+                <tr><td>계약번호</td><td>${ct.contract_code || code}</td></tr>
+                <tr><td>계약자</td><td>${maskName(ct.contractor_name)}</td></tr>
+                <tr><td>차량번호</td><td>${maskCar(ct.car_number)}</td></tr>
+                <tr><td>계약기간</td><td>${fmtD(ct.start_date)} ~ ${fmtD(ct.end_date)}</td></tr>
+                <tr><td>월 렌탈료</td><td>${fmt(ct.rent_amount)}</td></tr>
+                <tr><td>계약상태</td><td>${ct.contract_status || '-'}</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="my-card">
+            <div class="my-card-head">청구/납입 내역 (${bills.length}건)</div>
+            <div class="my-card-body" style="padding:0">
+              ${bills.length ? bills.map(b => `
+                <div class="my-bill">
+                  <div>
+                    <div class="my-bill-label">${b.billing_month || b.due_date || '-'}</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div class="my-bill-amount">${fmt(b.amount)}</div>
+                    <span class="my-bill-status ${b.paid_date ? 'paid' : 'unpaid'}">${b.paid_date ? '납입완료' : '미납'}</span>
+                  </div>
+                </div>
+              `).join('') : '<div style="padding:var(--sp-5);text-align:center;color:var(--c-text-muted)">청구 내역이 없습니다</div>'}
+            </div>
+          </div>
+        `;
+        result.hidden = false;
+
+      } catch (e) {
+        msg.className = 'my-msg is-error';
+        msg.textContent = '조회 실패: ' + e.message;
+      }
+    });
+  </script>
+</body>
+</html>

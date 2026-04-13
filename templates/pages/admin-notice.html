@@ -3,25 +3,52 @@
 {% block topbar_extra %}<span class="topbar-status">고지서업무</span>{% endblock %}
 {% block workspace_layout %}layout-37{% endblock %}
 {% block workspace %}
+<!-- 좌: 업로드 + 필터 -->
 <section class="panel">
   <div class="panel-head">
     <div><span class="panel-title">고지서 업로드</span></div>
   </div>
   <div class="panel-body is-pad" style="overflow-y:auto;display:flex;flex-direction:column;gap:14px">
-    <label id="noticeDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:24px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-text-muted);transition:background var(--t-fast)">
-      <input type="file" id="noticeFile" multiple accept=".pdf,.png,.jpg,.jpeg" hidden>
+    <label id="noticeDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:20px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-text-muted)">
+      <input type="file" id="noticeFile" multiple accept=".pdf,.png,.jpg,.jpeg,.heic" hidden>
       <span style="font-size:28px">📄</span>
-      <div style="font-size:12px;font-weight:600;color:var(--c-text)">과태료 고지서 업로드</div>
-      <div style="font-size:10px">PDF · 이미지 — 자동 OCR 매칭</div>
+      <div style="font-size:12px;font-weight:600;color:var(--c-text)">과태료/통행료 고지서</div>
+      <div style="font-size:10px">PDF · 이미지 (여러 장 가능)</div>
     </label>
-    <div id="noticeDetect" style="display:flex;flex-direction:column;gap:8px"></div>
+
+    <div id="noticeStatus" style="display:flex;flex-direction:column;gap:6px"></div>
+
+    <!-- 기존 이력 필터 -->
+    <div class="form-section">
+      <div class="form-section-title">조회 필터</div>
+      <div class="form-grid">
+        <div class="field"><label>날짜</label><input type="date" id="noticeFilterDate"></div>
+        <div class="field"><label>상태</label>
+          <select id="noticeFilterStatus">
+            <option value="">전체</option>
+            <option value="미납" selected>미납</option>
+            <option value="납부완료">납부완료</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="noticeRefresh" style="width:100%">조회</button>
+
+    <!-- 일괄 다운로드 -->
+    <button class="btn btn-primary" id="noticeDownloadAll" style="width:100%">일괄 다운로드 (고지서+확인서)</button>
   </div>
 </section>
+
+<!-- 우: 목록 + 상세 -->
 <section class="panel">
   <div class="panel-head">
     <div>
-      <span class="panel-title">매칭 목록</span>
-      <span class="panel-subtitle" id="noticeInfo"></span>
+      <span class="panel-title">과태료 목록</span>
+      <span class="panel-subtitle" id="noticeInfo">0건</span>
+    </div>
+    <div class="panel-actions">
+      {{ btn('file-text', '확인서 출력', id='noticePrintConfirm') }}
     </div>
   </div>
   <div id="noticeGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
