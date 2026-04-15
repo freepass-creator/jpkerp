@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#fbfbfa">
+  <title>로그인 · JPK</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}?v={{ v }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-180.png') }}">
+  <style>
+    body.mobile.m-login { background: #fbfbfa; overflow: auto; }
+    .login-wrap {
+      min-height: 100dvh;
+      display: flex; flex-direction: column;
+      padding: 0 24px env(safe-area-inset-bottom, 0px);
+    }
+    .login-top { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-top: 60px; }
+    .login-brand {
+      font-size: 28px; font-weight: 700; color: #37352f;
+      letter-spacing: -0.03em; margin-bottom: 6px;
+    }
+    .login-sub { font-size: 13px; color: #9b9a97; margin-bottom: 40px; letter-spacing: -0.01em; }
+    .login-form { display: flex; flex-direction: column; gap: 10px; }
+    .login-field {
+      background: #fff; border: 1px solid #e3e2de; border-radius: 12px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 14px; height: 52px;
+      transition: border-color 150ms, box-shadow 150ms;
+    }
+    .login-field:focus-within { border-color: #2383e2; box-shadow: 0 0 0 3px rgba(35,131,226,0.12); }
+    .login-field i { font-size: 18px; color: #9b9a97; flex-shrink: 0; }
+    .login-field input {
+      flex: 1; min-width: 0; height: 100%;
+      border: none; background: transparent;
+      font-size: 16px; color: #37352f;
+      outline: none; letter-spacing: -0.01em;
+      font-family: inherit;
+    }
+    .login-field input::placeholder { color: #b4b1aa; }
+    .login-btn {
+      margin-top: 8px;
+      height: 52px;
+      background: #37352f; color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 600;
+      letter-spacing: -0.01em;
+      cursor: pointer; font-family: inherit;
+      transition: background 150ms, transform 120ms;
+    }
+    .login-btn:active { transform: scale(0.99); background: #2a2824; }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-foot {
+      padding: 24px 0;
+      display: flex; justify-content: center; gap: 14px;
+      font-size: 13px; color: #9b9a97;
+    }
+    .login-foot a { color: #37352f; text-decoration: none; font-weight: 500; }
+    .login-msg {
+      min-height: 18px; margin-top: 8px;
+      font-size: 12px; color: #e03e3e; text-align: center;
+      letter-spacing: -0.01em;
+    }
+    .login-msg.is-success { color: #0f7b0f; }
+    .panel { display: none; }
+    .panel.is-active { display: flex; flex-direction: column; }
+  </style>
+</head>
+<body class="mobile m-login">
+  <div class="login-wrap">
+    <div class="login-top">
+      <!-- 로그인 -->
+      <form class="panel is-active" id="loginPanel">
+        <div class="login-brand">JPK</div>
+        <div class="login-sub">렌터카 ERP — 운영팀</div>
+        <div class="login-form">
+          <div class="login-field">
+            <i class="ph ph-envelope"></i>
+            <input type="email" id="loginEmail" placeholder="이메일" autocomplete="email" required>
+          </div>
+          <div class="login-field">
+            <i class="ph ph-lock"></i>
+            <input type="password" id="loginPassword" placeholder="비밀번호" autocomplete="current-password" required>
+          </div>
+          <button type="submit" class="login-btn">로그인</button>
+          <p class="login-msg" id="loginMsg"></p>
+        </div>
+      </form>
+
+      <!-- 회원가입 -->
+      <form class="panel" id="signupPanel">
+        <div class="login-brand">계정 만들기</div>
+        <div class="login-sub">JPK ERP 에 처음 오셨나요?</div>
+        <div class="login-form">
+          <div class="login-field"><i class="ph ph-user"></i><input type="text" id="signupName" placeholder="이름" required></div>
+          <div class="login-field"><i class="ph ph-envelope"></i><input type="email" id="signupEmail" placeholder="이메일" required></div>
+          <div class="login-field"><i class="ph ph-lock"></i><input type="password" id="signupPassword" placeholder="비밀번호 (6자 이상)" minlength="6" required></div>
+          <div class="login-field"><i class="ph ph-lock-key"></i><input type="password" id="signupPasswordConfirm" placeholder="비밀번호 확인" minlength="6" required></div>
+          <button type="submit" class="login-btn">가입하기</button>
+          <p class="login-msg" id="signupMsg"></p>
+        </div>
+      </form>
+
+      <!-- 비밀번호 재설정 -->
+      <form class="panel" id="resetPanel">
+        <div class="login-brand">비밀번호 재설정</div>
+        <div class="login-sub">이메일로 재설정 링크를 보내드립니다</div>
+        <div class="login-form">
+          <div class="login-field"><i class="ph ph-envelope"></i><input type="email" id="resetEmail" placeholder="이메일" required></div>
+          <button type="submit" class="login-btn">재설정 링크 보내기</button>
+          <p class="login-msg" id="resetMsg"></p>
+        </div>
+      </form>
+    </div>
+
+    <div class="login-foot" id="footLogin">
+      <a href="#" id="goSignup">계정 만들기</a>
+      <span style="color:#dadce0">·</span>
+      <a href="#" id="goReset">비밀번호 찾기</a>
+    </div>
+    <div class="login-foot" id="footOther" style="display:none">
+      <a href="#" id="backLogin">로그인으로 돌아가기</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from '{{ url_for("static", filename="js/firebase/config.js") }}';
+    import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { ref, get, set } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js';
+
+    const $ = (id) => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+    const next = params.get('next') || '/m';
+
+    const show = (id) => {
+      document.querySelectorAll('.panel').forEach((p) => p.classList.remove('is-active'));
+      $(id).classList.add('is-active');
+      $('footLogin').style.display = id === 'loginPanel' ? 'flex' : 'none';
+      $('footOther').style.display = id === 'loginPanel' ? 'none' : 'flex';
+    };
+
+    $('goSignup').onclick = (e) => { e.preventDefault(); show('signupPanel'); };
+    $('goReset').onclick = (e) => { e.preventDefault(); show('resetPanel'); };
+    $('backLogin').onclick = (e) => { e.preventDefault(); show('loginPanel'); };
+
+    $('loginPanel').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = $('loginMsg');
+      msg.className = 'login-msg';
+      const btn = e.target.querySelector('.login-btn');
+      btn.disabled = true;
+      msg.textContent = '로그인 중...';
+      try {
+        const email = $('loginEmail').value.trim();
+        const cred = await signInWithEmailAndPassword(auth, email, $('loginPassword').value);
+        const snap = await get(ref(db, 'users/' + cred.user.uid));
+        if (!snap.exists()) {
+          const role = email === 'dudguq@gmail.com' ? 'superadmin' : 'staff';
+          await set(ref(db, 'users/' + cred.user.uid), {
+            name: cred.user.displayName || '', email, role,
+            created_at: new Date().toISOString()
+          });
+        }
+        location.href = next;
+      } catch (err) {
+        btn.disabled = false;
+        msg.textContent = err.code === 'auth/invalid-credential'
+          ? '이메일 또는 비밀번호가 틀렸습니다'
+          : (err.message || '로그인 실패');
+      }
+    });
+
+    $('signupPanel').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = $('signupMsg');
+      msg.className = 'login-msg';
+      const name = $('signupName').value.trim();
+      const email = $('signupEmail').value.trim();
+      const pw = $('signupPassword').value;
+      if (pw !== $('signupPasswordConfirm').value) {
+        msg.textContent = '비밀번호가 일치하지 않습니다'; return;
+      }
+      const btn = e.target.querySelector('.login-btn');
+      btn.disabled = true;
+      msg.textContent = '가입 처리 중...';
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, pw);
+        await updateProfile(cred.user, { displayName: name });
+        const role = email === 'dudguq@gmail.com' ? 'superadmin' : 'staff';
+        await set(ref(db, 'users/' + cred.user.uid), {
+          name, email, role, created_at: new Date().toISOString()
+        });
+        msg.className = 'login-msg is-success';
+        msg.textContent = '가입 완료!';
+        setTimeout(() => { location.href = next; }, 400);
+      } catch (err) {
+        btn.disabled = false;
+        if (err.code === 'auth/email-already-in-use') msg.textContent = '이미 사용 중인 이메일입니다';
+        else if (err.code === 'auth/weak-password') msg.textContent = '비밀번호가 너무 짧습니다 (6자 이상)';
+        else msg.textContent = err.message || '가입 실패';
+      }
+    });
+
+    $('resetPanel').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = $('resetMsg');
+      msg.className = 'login-msg';
+      msg.textContent = '전송 중...';
+      try {
+        await sendPasswordResetEmail(auth, $('resetEmail').value.trim());
+        msg.className = 'login-msg is-success';
+        msg.textContent = '재설정 링크를 이메일로 보냈습니다';
+      } catch (err) {
+        msg.textContent = err.code === 'auth/user-not-found'
+          ? '등록되지 않은 이메일입니다'
+          : (err.message || '전송 실패');
+      }
+    });
+  </script>
+</body>
+</html>

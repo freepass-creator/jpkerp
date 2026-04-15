@@ -56,7 +56,7 @@ MOBILE_UA_RE = re.compile(r'(iPhone|iPod|Android.*Mobile|webOS|BlackBerry|Window
 def mobile_autoredirect():
     path = request.path
     # 이미 모바일/정적/API 경로는 패스
-    if path.startswith('/m') or path.startswith('/static') or path.startswith('/api') \
+    if path.startswith('/m/') or path == '/m' or path.startswith('/static') or path.startswith('/api') \
        or path in ('/sw.js', '/manifest.webmanifest', '/login', '/favicon.ico'):
         return
     # 쿠키/쿼리로 데스크탑 강제 (핸드폰에서도 데스크탑 보고 싶을때)
@@ -152,7 +152,15 @@ for path, tpl, title, ep in ROUTES:
 
 @app.route('/login')
 def login():
+    # 모바일은 전용 템플릿
+    ua = request.headers.get('User-Agent', '')
+    if MOBILE_UA_RE.search(ua) and not request.cookies.get('force_desktop') == '1':
+        return render_template('pages/m/login.html')
     return render_template('login.html')
+
+@app.route('/m/login')
+def m_login():
+    return render_template('pages/m/login.html')
 
 # ── PWA Service Worker (루트 스코프 필요) ──────
 from flask import send_from_directory

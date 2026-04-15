@@ -16,7 +16,6 @@ const $ = (s) => document.querySelector(s);
 
 // ── 로컬 설정 ─────────────────────
 const RECENT_KEY = 'jpk.op.recent_cars';
-const UPLOADER_KEY = 'jpk.m.uploader';
 
 const loadRecent = () => { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; } };
 const pushRecent = (car) => {
@@ -26,12 +25,9 @@ const pushRecent = (car) => {
   localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 8)));
 };
 const getUploader = () => {
-  let n = localStorage.getItem(UPLOADER_KEY);
-  if (!n) {
-    n = prompt('촬영자 이름을 입력하세요 (한번만 설정)');
-    if (n) { n = n.trim(); localStorage.setItem(UPLOADER_KEY, n); }
-  }
-  return n || '';
+  const u = window.__mUser;
+  if (!u) return { uid: '', name: '', email: '' };
+  return { uid: u.uid, name: u.name, email: u.email };
 };
 
 // ── 상태 ─────────────────────────
@@ -240,6 +236,7 @@ function uploadWithProgress(file, path, thumbId) {
 // ── 업로드 ─────────────────────────
 async function uploadOne(file, type) {
   if (!currentCar) { toast('차량번호를 먼저 선택하세요'); return; }
+  await window.__mUserReady;
   const uploader = getUploader();
   const ts = Date.now();
   const d = new Date(ts);
@@ -262,7 +259,9 @@ async function uploadOne(file, type) {
       name: file.name,
       content_type: file.type || '',
       size: file.size,
-      uploader,
+      uploader_uid: uploader.uid,
+      uploader_name: uploader.name,
+      uploader_email: uploader.email,
       taken_at: ts,
       car: currentCar,
       type,
