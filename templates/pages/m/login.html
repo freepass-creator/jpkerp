@@ -18,12 +18,39 @@
       display: flex; flex-direction: column;
       padding: 0 24px env(safe-area-inset-bottom, 0px);
     }
-    .login-top { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-top: 60px; }
-    .login-brand {
-      font-size: 28px; font-weight: 700; color: #37352f;
-      letter-spacing: -0.03em; margin-bottom: 6px;
+    .login-top { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-top: 40px; }
+
+    /* CI — teamjpk */
+    .ci-wrap {
+      display: flex; flex-direction: column; align-items: flex-start;
+      margin-bottom: 48px;
     }
-    .login-sub { font-size: 13px; color: #9b9a97; margin-bottom: 40px; letter-spacing: -0.01em; }
+    .ci-logo {
+      font-size: 36px; line-height: 1; color: #37352f;
+      font-family: 'Pretendard', sans-serif;
+    }
+    .ci-logo .team {
+      font-weight: 200;
+      letter-spacing: 3px;
+    }
+    .ci-logo .jpk {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .ci-sub {
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #9b9a97;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .login-brand {
+      font-size: 22px; font-weight: 700; color: #37352f;
+      letter-spacing: -0.03em; margin-bottom: 4px;
+    }
+    .login-sub { font-size: 13px; color: #9b9a97; margin-bottom: 28px; letter-spacing: -0.01em; }
     .login-form { display: flex; flex-direction: column; gap: 10px; }
     .login-field {
       background: #fff; border: 1px solid #e3e2de; border-radius: 12px;
@@ -72,10 +99,14 @@
 <body class="mobile m-login">
   <div class="login-wrap">
     <div class="login-top">
+      <!-- CI -->
+      <div class="ci-wrap">
+        <div class="ci-logo"><span class="team">team</span><span class="jpk">jpk</span></div>
+        <div class="ci-sub">JPK ERP</div>
+      </div>
+
       <!-- 로그인 -->
       <form class="panel is-active" id="loginPanel">
-        <div class="login-brand">JPK</div>
-        <div class="login-sub">렌터카 ERP — 운영팀</div>
         <div class="login-form">
           <div class="login-field">
             <i class="ph ph-envelope"></i>
