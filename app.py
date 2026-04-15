@@ -1,10 +1,10 @@
-import os, time
+import os, re, time
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'jpkerp4-dev')
@@ -48,6 +48,28 @@ def api_solapi_alimtalk():
     if not (to and tpl):
         return jsonify({'ok': False, 'error': '수신번호/템플릿ID 필요'}), 400
     return jsonify(solapi_alimtalk(to, tpl, vars_, fallback_sms=fb))
+
+# ── 모바일 자동 리다이렉트 ──────────────────
+MOBILE_UA_RE = re.compile(r'(iPhone|iPod|Android.*Mobile|webOS|BlackBerry|Windows Phone|Mobile Safari)', re.I)
+
+@app.before_request
+def mobile_autoredirect():
+    path = request.path
+    # 이미 모바일/정적/API 경로는 패스
+    if path.startswith('/m') or path.startswith('/static') or path.startswith('/api') \
+       or path in ('/sw.js', '/manifest.webmanifest', '/login', '/favicon.ico'):
+        return
+    # 쿠키/쿼리로 데스크탑 강제 (핸드폰에서도 데스크탑 보고 싶을때)
+    if request.args.get('desktop') == '1':
+        resp = redirect(path)
+        resp.set_cookie('force_desktop', '1', max_age=7*24*3600)
+        return resp
+    if request.cookies.get('force_desktop') == '1':
+        return
+    # User-Agent 로 모바일 감지 → /m 으로
+    ua = request.headers.get('User-Agent', '')
+    if MOBILE_UA_RE.search(ua):
+        return redirect('/m')
 
 @app.context_processor
 def inject_globals():
