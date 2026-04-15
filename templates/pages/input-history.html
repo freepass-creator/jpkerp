@@ -1,0 +1,50 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block topbar_extra %}
+  <span class="topbar-status">입력내역 · <span id="ihCount">0</span>건</span>
+{% endblock %}
+{% block workspace_layout %}layout-55{% endblock %}
+{% block workspace %}
+<!-- 좌: 업로드 이력 (배치 단위) -->
+<section class="panel">
+  <div class="panel-head">
+    <div style="display:flex;align-items:center;gap:6px;flex:1">
+      <i class="ph ph-clock-counter-clockwise" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">업로드 이력</span>
+    </div>
+    <select id="ihType" class="ctrl" style="width:110px">
+      <option value="">전체 종류</option>
+      <option value="asset">자산</option>
+      <option value="contract">계약</option>
+      <option value="customer">고객</option>
+      <option value="member">회원사</option>
+      <option value="vendor">거래처</option>
+      <option value="insurance">보험</option>
+      <option value="loan">할부</option>
+      <option value="autodebit">자동이체</option>
+      <option value="fund">입출금</option>
+      <option value="event">운영</option>
+    </select>
+    <input type="date" id="ihDateFrom" class="ctrl" style="width:130px" placeholder="시작일">
+    <span style="color:var(--c-text-muted)">~</span>
+    <input type="date" id="ihDateTo" class="ctrl" style="width:130px" placeholder="종료일">
+  </div>
+  <div id="ihGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+
+<!-- 우: 세부내용 -->
+<section class="panel">
+  <div class="panel-head">
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-file-text" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title" id="ihDetailTitle">세부내용</span>
+    </div>
+  </div>
+  <div id="ihDetail" class="panel-body is-pad" style="overflow:auto;flex:1;min-height:0">
+    <div class="empty">
+      <i class="ph ph-arrow-left" style="font-size:24px;color:var(--c-text-muted)"></i>
+      <div>좌측 이력을 선택하세요</div>
+    </div>
+  </div>
+</section>
+{% endblock %}

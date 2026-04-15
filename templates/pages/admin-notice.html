@@ -6,7 +6,10 @@
 <!-- 좌: 업로드 + 필터 -->
 <section class="panel">
   <div class="panel-head">
-    <div><span class="panel-title">고지서 업로드</span></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-upload-simple" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">고지서 업로드</span>
+    </div>
   </div>
   <div class="panel-body is-pad" style="overflow-y:auto;display:flex;flex-direction:column;gap:14px">
     <label id="noticeDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:20px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-text-muted)">
@@ -33,17 +36,22 @@
       </div>
     </div>
 
-    <button class="btn" id="noticeRefresh" style="width:100%">조회</button>
+    <button class="btn" id="noticeRefresh" style="width:100%">
+      <i class="ph ph-magnifying-glass"></i> 조회
+    </button>
 
     <!-- 일괄 다운로드 -->
-    <button class="btn btn-primary" id="noticeDownloadAll" style="width:100%">일괄 다운로드 (고지서+확인서)</button>
+    <button class="btn btn-primary" id="noticeDownloadAll" style="width:100%">
+      <i class="ph ph-download-simple"></i> 일괄 다운로드 (고지서+확인서)
+    </button>
   </div>
 </section>
 
 <!-- 우: 목록 + 상세 -->
 <section class="panel">
   <div class="panel-head">
-    <div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-prohibit" style="color:var(--c-text-muted)"></i>
       <span class="panel-title">과태료 목록</span>
       <span class="panel-subtitle" id="noticeInfo">0건</span>
     </div>

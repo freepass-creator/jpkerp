@@ -3,18 +3,22 @@
 {% block topbar_extra %}
   <span class="topbar-status">운영업무</span>
 {% endblock %}
-{% block workspace_layout %}layout-37{% endblock %}
+{% block workspace_layout %}layout-254{% endblock %}
 {% block workspace %}
-<section class="panel">
+<section class="panel" id="opPanelList">
   <div class="panel-head">
-    <div><span class="panel-title">업무 선택</span></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-list-bullets" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">업무 선택</span>
+    </div>
   </div>
   <div class="panel-body" id="opList" style="overflow-y:auto"></div>
 </section>
-<section class="panel">
+<section class="panel" id="opPanelForm">
   <div class="panel-head">
     <div>
-      <span class="panel-title" id="opFormTitle">입력</span>
+      <span class="panel-title" id="opFormTitle">업무를 선택하세요</span>
+      <span class="panel-subtitle" id="opFormSubtitle"></span>
     </div>
     <div class="panel-actions">
       {{ btn('reset', '초기화', id='opReset') }}
@@ -23,6 +27,18 @@
   </div>
   <div class="panel-body is-pad" id="opFormHost" style="overflow-y:auto">
     <div style="padding:24px;text-align:center;color:var(--c-text-muted)">좌측에서 유형을 선택하세요.</div>
+  </div>
+</section>
+<section class="panel" id="opPanelContext">
+  <div class="panel-head">
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-clock-counter-clockwise" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title" id="opContextTitle">이력관리</span>
+      <span class="panel-subtitle" id="opContextSubtitle">차량번호를 입력하세요</span>
+    </div>
+  </div>
+  <div class="panel-body is-pad" id="opContextHost" style="overflow-y:auto">
+    <div style="padding:24px;text-align:center;color:var(--c-text-muted)">차량번호 입력 시<br>계약/수납/운영이력이 여기 표시됩니다.</div>
   </div>
 </section>
 {% endblock %}

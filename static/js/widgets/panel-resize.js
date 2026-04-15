@@ -23,11 +23,16 @@ function setup(ws) {
 
   const key = STORAGE_PREFIX + window.location.pathname;
 
-  // 저장된 비율 복원
+  // 저장된 비율 복원 (과거 버그로 특정 패널이 0에 가까운 값 저장된 경우 폐기)
   try {
     const saved = JSON.parse(localStorage.getItem(key));
     if (saved && saved.length === panels.length) {
-      panels.forEach((p, i) => { p.style.flex = `${saved[i]} 0 0`; });
+      const allOk = saved.every(r => typeof r === 'number' && r >= 5);
+      if (allOk) {
+        panels.forEach((p, i) => { p.style.flex = `${saved[i]} 0 0`; });
+      } else {
+        localStorage.removeItem(key);
+      }
     }
   } catch {}
 
@@ -39,30 +44,19 @@ function setup(ws) {
 
     let dragging = false;
     let startX = 0;
-    let leftW = 0;
-    let rightW = 0;
+    let startWidths = [];
 
-    let dblState = 0; // 0=현재, 1=5:5, 2=3:7
+    // 더블클릭 → CSS 레이아웃 기본값 복원 (layout-55/37/254 등)
     handle.addEventListener('dblclick', () => {
-      dblState = (dblState + 1) % 3;
-      let ratios;
-      if (dblState === 1) {
-        ratios = panels.map(() => 100 / panels.length);
-      } else if (dblState === 2) {
-        ratios = panels.length === 2 ? [30, 70] : panels.map(() => 100 / panels.length);
-      } else {
-        ratios = panels.map(() => 100 / panels.length);
-        dblState = 1;
-      }
-      panels.forEach((p, i) => { p.style.flex = `${ratios[i]} 0 0`; });
-      localStorage.setItem(key, JSON.stringify(ratios));
+      panels.forEach(p => { p.style.flex = ''; });
+      localStorage.removeItem(key);
     });
 
     handle.addEventListener('mousedown', (e) => {
       dragging = true;
       startX = e.clientX;
-      leftW = panels[i - 1].getBoundingClientRect().width;
-      rightW = panels[i].getBoundingClientRect().width;
+      // 3패널 이상에서도 안전하도록 전체 패널 너비 고정
+      startWidths = panels.map(p => p.getBoundingClientRect().width);
       document.body.classList.add('is-resizing');
       e.preventDefault();
     });
@@ -70,10 +64,13 @@ function setup(ws) {
     document.addEventListener('mousemove', (e) => {
       if (!dragging) return;
       const dx = e.clientX - startX;
-      const newLeft = Math.max(80, leftW + dx);
-      const newRight = Math.max(80, rightW - dx);
-      panels[i - 1].style.flex = `${newLeft} 0 0`;
-      panels[i].style.flex = `${newRight} 0 0`;
+      const newLeft = Math.max(80, startWidths[i - 1] + dx);
+      const newRight = Math.max(80, startWidths[i] - dx);
+      panels.forEach((p, idx) => {
+        if (idx === i - 1)      p.style.flex = `${newLeft} 0 0`;
+        else if (idx === i)     p.style.flex = `${newRight} 0 0`;
+        else                    p.style.flex = `${startWidths[idx]} 0 0`;
+      });
     });
 
     document.addEventListener('mouseup', () => {

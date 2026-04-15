@@ -1,0 +1,18 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-arrows-clockwise" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">자동이체 관리</span>
+      <span class="panel-subtitle" id="adSubtitle">0건</span>
+    </div>
+    <div class="panel-actions">
+      {{ btn('plus', '신규', id='adNew') }}
+      {{ btn('upload', '일괄 등록', id='adUpload') }}
+    </div>
+  </div>
+  <div id="adGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+{% endblock %}

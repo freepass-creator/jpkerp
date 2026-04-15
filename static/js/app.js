@@ -5,6 +5,8 @@
  */
 import { renderMenu, MENU } from './core/menu.js';
 import { initToast } from './core/toast.js';
+import { renderBreadcrumb } from './core/breadcrumb.js';
+import { initMenuCounts, refreshCountsDom } from './core/menu-counts.js';
 import { initPanelResize } from './widgets/panel-resize.js';
 import { initAllGridFilters } from './widgets/grid-filter.js';
 
@@ -13,6 +15,9 @@ if (document.getElementById('shell')) bootstrap();
 async function bootstrap() {
   const menuEl = document.getElementById('sidebarMenu');
   if (menuEl) renderMenu(menuEl, MENU);
+  renderBreadcrumb(document.getElementById('topbarBreadcrumb'), window.location.pathname);
+  initMenuCounts();
+  refreshCountsDom();
 
   initToast();
   initPanelResize();
@@ -231,9 +236,13 @@ async function loadPage(pathname) {
     console.warn(`[spa fetch] ${pathname}`, e);
   }
 
-  // 패널 리사이즈 재초기화
+  // 패널 리사이즈 재초기화 (SPA 전환)
   document.querySelectorAll('.workspace').forEach(ws => { delete ws.dataset.resizeInit; });
   initPanelResize();
+
+  // 브레드크럼 + 카운트 갱신
+  renderBreadcrumb(document.getElementById('topbarBreadcrumb'), pathname);
+  refreshCountsDom();
 
   // 페이지 모듈 로드
   try {

@@ -7,6 +7,8 @@
 import { saveEvent, watchEvents } from '../firebase/events.js';
 import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
+import { watchBillings } from '../firebase/billings.js';
+import { openDetail } from '../core/detail-panel.js';
 import { watchVendors } from '../firebase/vendors.js';
 import { showToast } from '../core/toast.js';
 
@@ -41,22 +43,58 @@ function saveTitle(type, title) {
   } catch {}
 }
 
+// 운영업무 아이콘 — 카테고리별 색상 통일
+// 🔵 고객 소통 (파랑)  | 🟢 차량 흐름 (녹색) | 🔴 문제·긴급 (빨강)
+// 🟠 관리·수리 (주황)  | 🟣 서비스·부가 (보라)
+const OP_ICONS = {
+  // 🔵 고객 소통
+  contact:   { name: 'ph-phone',              color: '#3b82f6' },  // blue-500
+  collect:   { name: 'ph-envelope',           color: '#2563eb' },  // blue-600
+
+  // 🟢 차량 흐름 (출고/반납/이동)
+  delivery:  { name: 'ph-truck',              color: '#10b981' },  // emerald-500
+  return:    { name: 'ph-arrow-u-down-left',  color: '#059669' },  // emerald-600
+  transfer:  { name: 'ph-arrows-left-right',  color: '#14b8a6' },  // teal-500
+
+  // 🔴 문제·긴급
+  force:     { name: 'ph-warning-octagon',    color: '#dc2626' },  // red-600
+  accident:  { name: 'ph-car-profile',        color: '#ef4444' },  // red-500
+  penalty:   { name: 'ph-prohibit',           color: '#b91c1c' },  // red-700
+
+  // 🟠 관리·수리
+  maint:     { name: 'ph-wrench',             color: '#f97316' },  // orange-500
+  repair:    { name: 'ph-hammer',             color: '#ea580c' },  // orange-600
+  key:       { name: 'ph-key',                color: '#f59e0b' },  // amber-500
+
+  // 🟣 서비스·부가
+  product:   { name: 'ph-sparkle',            color: '#8b5cf6' },  // violet-500
+  insurance: { name: 'ph-shield-check',       color: '#7c3aed' },  // violet-600
+  wash:      { name: 'ph-drop',               color: '#a855f7' },  // purple-500
+  fuel:      { name: 'ph-gas-pump',           color: '#c026d3' },  // fuchsia-600
+};
+
+function opIcon(key) {
+  const ic = OP_ICONS[key];
+  if (!ic) return '';
+  return `<i class="ph ${ic.name}" style="color:${ic.color};font-size:18px"></i>`;
+}
+
 const DEFAULT_TYPES = [
-  { key: 'contact',     label: '고객응대',       icon: '📞', sub: '통화/상담/컴플레인',       direction: 'out' },
-  { key: 'delivery',    label: '출고(인도)',     icon: '🚗', sub: '차량 인도',                 direction: 'out' },
-  { key: 'return',      label: '정상반납',       icon: '🔙', sub: '계약만료/정상회수',          direction: 'in' },
-  { key: 'force',       label: '강제회수',       icon: '🚨', sub: '미납/연락두절/강제회수',     direction: 'in' },
-  { key: 'transfer',    label: '차량이동',       icon: '🔄', sub: '이동/배차/탁송',            direction: 'out' },
-  { key: 'key',         label: '차키 전달/분출', icon: '🔑', sub: '키 전달/회수/분실',          direction: 'out' },
-  { key: 'maint',       label: '정비',           icon: '🔧', sub: '소모품교체 + 기능수리',      direction: 'out' },
-  { key: 'product',     label: '상품화',         icon: '✨', sub: '반납 후 재상품화',           direction: 'out' },
-  { key: 'accident',    label: '사고접수 및 처리', icon: '💥', sub: '사고 발생/보험접수',        direction: 'out' },
-  { key: 'repair',      label: '사고수리',       icon: '🔨', sub: '판금/도색/수리',             direction: 'out' },
-  { key: 'penalty',     label: '과태료 임차인 변경부과', icon: '🚫', sub: '과태료 변경부과 처리',  direction: 'out' },
-  { key: 'collect',     label: '미수관리',       icon: '📨', sub: '독촉/내용증명/법적조치',     direction: 'out' },
-  { key: 'insurance',   label: '보험관리',       icon: '🛡', sub: '보험배서/연령변경/갱신',     direction: 'out' },
-  { key: 'wash',        label: '세차',           icon: '🧼', sub: '세차/실내크리닝',           direction: 'out' },
-  { key: 'fuel',        label: '연료보충',       icon: '⛽', sub: '주유/전기충전',              direction: 'out' },
+  { key: 'contact',     label: '고객응대',       sub: '통화/상담/컴플레인',       direction: 'out' },
+  { key: 'delivery',    label: '출고(인도)',     sub: '차량 인도',                 direction: 'out' },
+  { key: 'return',      label: '정상반납',       sub: '계약만료/정상회수',          direction: 'in' },
+  { key: 'force',       label: '강제회수',       sub: '미납/연락두절/강제회수',     direction: 'in' },
+  { key: 'transfer',    label: '차량이동',       sub: '이동/배차/탁송',            direction: 'out' },
+  { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',          direction: 'out' },
+  { key: 'maint',       label: '정비',           sub: '소모품교체 + 기능수리',      direction: 'out' },
+  { key: 'product',     label: '상품화',         sub: '반납 후 재상품화',           direction: 'out' },
+  { key: 'accident',    label: '사고접수',       sub: '사고 발생/보험접수',        direction: 'out' },
+  { key: 'repair',      label: '사고수리',       sub: '판금/도색/수리',             direction: 'out' },
+  { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out' },
+  { key: 'collect',     label: '미수관리',       sub: '독촉/내용증명/법적조치',     direction: 'out' },
+  { key: 'insurance',   label: '보험관리',       sub: '보험배서/연령변경/갱신',     direction: 'out' },
+  { key: 'wash',        label: '세차',           sub: '세차/실내크리닝',           direction: 'out' },
+  { key: 'fuel',        label: '연료보충',       sub: '주유/전기충전',              direction: 'out' },
 ];
 
 const ORDER_KEY = 'jpk.op.order';
@@ -87,66 +125,46 @@ let lastCarNumber = '';
 function renderList() {
   const host = $('#opList');
   host.innerHTML = TYPES.map(t => `
-    <div class="op-type${currentType === t.key ? ' is-active' : ''}" data-type="${t.key}" draggable="true">
-      <span class="op-type__icon">${t.icon}</span>
+    <div class="op-type${currentType === t.key ? ' is-active' : ''}" data-type="${t.key}">
+      <span class="op-type__icon">${opIcon(t.key)}</span>
       <span class="op-type__label">${t.label}</span>
-      <span class="op-type__sub">${t.sub}</span>
-      <span class="op-type__handle">⠿</span>
+      <span class="op-type__handle" style="margin-left:auto">⠿</span>
     </div>
   `).join('');
 
   // 클릭
   host.querySelectorAll('.op-type').forEach(el => {
-    el.addEventListener('click', (e) => {
-      if (e.target.closest('[draggable]') && e.detail === 0) return;
+    el.addEventListener('click', () => {
       currentType = el.dataset.type;
       renderList();
       renderForm();
     });
   });
 
-  // 드래그 정렬
-  let dragEl = null;
-  host.querySelectorAll('.op-type').forEach(el => {
-    el.addEventListener('dragstart', (e) => {
-      dragEl = el;
-      el.style.opacity = '0.4';
-      e.dataTransfer.effectAllowed = 'move';
+  // Sortable.js로 부드러운 드래그
+  if (window.Sortable && !host._sortable) {
+    host._sortable = Sortable.create(host, {
+      animation: 200,
+      handle: '.op-type__handle',
+      ghostClass: 'op-type--ghost',
+      chosenClass: 'op-type--chosen',
+      dragClass: 'op-type--drag',
+      onEnd: () => {
+        const order = [...host.querySelectorAll('.op-type')].map(el => el.dataset.type);
+        TYPES = order.map(k => TYPES.find(t => t.key === k)).filter(Boolean);
+        saveOrder(TYPES);
+      },
     });
-    el.addEventListener('dragend', () => {
-      el.style.opacity = '';
-      dragEl = null;
-    });
-    el.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      el.style.borderTop = '2px solid var(--c-primary)';
-    });
-    el.addEventListener('dragleave', () => {
-      el.style.borderTop = '';
-    });
-    el.addEventListener('drop', (e) => {
-      e.preventDefault();
-      el.style.borderTop = '';
-      if (!dragEl || dragEl === el) return;
-      const fromKey = dragEl.dataset.type;
-      const toKey = el.dataset.type;
-      const fromIdx = TYPES.findIndex(t => t.key === fromKey);
-      const toIdx = TYPES.findIndex(t => t.key === toKey);
-      if (fromIdx < 0 || toIdx < 0) return;
-      const [moved] = TYPES.splice(fromIdx, 1);
-      TYPES.splice(toIdx, 0, moved);
-      saveOrder(TYPES);
-      renderList();
-    });
-  });
+  }
 }
 
 function renderForm() {
   const t = TYPES.find(x => x.key === currentType);
   if (!t) return;
   const today = new Date().toISOString().slice(0, 10);
-  $('#opFormTitle').textContent = `${t.icon} ${t.label} 입력`;
+  $('#opFormTitle').innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon(t.key)}<span>${t.label}</span></span>`;
+  const subEl = $('#opFormSubtitle');
+  if (subEl) subEl.textContent = t.sub || '';
 
   const host = $('#opFormHost');
   const carList = `<datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">${a.car_model || ''}</option>`).join('')}</datalist>`;
@@ -1069,7 +1087,180 @@ function renderForm() {
     });
   });
 
+  // 차량번호 입력 → 우측 컨텍스트 패널 갱신
+  const carCtx = host.querySelector('[name="car_number"]');
+  if (carCtx) {
+    carCtx.addEventListener('input', () => updateContextPanel(carCtx.value.trim()));
+    carCtx.addEventListener('change', () => updateContextPanel(carCtx.value.trim()));
+    if (carCtx.value.trim()) updateContextPanel(carCtx.value.trim());
+  }
+
   host.querySelector('[name="car_number"]')?.focus();
+}
+
+// ── 우측 컨텍스트 패널 (계약이력 + 수납 + 운영이력) ─────
+let _billings = [];
+let _selectedContractCode = null;
+
+function updateContextPanel(carNumber) {
+  const panel = $('#opPanelContext');
+  const host = $('#opContextHost');
+  const sub = $('#opContextSubtitle');
+  if (!panel || !host) return;
+
+  if (!carNumber) {
+    panel.hidden = false;
+    host.innerHTML = `<div style="padding:24px;text-align:center;color:var(--c-text-muted)">차량번호 입력 시<br>계약/수납/운영이력이 여기 표시됩니다.</div>`;
+    sub.textContent = '차량번호를 입력하세요';
+    return;
+  }
+  panel.hidden = false;
+
+  // 해당 차량의 자산 / 계약 / 이벤트
+  const asset = assets.find(a => a.car_number === carNumber);
+  const carContracts = contracts
+    .filter(c => c.car_number === carNumber && c.status !== 'deleted')
+    .sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
+  const carEvents = allEvents
+    .filter(e => e.car_number === carNumber && e.status !== 'deleted')
+    .sort((a, b) => (b.date || b.created_at || '').toString().localeCompare((a.date || a.created_at || '').toString()));
+
+  sub.textContent = `${carNumber}${asset ? ` · ${asset.manufacturer || ''} ${asset.car_model || ''}`.trim() : ' · 미등록 차량'}`;
+
+  // 기본 선택: 최신 계약
+  if (carContracts.length && !carContracts.some(c => c.contract_code === _selectedContractCode)) {
+    _selectedContractCode = carContracts[0].contract_code;
+  }
+  if (!carContracts.length) _selectedContractCode = null;
+
+  renderContextContent(asset, carContracts, carEvents);
+}
+
+function renderContextContent(asset, carContracts, carEvents) {
+  const host = $('#opContextHost');
+
+  // ── 계약 이력 리스트 ──
+  const contractsHtml = carContracts.length
+    ? carContracts.map(c => {
+        const active = c.contract_code === _selectedContractCode;
+        const isCurrent = !c.contract_status || c.contract_status === '계약진행' || c.contract_status === '계약완료';
+        return `<div class="op-ctx-contract${active ? ' is-active' : ''}" data-code="${c.contract_code}" style="
+          display:flex;align-items:center;gap:8px;
+          padding:8px 10px;border:1px solid ${active ? 'var(--c-primary)' : 'var(--c-border)'};
+          border-radius:var(--r-sm);cursor:pointer;margin-bottom:4px;
+          background:${active ? 'var(--c-primary-bg)' : 'transparent'};
+        ">
+          <span style="color:${active ? 'var(--c-primary)' : 'var(--c-text-muted)'}">${active ? '●' : '○'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:var(--font-size-sm)">${c.contractor_name || '-'} <span style="color:var(--c-text-muted);font-weight:400">${c.contractor_phone || ''}</span></div>
+            <div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">${c.start_date || ''} ~ ${c.end_date || computeEndDate(c)} ${isCurrent ? '<span style="color:var(--c-success);font-weight:600">현재</span>' : ''}</div>
+          </div>
+        </div>`;
+      }).join('')
+    : `<div style="color:var(--c-text-muted);font-size:var(--font-size-sm);padding:4px">계약 이력 없음</div>`;
+
+  // ── 선택된 계약 상세 ──
+  const selected = carContracts.find(c => c.contract_code === _selectedContractCode);
+  const contractDetail = selected ? renderContractDetail(selected) : '';
+
+  // ── 운영이력 (최근 5건) ──
+  const eventsHtml = carEvents.slice(0, 5).length
+    ? carEvents.slice(0, 5).map((e, idx) => {
+        const typeIcon = { maint: '🔧', accident: '💥', penalty: '🚫', contact: '📞', delivery: '🚗', return: '🔙', wash: '🧼', fuel: '⛽' }[e.event_type] || '•';
+        const date = (e.date || '').slice(0, 10) || (e.created_at ? new Date(e.created_at).toISOString().slice(0, 10) : '');
+        return `<div class="op-ctx-event" data-idx="${idx}" style="display:flex;gap:6px;padding:6px 4px;font-size:var(--font-size-sm);border-bottom:1px solid var(--c-border-soft,#f0f0f0);cursor:pointer;border-radius:var(--r-xs)">
+          <span>${typeIcon}</span>
+          <span style="color:var(--c-text-muted);font-size:var(--font-size-xs);width:75px">${date}</span>
+          <span style="flex:1;min-width:0">${e.title || e.event_type || '-'}</span>
+        </div>`;
+      }).join('')
+    : `<div style="color:var(--c-text-muted);font-size:var(--font-size-sm);padding:4px">이력 없음</div>`;
+
+  host.innerHTML = `
+    <div class="form-section">
+      <div class="form-section-title">📋 계약 이력 (${carContracts.length})</div>
+      ${contractsHtml}
+    </div>
+    ${contractDetail}
+    <div class="form-section">
+      <div class="form-section-title">🔧 최근 운영이력 (${carEvents.length > 5 ? '최근 5건 / 총 ' + carEvents.length : carEvents.length})</div>
+      ${eventsHtml}
+    </div>
+  `;
+
+  // 계약 클릭 → 선택 변경
+  host.querySelectorAll('.op-ctx-contract').forEach(el => {
+    el.addEventListener('click', () => {
+      _selectedContractCode = el.dataset.code;
+      renderContextContent(asset, carContracts, carEvents);
+    });
+  });
+
+  // 운영이력 클릭 → 상세 팝업
+  host.querySelectorAll('.op-ctx-event').forEach(el => {
+    el.addEventListener('hover', () => { el.style.background = 'var(--c-bg-hover)'; });
+    el.addEventListener('click', () => {
+      const e = carEvents[Number(el.dataset.idx)];
+      if (!e) return;
+      const entries = Object.entries(e).filter(([k, v]) => !k.startsWith('_') && v !== '' && v !== null && v !== undefined && k !== 'status' && k !== 'created_at' && k !== 'updated_at');
+      openDetail({
+        title: `${e.title || e.event_type || '이력'}`,
+        subtitle: `${e.car_number || ''} · ${(e.date || '').slice(0, 10)}`,
+        sections: [{
+          title: '상세',
+          fields: entries.map(([k, v]) => ({ label: k, value: String(v) })),
+        }],
+      });
+    });
+  });
+}
+
+function renderContractDetail(c) {
+  const start = c.start_date || '-';
+  const end = c.end_date || computeEndDate(c) || '-';
+  const rent = Number(c.rent_amount || 0).toLocaleString();
+  const deposit = Number(c.deposit_amount || 0).toLocaleString();
+
+  // 미납 계산
+  const contractBillings = _billings.filter(b => b.contract_code === c.contract_code);
+  const unpaid = contractBillings.filter(b => (Number(b.paid_total) || 0) < (Number(b.amount) || 0));
+  const unpaidTotal = unpaid.reduce((s, b) => s + ((Number(b.amount) || 0) - (Number(b.paid_total) || 0)), 0);
+  const paidTotal = contractBillings.reduce((s, b) => s + (Number(b.paid_total) || 0), 0);
+
+  // D-day
+  const today = new Date().toISOString().slice(0, 10);
+  const dDay = end !== '-' ? Math.ceil((new Date(end) - new Date(today)) / 86400000) : null;
+
+  return `
+    <div class="form-section">
+      <div class="form-section-title">📄 ${c.contractor_name || ''} 계약 상세</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:var(--font-size-sm);padding:4px 8px">
+        <div style="color:var(--c-text-muted)">계약코드</div><div style="font-family:monospace">${c.contract_code || '-'}</div>
+        <div style="color:var(--c-text-muted)">연락처</div><div>${c.contractor_phone || '-'}</div>
+        <div style="color:var(--c-text-muted)">계약기간</div><div>${start} ~ ${end} ${dDay !== null ? (dDay < 0 ? `<span style="color:var(--c-danger)">(${Math.abs(dDay)}일 초과)</span>` : `<span style="color:var(--c-text-muted)">(D-${dDay})</span>`) : ''}</div>
+        <div style="color:var(--c-text-muted)">월대여료</div><div>${rent}원</div>
+        <div style="color:var(--c-text-muted)">보증금</div><div>${deposit}원</div>
+        <div style="color:var(--c-text-muted)">결제일</div><div>매월 ${c.auto_debit_day || '-'}일</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">💰 수납 내역</div>
+      <div style="padding:4px 8px;font-size:var(--font-size-sm);line-height:1.8">
+        <div>완납 <b style="color:var(--c-success)">${paidTotal.toLocaleString()}원</b> / 회차 ${contractBillings.length}건</div>
+        ${unpaid.length ? `<div style="color:var(--c-danger);font-weight:600">🔴 미납 ${unpaidTotal.toLocaleString()}원 (${unpaid.length}회차)</div>` : '<div style="color:var(--c-success)">✅ 미납 없음</div>'}
+        ${unpaid.slice(0, 3).map(b => `<div style="font-size:var(--font-size-xs);color:var(--c-text-muted);padding-left:8px">· ${b.seq || '-'}회차 ${b.due_date || ''} — ${Number(b.amount || 0).toLocaleString()}원</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function computeEndDate(c) {
+  if (!c.start_date || !c.rent_months) return '';
+  const d = new Date(c.start_date);
+  if (isNaN(d)) return '';
+  d.setMonth(d.getMonth() + Number(c.rent_months));
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
 }
 
 function resetForm() {
@@ -1227,6 +1418,7 @@ export async function mount() {
   watchAssets((items) => { assets = items; });
   watchContracts((items) => { contracts = items; });
   watchEvents((items) => { allEvents = items; });
+  watchBillings((items) => { _billings = items; });
   watchVendors((items) => { vendors = items; });
   renderList();
   $('#opReset')?.addEventListener('click', resetForm);

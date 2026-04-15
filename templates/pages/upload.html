@@ -5,64 +5,99 @@
 {% block workspace %}
 <section class="panel">
   <div class="panel-head">
-    <div><span class="panel-title">업로드</span></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-upload-simple" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">업로드</span>
+    </div>
     <div class="panel-actions">
       {{ btn('reset', '초기화', id='uploadReset') }}
     </div>
   </div>
   <div class="panel-body is-pad" style="overflow-y:auto;display:flex;flex-direction:column;gap:14px">
-    <!-- 데이터 종류 -->
+
+    <!-- ① 데이터 종류 -->
     <div class="form-section">
       <div class="form-section-title">데이터 종류</div>
       <select id="uploadType" class="ctrl" style="width:100%">
         <option value="auto">자동감지</option>
-        <option value="asset">자산(차량)</option>
-        <option value="contract">계약</option>
-        <option value="customer">고객</option>
-        <option value="member">회원사</option>
-        <option value="vendor">거래처</option>
+        <optgroup label="📂 기본 마스터">
+          <option value="asset">자산 (차량)</option>
+          <option value="loan">할부</option>
+          <option value="insurance">보험</option>
+          <option value="contract">계약</option>
+          <option value="customer">고객</option>
+          <option value="member">회원사</option>
+          <option value="vendor">거래처</option>
+          <option value="product">상품</option>
+        </optgroup>
+        <optgroup label="📊 거래/이력">
+          <option value="bank">통장 거래내역</option>
+          <option value="card">카드 이용내역</option>
+          <option value="autodebit">자동이체 등록</option>
+          <option value="cms">CMS 집금내역서 (건별)</option>
+          <option value="cms_summary">CMS 정산 요약 (월별)</option>
+          <option value="finance">재무원장</option>
+        </optgroup>
       </select>
     </div>
 
-    <!-- 스키마 안내 -->
-    <div id="uploadSchemaInfo" style="background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:var(--r-sm);padding:10px 12px;font-size:var(--font-size-sm);line-height:1.8;max-height:120px;overflow-y:auto"></div>
-
-    <!-- 파일 업로드 -->
-    <label id="uploadDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:24px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-text-muted);transition:background var(--t-fast)">
-      <input type="file" id="uploadFile" multiple accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.heic,.webp" hidden>
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>
-      <div style="font-size:12px;font-weight:600;color:var(--c-text)">파일 업로드</div>
-      <div style="font-size:10px">CSV · 엑셀 · PDF · 이미지</div>
-    </label>
-
-    <!-- 또는 구글시트 -->
-    <div style="display:flex;align-items:center;gap:8px;color:var(--c-text-muted);font-size:10px">
-      <div style="flex:1;height:1px;background:var(--c-border)"></div>또는<div style="flex:1;height:1px;background:var(--c-border)"></div>
-    </div>
-    <div style="display:flex;gap:6px">
-      <input type="url" id="uploadUrl" class="ctrl" placeholder="구글시트 URL 붙여넣기" style="flex:1">
-      <button class="btn btn-primary" id="uploadUrlLoad">불러오기</button>
-    </div>
-    <div style="font-size:10px;color:var(--c-text-muted);line-height:1.6;background:var(--c-bg-sub);padding:8px 10px;border-radius:var(--r-sm)">
-      · 공유 → 링크가 있는 모든 사용자: 뷰어<br>
-      · 1행은 헤더 (컬럼명)<br>
-      · 헤더로 데이터 유형을 자동 감지합니다
+    <!-- ② 스키마 안내 + 헤더복사/샘플 -->
+    <div class="form-section">
+      <div class="form-section-title">스키마 항목</div>
+      <div id="uploadSchemaInfo" style="background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:var(--r-sm);padding:10px 12px;font-size:var(--font-size-sm);line-height:1.8;max-height:140px;overflow-y:auto;margin-bottom:8px"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end">
+        <button class="btn" id="uploadCopyHead">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          헤더 복사
+        </button>
+        <button class="btn" id="uploadSample">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          샘플 다운로드
+        </button>
+      </div>
     </div>
 
-    <!-- 헤더 복사 / 샘플 -->
-    <div style="display:flex;gap:6px">
-      <button class="btn" id="uploadCopyHead" style="flex:1">헤더 복사</button>
-      <button class="btn" id="uploadSample" style="flex:1">샘플 다운로드</button>
+    <!-- ③ 업로드 방법 -->
+    <div class="form-section">
+      <div class="form-section-title">업로드</div>
+
+      <!-- 파일 드롭존 -->
+      <label id="uploadDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:20px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-text-muted);transition:background var(--t-fast);margin-bottom:10px">
+        <input type="file" id="uploadFile" multiple accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.heic,.webp" hidden>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>
+        <div style="font-size:12px;font-weight:600;color:var(--c-text)">파일 업로드</div>
+        <div style="font-size:10px">CSV · 엑셀 · PDF · 이미지</div>
+      </label>
+
+      <!-- 또는 구분선 -->
+      <div style="display:flex;align-items:center;gap:8px;color:var(--c-text-muted);font-size:10px;margin-bottom:10px">
+        <div style="flex:1;height:1px;background:var(--c-border)"></div>또는<div style="flex:1;height:1px;background:var(--c-border)"></div>
+      </div>
+
+      <!-- 구글시트 URL -->
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input type="url" id="uploadUrl" class="ctrl" placeholder="구글시트 URL 붙여넣기" style="flex:1">
+        <button class="btn btn-primary" id="uploadUrlLoad">
+          <i class="ph ph-arrow-square-in"></i>
+          불러오기
+        </button>
+      </div>
+      <div style="font-size:10px;color:var(--c-text-muted);line-height:1.6">
+        · 공유 → 링크가 있는 모든 사용자: 뷰어<br>
+        · 1행은 헤더 (컬럼명)<br>
+        · 헤더로 데이터 유형을 자동 감지합니다
+      </div>
     </div>
 
-    <!-- 감지 결과 -->
+    <!-- ④ 감지 결과 -->
     <div id="uploadDetect" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
 </section>
 
 <section class="panel">
   <div class="panel-head">
-    <div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-eye" style="color:var(--c-text-muted)"></i>
       <span class="panel-title" id="uploadDetectTitle">데이터 미리보기</span>
       <span class="panel-subtitle" id="uploadInfo">파일을 업로드하세요</span>
     </div>
@@ -70,7 +105,7 @@
       {{ btn('check', '반영', cls='btn-primary', id='uploadConfirm') }}
     </div>
   </div>
-  <div id="uploadSummaryBar" hidden style="flex-shrink:0;padding:8px 16px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:12px;background:var(--c-bg-sub);font-size:var(--font-size-sm)"></div>
+  <div id="uploadSummaryBar" hidden style="flex-shrink:0;padding:8px 16px;border-bottom:1px solid var(--c-border);align-items:center;gap:12px;background:var(--c-bg-sub);font-size:var(--font-size-sm)"></div>
   <div id="uploadGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
 </section>
 {% endblock %}

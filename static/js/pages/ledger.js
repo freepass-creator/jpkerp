@@ -175,7 +175,6 @@ function refresh() {
 
   if (gridApi) gridApi.destroy();
   gridApi = agGrid.createGrid($('#ledgerGrid'), {
-  $('#ledgerGrid')._agApi = gridApi;
     columnDefs: getColumnDefs(),
     rowData: rows,
     defaultColDef: { resizable: true, sortable: true, editable: false, minWidth: 50 },
@@ -183,8 +182,9 @@ function refresh() {
     headerHeight: 28,
     animateRows: false,
     suppressContextMenu: true,
-    onRowDoubleClicked: (e) => { if(e.data && (activePeriod==='day'||activePeriod==='week')) showLedgerDetail(e.data); },
+    onRowClicked: (e) => { if(e.data && (activePeriod==='day'||activePeriod==='week')) showLedgerDetail(e.data); },
   });
+  $('#ledgerGrid')._agApi = gridApi;
 }
 
 const row = (l,v) => v ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);width:100px">${l}</td><td style="padding:6px 0;font-weight:500">${v}</td></tr>` : '';

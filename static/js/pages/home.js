@@ -52,6 +52,8 @@ function render() {
 
   // ─── 자산 ───────────────────────────────────
   const activeContracts = contracts.filter(c => {
+    if (c.status === 'deleted') return false;
+    if (!c.contractor_name || !String(c.contractor_name).trim()) return false;  // 계약자 빈 건 무효
     const start = normalizeDate(c.start_date);
     const end = computeContractEnd(c);
     if (!start) return false;

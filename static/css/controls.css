@@ -1,6 +1,20 @@
 /* controls.css — Notion-style 버튼 · 입력 통일 규격 */
 
 /* ── 버튼 ── */
+/* ── Phosphor 아이콘 전역 기본값 ── */
+i.ph {
+  font-size: var(--icon-sm);       /* 기본 14px */
+  line-height: 1;
+  color: inherit;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── 버튼 통일 스타일 ──
+   기본: 박스 없음 (transparent), 아이콘 + 텍스트만
+   호버: 배경 박스 표시
+   primary/danger 등 variant도 동일 — 호버 시만 배경 강조색
+*/
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 5px;
@@ -15,30 +29,36 @@
   font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
-  transition: background var(--t-fast), color var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
 .btn:hover { background: var(--c-bg-hover); color: var(--c-text); }
 .btn:active { background: var(--c-bg-active); }
 .btn svg { width: var(--ctrl-icon); height: var(--ctrl-icon); flex-shrink: 0; }
 
+/* Primary: 기본은 투명, 글자색만 강조 / 호버 시 채워짐 */
 .btn-primary {
+  background: transparent;
+  color: var(--c-text);
+  border-color: transparent;
+}
+.btn-primary:hover {
   background: var(--c-text);
   color: #fff;
   border-color: var(--c-text);
 }
-.btn-primary:hover { background: #555; color: #fff; }
+.btn-primary svg { color: var(--c-text); }
+.btn-primary:hover svg { color: #fff; }
 
-.btn-outline {
-  border-color: var(--c-border-strong);
-  background: var(--c-bg);
-  color: var(--c-text);
-}
-.btn-outline:hover { background: var(--c-bg-hover); }
+/* Outline: 기본은 투명, 호버 시 테두리만 */
+.btn-outline { background: transparent; color: var(--c-text); }
+.btn-outline:hover { background: var(--c-bg-hover); border-color: var(--c-border-strong); }
 
-.btn-icon { width: 24px; height: 24px; padding: 0; }
+/* Icon-only 버튼 */
+.btn-icon { width: 28px; height: 28px; padding: 0; }
 
+/* Danger */
 .btn-danger { color: var(--c-danger); }
-.btn-danger:hover { background: var(--c-danger-bg); }
+.btn-danger:hover { background: var(--c-danger-bg); color: var(--c-danger); }
 
 .btn.is-active { background: var(--c-bg-active); color: var(--c-text); font-weight: var(--fw-bold); }
 .btn[disabled] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
@@ -102,7 +122,19 @@
 .op-type__icon { font-size: var(--font-size-lg); flex-shrink: 0; width: 24px; text-align: center; }
 .op-type__label { font-weight: var(--fw-medium); font-size: var(--font-size); }
 .op-type__sub { font-size: var(--font-size-xs); color: var(--c-text-muted); margin-left: auto; }
-.op-type__handle { color: var(--c-text-muted); font-size: 10px; cursor: grab; margin-left: var(--sp-2); }
+.op-type__handle {
+  color: var(--c-text-muted);
+  font-size: 12px;
+  cursor: grab;
+  margin-left: var(--sp-2);
+  padding: 4px 6px;
+  border-radius: 3px;
+  transition: background var(--t-fast);
+}
+.op-type__handle:hover { background: var(--c-bg-hover); color: var(--c-text); }
+.op-type__handle:active { cursor: grabbing; }
+.op-type--ghost { opacity: 0.4; background: var(--c-bg-hover); }
+.op-type--chosen { background: var(--c-bg-active); }
 
 /* ── 버튼 그룹 (드롭다운 대체) ── */
 .btn-group {

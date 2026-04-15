@@ -23,17 +23,18 @@
   border: none !important;
 }
 
-/* 외곽 보더 완전 제거 */
+/* 외곽 보더 완전 제거 — 패널 리사이즈 핸들(1px)이 구분선 역할 */
 .ag-theme-alpine .ag-root-wrapper { border: none !important; }
 .ag-theme-alpine .ag-root { border: none !important; }
 .ag-theme-alpine .ag-body-viewport { border: none !important; }
 .ag-theme-alpine .ag-header { border-bottom: 1px solid var(--c-border) !important; }
 
-/* 세로줄 강제 + 텍스트 잘림 방지 */
+/* 세로줄 강제 + 엑셀식 말줄임표 */
 .ag-theme-alpine .ag-cell {
   border-right: 1px solid var(--c-border) !important;
-  text-overflow: clip !important;
-  overflow: visible !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 .ag-theme-alpine .ag-header-cell {
   border-right: 1px solid var(--c-border) !important;
@@ -146,10 +147,40 @@
   justify-content: center;
 }
 
-/* 컬럼 리사이즈 핸들 숨김 (드래그는 작동) */
+/* 컬럼 리사이즈 핸들 — 보이지 않지만 클릭 영역 넓게 (호버 시만 표시) */
 .ag-theme-alpine .ag-header-cell-resize {
-  opacity: 0;
+  width: 8px !important;
+  right: -4px !important;
+  cursor: col-resize !important;
+  background: transparent;
+  opacity: 1;
+  z-index: 2;
 }
-.ag-theme-alpine .ag-header-cell-resize:hover {
-  opacity: 0.3;
+.ag-theme-alpine .ag-header-cell-resize::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  background: var(--c-primary);
+  transition: width var(--t-fast);
+}
+.ag-theme-alpine .ag-header-cell-resize:hover::after {
+  width: 2px;
+}
+
+/* 보험관리 · 핵심 컬럼 그룹 헤더 강조 */
+.ag-theme-alpine .ag-header-group-cell.grp-coverage,
+.ag-theme-alpine .ag-header-group-cell.grp-payment {
+  background: var(--c-primary-bg);
+  color: var(--c-primary);
+  font-weight: 700;
+  border-bottom: 2px solid var(--c-primary);
+}
+.ag-theme-alpine .ag-header-group-cell.grp-basic,
+.ag-theme-alpine .ag-header-group-cell.grp-holder,
+.ag-theme-alpine .ag-header-group-cell.grp-car {
+  background: var(--c-bg-sub);
+  font-weight: 600;
 }

@@ -1,0 +1,26 @@
+{% extends 'workspace.html' %}
+{% block topbar_extra %}보험관리 · <span id="insCount">0</span>건{% endblock %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-shield-check" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">보험</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+      <input id="insSearch" type="search" placeholder="검색 (차량번호/증권번호/보험사…)"
+             style="padding:4px 8px;border:1px solid var(--c-border);border-radius:var(--r-sm);font-size:12px;width:240px">
+      <button id="insExportCsv" class="btn btn-sm" title="CSV 다운로드">
+        <i class="ph ph-file-csv"></i> CSV
+      </button>
+      <button id="insExportXlsx" class="btn btn-sm" title="Excel 다운로드">
+        <i class="ph ph-file-xls"></i> Excel
+      </button>
+      <button id="insExportJson" class="btn btn-sm" title="JSON 다운로드 (분납일정·특약 포함 원본)">
+        <i class="ph ph-file-code"></i> JSON
+      </button>
+    </div>
+  </div>
+  <div id="insuranceGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+{% endblock %}

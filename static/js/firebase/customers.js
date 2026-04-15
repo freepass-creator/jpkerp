@@ -20,7 +20,17 @@ export async function getCustomer(code) {
 }
 
 export async function saveCustomer(data) {
-  const code = await nextSequence('customer', 'CU');
+  // 고객코드 — 회원사 있으면 CP01CU00001, 없으면 CU00001
+  let code = data.customer_code || '';
+  if (!code) {
+    const partner = (data.partner_code || '').trim();
+    if (partner) {
+      const seq = await nextSequence(`customer_${partner}`, '', 5);
+      code = `${partner}CU${seq}`;
+    } else {
+      code = await nextSequence('customer', 'CU', 5);
+    }
+  }
   const now = Date.now();
   const record = {
     ...data,

@@ -1,0 +1,66 @@
+{% extends 'base-mobile.html' %}
+{% block main %}
+<div class="m-section">
+  <div class="m-section-title">내정보</div>
+  <div style="padding:20px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:10px;text-align:center">
+    <i class="ph ph-user-circle" style="font-size:56px;color:var(--c-text-muted)"></i>
+    <div id="myName" style="margin-top:8px;font-size:16px;font-weight:600">이름 미설정</div>
+  </div>
+  <button class="m-btn" id="btnSetName" style="margin-top:12px">
+    <i class="ph ph-pencil-simple"></i> 촬영자 이름 변경
+  </button>
+  <button class="m-btn m-btn-primary" id="btnInstall" hidden style="margin-top:8px">
+    <i class="ph ph-download-simple"></i> 앱으로 설치하기
+  </button>
+  <div id="iosHint" hidden style="margin-top:8px;padding:14px;background:#fff;border:1px solid #e3e2de;border-radius:10px;font-size:12px;color:#37352f;line-height:1.6">
+    <strong>iPhone 홈 화면에 추가하기</strong><br>
+    Safari 하단 <i class="ph ph-export"></i> 공유 버튼 → <strong>"홈 화면에 추가"</strong> 선택
+  </div>
+  <a class="m-btn" href="/" style="margin-top:8px">
+    <i class="ph ph-monitor"></i> 데스크탑 버전으로
+  </a>
+</div>
+<script>
+  const UPLOADER_KEY = 'jpk.m.uploader';
+  const nameEl = document.getElementById('myName');
+  const set = () => { nameEl.textContent = localStorage.getItem(UPLOADER_KEY) || '이름 미설정'; };
+  document.getElementById('btnSetName').addEventListener('click', () => {
+    const n = prompt('촬영자 이름', localStorage.getItem(UPLOADER_KEY) || '');
+    if (n !== null) {
+      const v = n.trim();
+      if (v) localStorage.setItem(UPLOADER_KEY, v); else localStorage.removeItem(UPLOADER_KEY);
+      set();
+    }
+  });
+  set();
+
+  // PWA 설치 (Android/Chrome)
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('btnInstall');
+  const iosHint = document.getElementById('iosHint');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // iOS — 별도 install prompt 없음, 안내문구
+  const ua = navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isIOS && !isStandalone) iosHint.hidden = false;
+  if (isStandalone) {
+    installBtn.hidden = true;
+    iosHint.hidden = true;
+  }
+</script>
+{% endblock %}

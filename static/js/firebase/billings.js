@@ -101,6 +101,34 @@ export function computeTotalDue(billing) {
   return adj.reduce((s, a) => s + (Number(a.amount) || 0), base);
 }
 
+/**
+ * 회차 상태 자동 산정 (오늘 기준)
+ *  - 수납완료: paid >= due
+ *  - 부분수납: 0 < paid < due (납부일 무관)
+ *  - 납부예정: paid = 0 + 납부일 미도래
+ *  - 미납: paid < due + 납부일 1일 이상 경과
+ */
+export function computeBillingStatus(billing) {
+  const due = computeTotalDue(billing);
+  const paid = Number(billing?.paid_total) || 0;
+  if (due > 0 && paid >= due) return '수납완료';
+  if (paid > 0) return '부분수납';
+  const today = new Date().toISOString().slice(0, 10);
+  if (billing?.due_date && billing.due_date < today) return '미납';
+  return '납부예정';
+}
+
+/** 미납 경과 일수 (납부일 지난 만큼) — 0이면 미납 아님 */
+export function computeOverdueDays(billing) {
+  if (!billing?.due_date) return 0;
+  const today = new Date().toISOString().slice(0, 10);
+  if (billing.due_date >= today) return 0;
+  const due = computeTotalDue(billing);
+  const paid = Number(billing.paid_total) || 0;
+  if (paid >= due) return 0;
+  return Math.floor((Date.now() - new Date(billing.due_date).getTime()) / 86400000);
+}
+
 // ─── 입금 추가 (부분/초과 자동 처리) ───────────────────────────
 export async function addPaymentToBilling(billingId, payment) {
   const cur = await getBilling(billingId);

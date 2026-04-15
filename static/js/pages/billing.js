@@ -6,7 +6,7 @@
  * 행 클릭 → 디테일 (납부일자/방법/금액/잔액 누적)
  */
 import { watchContracts } from '../firebase/contracts.js';
-import { watchBillings, computeTotalDue, generateBillingsForContract } from '../firebase/billings.js';
+import { watchBillings, computeTotalDue, computeBillingStatus, computeOverdueDays, generateBillingsForContract } from '../firebase/billings.js';
 import { showToast } from '../core/toast.js';
 import { showContextMenu } from '../core/context-menu.js';
 import { openDetail } from '../core/detail-panel.js';
@@ -22,7 +22,20 @@ const fmtDate = (s) => {
 let gridApi = null;
 let allContracts = [];
 let allBillings = [];
-let selectedYear = new Date().getFullYear();
+// 당월 기준 ±3개월 뷰 — selectedMonth = 가운데 월
+const today0 = new Date();
+let selectedMonth = new Date(today0.getFullYear(), today0.getMonth(), 1);
+
+function ymStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function shiftMonth(base, delta) {
+  return new Date(base.getFullYear(), base.getMonth() + delta, 1);
+}
+/** 가운데 월 기준 ±3개월 = 7개 (오름차순) */
+function visibleMonths() {
+  return [-3, -2, -1, 0, 1, 2, 3].map(d => ymStr(shiftMonth(selectedMonth, d)));
+}
 
 function normalizeDate(s) {
   if (!s) return '';
@@ -47,16 +60,16 @@ function computeContractEnd(c) {
 }
 
 function buildRowData() {
-  const yearStart = `${selectedYear}-01-01`;
-  const yearEnd = `${selectedYear}-12-31`;
-  const today = new Date().toISOString().slice(0, 10);
+  const months = visibleMonths();
+  const rangeStart = months[0] + '-01';
+  const rangeEnd = months[months.length - 1] + '-31';
 
   const activeContracts = allContracts.filter(c => {
     const start = normalizeDate(c.start_date);
     const end = computeContractEnd(c);
-    if (!start) return allBillings.some(b => b.contract_code === c.contract_code && b.due_month && b.due_month.startsWith(String(selectedYear)));
-    if (!end) return start <= yearEnd;
-    return start <= yearEnd && end >= yearStart;
+    if (!start) return allBillings.some(b => b.contract_code === c.contract_code && months.includes(b.due_month));
+    if (!end) return start <= rangeEnd;
+    return start <= rangeEnd && end >= rangeStart;
   });
 
   return activeContracts.map(c => {
@@ -68,76 +81,175 @@ function buildRowData() {
       contract_code: c.contract_code,
       contractor_name: c.contractor_name || '-',
       car_number: c.car_number || '-',
-      car_model: c.car_model || '-',
-      _yearUnpaid: 0,
+      detail_model: c.detail_model || c.car_model || '-',
+      deposit_amount: Number(c.deposit_amount) || 0,
+      auto_debit_day: c.auto_debit_day || '-',
+      action_status: c.action_status || '납부중',
+      _rangeUnpaid: 0,
+      _maxOverdueDays: 0,
     };
 
-    for (let m = 1; m <= 12; m++) {
-      const key = `${selectedYear}-${String(m).padStart(2, '0')}`;
+    // 미납일수 = 모든 회차 중 가장 오래된 미납일수
+    bills.forEach(b => {
+      const od = computeOverdueDays(b);
+      if (od > row._maxOverdueDays) row._maxOverdueDays = od;
+    });
+
+    // 평균 지연일 = 완납된 회차들의 (최종 납부일 - 납부예정일) 평균
+    let totalLateDays = 0;
+    let paidCount = 0;
+    bills.forEach(b => {
+      if (!b.due_date || !Array.isArray(b.payments) || !b.payments.length) return;
+      const due = computeTotalDue(b);
+      const paid = Number(b.paid_total) || 0;
+      if (paid < due) return;  // 완납만 집계
+      // 마지막 입금일 (완납을 만든 날짜)
+      const lastPay = b.payments
+        .map(p => p.date)
+        .filter(Boolean)
+        .sort()
+        .pop();
+      if (!lastPay) return;
+      const diff = Math.floor((new Date(lastPay) - new Date(b.due_date)) / 86400000);
+      totalLateDays += diff;
+      paidCount++;
+    });
+    row._avgLateDays = paidCount > 0 ? Math.round(totalLateDays / paidCount * 10) / 10 : null;
+    row._paidCount = paidCount;
+
+    months.forEach((key, i) => {
       const b = byMonth[key];
+      const f = `m${i}`;
       if (!b) {
-        row[`m${m}`] = null; // 해당 월 회차 없음
-        row[`m${m}_meta`] = null;
+        row[f] = null;
+        row[f + '_meta'] = null;
       } else {
         const due = computeTotalDue(b);
         const paid = Number(b.paid_total) || 0;
         const bal = due - paid;
-        const isOverdue = b.due_date && b.due_date < today && bal > 0;
-        row[`m${m}`] = bal;
-        row[`m${m}_meta`] = { due, paid, bal, isOverdue };
-        if (bal > 0) row._yearUnpaid += bal;
+        const status = computeBillingStatus(b);
+        const overdueDays = computeOverdueDays(b);
+        row[f] = bal;
+        row[f + '_meta'] = { due, paid, bal, status, overdueDays, due_date: b.due_date };
+        if (bal > 0) row._rangeUnpaid += bal;
       }
-    }
+    });
     return row;
   });
+}
+
+// 상태별 글자색 (배경 없음)
+const STATUS_FG = {
+  '수납완료': '#16a34a',         // 초록
+  '부분수납': '#2563eb',         // 파랑
+  '납부예정': 'var(--c-text-muted)',
+};
+// 미납 일수별 글자색 (단계적 강도)
+function overdueFg(days) {
+  if (days >= 60) return '#7f1d1d';   // 60일+ 진빨강
+  if (days >= 30) return '#dc2626';   // 30일+ 빨강
+  if (days >= 7)  return '#ea580c';   // 7일+ 주황
+  return '#a16207';                   // 1~6일 진노랑
 }
 
 function monthCellRenderer(params) {
   const val = params.value;
   if (val == null) return '<span style="color:var(--c-text-faint)">-</span>';
-  if (val <= 0) return '<span style="color:#16a34a">0</span>';
-  return `<span style="font-weight:500">${fmt(val)}</span>`;
+  const meta = params.data?.[params.colDef.field + '_meta'];
+  if (!meta) return fmt(val);
+  if (meta.status === '수납완료') return '완납';
+  if (meta.status === '납부예정') return fmt(meta.due);
+  // 부분수납 또는 미납
+  const days = meta.overdueDays;
+  const tag = days > 0 ? ` <span style="font-size:10px">(${days}일)</span>` : '';
+  return `${fmt(val)}${tag}`;
 }
 
 function monthCellStyle(params) {
-  const field = params.colDef.field;
-  const meta = params.data?.[field + '_meta'];
-  if (!meta) return null;
-  if (meta.bal <= 0) return { background: '#dcfce7' };
-  if (meta.isOverdue) return { background: '#fef2f2', color: '#dc2626' };
-  return null;
+  const meta = params.data?.[params.colDef.field + '_meta'];
+  if (!meta) return { textAlign: 'right' };
+  const fg = meta.overdueDays > 0
+    ? overdueFg(meta.overdueDays)
+    : (STATUS_FG[meta.status] || STATUS_FG['납부예정']);
+  return {
+    color: fg,
+    fontWeight: meta.overdueDays > 0 || meta.status === '부분수납' ? 600 : 400,
+    textAlign: 'right',
+    background: 'transparent',
+  };
 }
 
-function initGrid() {
-  const monthCols = [];
-  for (let m = 1; m <= 12; m++) {
-    monthCols.push({
-      headerName: `${m}월`,
-      field: `m${m}`,
-      width: 90,
+function buildColumnDefs() {
+  const months = visibleMonths();
+  const todayMonth = ymStr(new Date());
+  const monthCols = months.map((ym, i) => {
+    const isCurrent = ym === todayMonth;
+    const [y, m] = ym.split('-');
+    return {
+      headerName: `${Number(m)}월${isCurrent ? ' (당월)' : ''}`,
+      field: `m${i}`,
+      width: 105,
       cellRenderer: monthCellRenderer,
       cellStyle: monthCellStyle,
       type: 'numericColumn',
-    });
-  }
+      headerClass: isCurrent ? 'bl-current-month' : '',
+    };
+  });
 
-  const columnDefs = [
-    { headerName: '고객명', field: 'contractor_name', width: 90, pinned: 'left',
-      cellStyle: { fontWeight: 500 } },
-    { headerName: '차량번호', field: 'car_number', width: 90, pinned: 'left' },
-    { headerName: '차종', field: 'car_model', width: 80, pinned: 'left',
-      cellStyle: { color: 'var(--c-text-muted)' } },
+  const ACTION_COLOR = {
+    '납부중':   '#16a34a',
+    '시동제어': '#ea580c',
+    '회수결정': '#dc2626',
+  };
+  return [
+    { headerName: '고객명',   field: 'contractor_name', width: 90, pinned: 'left', cellStyle: { fontWeight: 500 } },
+    { headerName: '차량번호', field: 'car_number',      width: 90, pinned: 'left' },
+    { headerName: '세부모델', field: 'detail_model',    width: 110, pinned: 'left', cellStyle: { color: 'var(--c-text-muted)' } },
+    { headerName: '보증금',   field: 'deposit_amount',  width: 95, pinned: 'left', type: 'numericColumn',
+      valueFormatter: (p) => p.value ? fmt(p.value) : '-',
+      cellStyle: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--c-text-muted)' } },
+    { headerName: '결제일',   field: 'auto_debit_day',  width: 70, pinned: 'left',
+      valueFormatter: (p) => p.value && p.value !== '-' ? `${p.value}${/^\d+$/.test(p.value) ? '일' : ''}` : '-',
+      cellStyle: { textAlign: 'center', color: 'var(--c-text-muted)' } },
+    { headerName: '미납일수', field: '_maxOverdueDays', width: 85, pinned: 'left', type: 'numericColumn',
+      valueFormatter: (p) => p.value > 0 ? `${p.value}일` : '-',
+      cellStyle: (p) => ({
+        textAlign: 'right',
+        fontWeight: p.value > 0 ? 700 : 400,
+        color: p.value >= 60 ? '#7f1d1d'
+             : p.value >= 30 ? '#dc2626'
+             : p.value >= 7  ? '#ea580c'
+             : p.value >= 1  ? '#a16207'
+             : 'var(--c-text-muted)',
+      }) },
+    { headerName: '평균지연', field: '_avgLateDays', width: 85, pinned: 'left', type: 'numericColumn',
+      valueFormatter: (p) => p.value === null ? '-' : (p.value > 0 ? `+${p.value}일` : (p.value < 0 ? `${p.value}일` : '0일')),
+      cellStyle: (p) => ({
+        textAlign: 'right',
+        fontWeight: 600,
+        color: p.value === null ? 'var(--c-text-muted)'
+             : p.value <= 0  ? '#16a34a'
+             : p.value <= 2  ? 'var(--c-text)'
+             : p.value <= 5  ? '#a16207'
+             : p.value <= 10 ? '#ea580c'
+             : '#dc2626',
+      }) },
+    { headerName: '조치상태', field: 'action_status',   width: 90, pinned: 'left',
+      cellStyle: (p) => ({ color: ACTION_COLOR[p.value] || 'var(--c-text-muted)', fontWeight: 600, textAlign: 'center' }) },
     ...monthCols,
-    { headerName: '연미수', field: '_yearUnpaid', width: 100, pinned: 'right',
+    { headerName: '범위 미수', field: '_rangeUnpaid', width: 110, pinned: 'right',
       type: 'numericColumn',
       cellRenderer: (params) => {
         const v = params.value || 0;
         const color = v > 0 ? '#dc2626' : '#16a34a';
         return `<span style="font-weight:600;color:${color}">${fmt(v)}</span>`;
       },
-      cellStyle: { background: '#fef3c7' },
     },
   ];
+}
+
+function initGrid() {
+  const columnDefs = buildColumnDefs();
 
   const gridOptions = {
     columnDefs,
@@ -204,21 +316,31 @@ function initGrid() {
 
 function refreshGrid() {
   if (!gridApi) return;
+  // 컬럼 헤더는 월 변경 시 다시 만들어야 함
+  gridApi.setGridOption('columnDefs', buildColumnDefs());
   const rows = buildRowData();
   gridApi.setGridOption('rowData', rows);
 
   const info = document.getElementById('billingInfo');
-  if (info) info.textContent = `수납관리 · ${selectedYear}년 · ${rows.length}건`;
+  if (info) info.textContent = `수납관리 · ${rows.length}건`;
+  const monthBtn = document.getElementById('billingMonth');
+  if (monthBtn) monthBtn.textContent = `${selectedMonth.getFullYear()}.${String(selectedMonth.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function initYearSelect() {
-  const sel = document.getElementById('billingYear');
-  if (!sel) return;
-  const years = new Set();
-  allBillings.forEach(b => { if (b.due_month) years.add(b.due_month.slice(0, 4)); });
-  years.add(String(new Date().getFullYear()));
-  const sorted = Array.from(years).sort().reverse();
-  sel.innerHTML = sorted.map(y => `<option value="${y}" ${Number(y) === selectedYear ? 'selected' : ''}>${y}년</option>`).join('');
+function initMonthNav() {
+  document.getElementById('billingPrev')?.addEventListener('click', () => {
+    selectedMonth = shiftMonth(selectedMonth, -1);
+    refreshGrid();
+  });
+  document.getElementById('billingNext')?.addEventListener('click', () => {
+    selectedMonth = shiftMonth(selectedMonth, 1);
+    refreshGrid();
+  });
+  document.getElementById('billingToday')?.addEventListener('click', () => {
+    const t = new Date();
+    selectedMonth = new Date(t.getFullYear(), t.getMonth(), 1);
+    refreshGrid();
+  });
 }
 
 // ─── 디테일 (행 클릭 시) ──────────────────────────────────────
@@ -349,13 +471,9 @@ function showDetail(contractCode) {
 
 export async function mount() {
   initGrid();
-  initYearSelect();
+  initMonthNav();
+  refreshGrid();
 
-  watchContracts((items) => { allContracts = items; initYearSelect(); refreshGrid(); });
-  watchBillings((items) => { allBillings = items; initYearSelect(); refreshGrid(); });
-
-  document.getElementById('billingYear')?.addEventListener('change', (e) => {
-    selectedYear = Number(e.target.value);
-    refreshGrid();
-  });
+  watchContracts((items) => { allContracts = items; refreshGrid(); });
+  watchBillings((items) => { allBillings = items; refreshGrid(); });
 }

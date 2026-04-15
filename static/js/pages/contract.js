@@ -4,6 +4,7 @@
 import { showToast } from '../core/toast.js';
 import { showContextMenu } from '../core/context-menu.js';
 import { openDetail, schemaToSections } from '../core/detail-panel.js';
+import { buildSchemaColumns, readSavedColState, applyColState, persistColState, baseGridOptions } from '../core/grid-utils.js';
 import { watchContracts, saveContract, updateContract } from '../firebase/contracts.js';
 import { CONTRACT_SCHEMA, CONTRACT_SECTIONS } from '../data/schemas/contract.js';
 
@@ -14,67 +15,71 @@ let editableKeys = new Set();
 const KEY = 'contract_code';
 const COL_STATE_KEY = 'jpk.grid.contract';
 
+// 종료일 계산 + 만기 후 일수
+function normalizeDate(s) {
+  if (!s) return '';
+  let v = String(s).trim().replace(/[./]/g, '-');
+  const m = v.match(/^(\d{2})-(\d{1,2})-(\d{1,2})$/);
+  if (m) v = `${Number(m[1]) < 50 ? 2000 + Number(m[1]) : 1900 + Number(m[1])}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  return v;
+}
+function computeEnd(c) {
+  if (c.end_date) return normalizeDate(c.end_date);
+  const s = normalizeDate(c.start_date);
+  if (!s || !c.rent_months) return '';
+  const d = new Date(s);
+  if (isNaN(d)) return '';
+  d.setMonth(d.getMonth() + Number(c.rent_months));
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function mount() {
   initGrid();
   bindButtons();
   restoreColumnState();
   watchContracts((data) => {
-    allData = data;
-    document.getElementById('contractCount').textContent = data.length;
-    gridApi.setGridOption('rowData', data.map(r => ({ ...r })));
+    const today = new Date().toISOString().slice(0, 10);
+    // 만기 후 미연장 정보 부여
+    allData = data.map(c => {
+      const end = computeEnd(c);
+      const expired = end && end < today && c.contract_status !== '계약해지';
+      const days = expired ? Math.floor((Date.now() - new Date(end)) / 86400000) : 0;
+      return { ...c, _expiredDays: expired ? days : 0 };
+    });
+    const expiredCount = allData.filter(r => r._expiredDays > 0).length;
+    const cntEl = document.getElementById('contractCount');
+    if (cntEl) cntEl.textContent = data.length + (expiredCount ? ` · 만기 ${expiredCount}건` : '');
+    gridApi.setGridOption('rowData', allData);
   });
 }
 
 function initGrid() {
-  let savedState = {};
-  try {
-    const raw = localStorage.getItem(COL_STATE_KEY);
-    if (raw) JSON.parse(raw).forEach(s => { savedState[s.colId] = s; });
-  } catch {}
-
-  const columnDefs = [
-    { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 50, editable: false },
-    ...CONTRACT_SCHEMA.map(s => ({
-      field: s.col,
-      headerName: s.label + (s.required ? ' *' : ''),
-      editable: (params) => {
-        const key = params.data[KEY] || params.data._tempId;
-        return editableKeys.has(key);
-      },
-      ...(savedState[s.col]?.width ? { width: savedState[s.col].width } : {}),
-      ...(s.type === 'select' && s.options ? {
-        cellEditor: 'agSelectCellEditor',
-        cellEditorParams: { values: ['', ...s.options] },
-      } : {}),
-      ...(s.type === 'date' ? { cellEditor: 'agTextCellEditor' } : {}),
-      ...(s.type === 'number' ? {
-        cellEditor: 'agTextCellEditor',
-        valueParser: (params) => params.newValue,
-      } : {}),
-    })),
-  ];
-
-  const gridOptions = {
-    columnDefs,
-    rowData: [],
-    defaultColDef: { resizable: true, sortable: false, filter: 'agTextColumnFilter', minWidth: 60 },
-    rowHeight: 28,
-    headerHeight: 28,
-    animateRows: false,
-    singleClickEdit: true,
-    stopEditingWhenCellsLoseFocus: true,
-    undoRedoCellEditing: true,
-    onCellValueChanged: (e) => {
-      const key = e.data[KEY] || e.data._tempId;
-      if (!key) return;
-      if (!dirtyRows[key]) dirtyRows[key] = {};
-      dirtyRows[key][e.colDef.field] = e.newValue;
-    },
-    getRowId: (params) => params.data[KEY] || params.data._tempId || String(Math.random()),
-    onColumnResized: saveColumnState,
-    onColumnMoved: saveColumnState,
-    suppressContextMenu: true,
+  const savedState = readSavedColState(COL_STATE_KEY);
+  const baseCols = buildSchemaColumns(CONTRACT_SCHEMA, {
+    savedState,
+    editableFn: (params) => editableKeys.has(params.data[KEY] || params.data._tempId),
+  });
+  // "만기경과" 컬럼 추가 (만기 후 일수 — 0이면 빈칸)
+  const expiryCol = {
+    headerName: '만기경과', field: '_expiredDays', width: 100,
+    cellStyle: p => p.value > 0
+      ? { color: 'var(--c-danger)', fontWeight: 700, textAlign: 'right' }
+      : { color: 'var(--c-text-muted)', textAlign: 'right' },
+    valueFormatter: p => p.value > 0 ? `${p.value}일 경과` : '',
   };
+  // # 다음 + 계약상태 다음에 만기경과 삽입 (스키마 첫 4개 = #/계약코드/회원사코드/계약상태)
+  const columnDefs = [...baseCols.slice(0, 4), expiryCol, ...baseCols.slice(4)];
+
+  const gridOptions = baseGridOptions({
+    columnDefs,
+    keyField: KEY,
+    dirtyRows,
+    onColStateChange: saveColumnState,
+    colStateKey: COL_STATE_KEY,
+  });
+  // 만기 후 미연장 행 → 연한 빨간 배경
+  gridOptions.getRowStyle = (p) => p.data._expiredDays > 0 ? { background: '#fff5f5' } : null;
 
   const el = document.getElementById('contractGrid');
   gridApi = agGrid.createGrid(el, gridOptions);
@@ -162,14 +167,8 @@ function addRowAt(index) {
   }, 50);
 }
 
-function restoreColumnState() {
-  const saved = localStorage.getItem(COL_STATE_KEY);
-  if (saved) { try { gridApi.applyColumnState({ state: JSON.parse(saved), applyOrder: true }); } catch {} }
-}
-function saveColumnState() {
-  if (!gridApi) return;
-  localStorage.setItem(COL_STATE_KEY, JSON.stringify(gridApi.getColumnState()));
-}
+function restoreColumnState() { applyColState(gridApi, COL_STATE_KEY); }
+function saveColumnState() { persistColState(gridApi, COL_STATE_KEY); }
 
 function bindButtons() {
   document.getElementById('contractSearch')?.addEventListener('input', (e) => {
@@ -180,7 +179,6 @@ function bindButtons() {
 const fmtD = s => { if(!s) return '-'; const m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?`${m[1].slice(2)}.${m[2]}.${m[3]}`:s; };
 const fmtN = v => v ? Number(v).toLocaleString('ko-KR') : '-';
 const row = (l,v) => v && v !== '-' ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);width:120px">${l}</td><td style="padding:6px 0;font-weight:500">${v}</td></tr>` : '';
-function normalizeDate(s){if(!s)return'';let v=String(s).trim().replace(/[./]/g,'-');const m=v.match(/^(\d{2})-(\d{1,2})-(\d{1,2})$/);if(m)v=`${Number(m[1])<50?2000+Number(m[1]):1900+Number(m[1])}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;return v;}
 
 function showContractDetail(d) {
   const grid = document.getElementById('contractGrid');

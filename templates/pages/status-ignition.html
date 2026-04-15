@@ -1,0 +1,13 @@
+{% extends 'workspace.html' %}
+{% block topbar_extra %}시동제어 · <span id="igCount">0</span>대{% endblock %}
+{% block workspace %}
+<section class="panel" style="flex:1;min-height:0">
+  <div class="panel-head">
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-warning-circle" style="color:#ea580c"></i>
+      <span class="panel-title">시동제어 / 회수 진행</span>
+    </div>
+  </div>
+  <div id="igGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+{% endblock %}

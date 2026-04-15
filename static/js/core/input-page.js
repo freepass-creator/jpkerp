@@ -14,6 +14,7 @@
  */
 import { showToast } from './toast.js';
 import { openCsvUpload } from '../widgets/csv-upload.js';
+import { confirmReflect } from './confirm-reflect.js';
 
 let _state = null;
 
@@ -161,10 +162,28 @@ function removeStage(id) {
 }
 
 async function commitAll() {
-  const { stage, saveFn, label } = _state;
+  const { stage, saveFn, label, schema } = _state;
   const targets = stage.filter(s => s._status === 'pending');
+  const errors = stage.filter(s => s._status === 'error');
   if (!targets.length) { showToast('반영할 항목이 없습니다', 'info'); return; }
-  if (!confirm(`${targets.length}건을 반영합니다. 진행할까요?`)) return;
+
+  const summary = {};
+  if (targets.length) summary['정상'] = targets.length;
+  if (errors.length) summary['오류'] = errors.length;
+
+  const previewCols = schema ? schema.filter(s => s.gridShow !== false).slice(0, 5).map(s => s.col) : null;
+  const previewLabels = schema ? Object.fromEntries(schema.map(s => [s.col, s.label])) : null;
+
+  const ok = await confirmReflect({
+    title: `${label || '항목'} 반영`,
+    message: `<strong>${targets.length}건</strong>을 시스템에 반영합니다.${errors.length ? ` (오류 ${errors.length}건 제외)` : ''}`,
+    summary,
+    preview: targets,
+    previewCols,
+    previewLabels,
+    count: targets.length,
+  });
+  if (!ok) return;
   let ok = 0, fail = 0;
   for (const row of targets) {
     try {

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#fbfbfa">
+  <title>{{ page_title or 'JPK 모바일' }}</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-180.png') }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="JPK">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="JPK 모바일">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v={{ v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}?v={{ v }}">
+</head>
+<body class="mobile">
+  <header class="m-topbar">
+    {% block topbar %}
+      <div class="m-right"></div>
+      <div class="m-title">{{ page_title or 'JPK' }}</div>
+      <div class="m-right"></div>
+    {% endblock %}
+  </header>
+
+  <main class="m-main">
+    {% block main %}{% endblock %}
+  </main>
+
+  <nav class="m-tabbar">
+    {% set t = active_tab or '' %}
+    <a class="m-tab {% if t == 'upload' %}is-active{% endif %}" href="{{ url_for('m_upload') }}">
+      <i class="ph{% if t == 'upload' %}-fill{% endif %} ph-upload-simple"></i>
+      <span>업로드</span>
+    </a>
+    <a class="m-tab {% if t == 'input' %}is-active{% endif %}" href="{{ url_for('m_input') }}">
+      <i class="ph{% if t == 'input' %}-fill{% endif %} ph-plus-circle"></i>
+      <span>입력</span>
+    </a>
+    <a class="m-tab {% if t == 'status' %}is-active{% endif %}" href="{{ url_for('m_status') }}">
+      <i class="ph{% if t == 'status' %}-fill{% endif %} ph-chart-bar"></i>
+      <span>현황</span>
+    </a>
+    <a class="m-tab {% if t == 'search' %}is-active{% endif %}" href="{{ url_for('m_search') }}">
+      <i class="ph{% if t == 'search' %}-fill{% endif %} ph-magnifying-glass"></i>
+      <span>조회</span>
+    </a>
+    <a class="m-tab {% if t == 'me' %}is-active{% endif %}" href="{{ url_for('m_me') }}">
+      <i class="ph{% if t == 'me' %}-fill{% endif %} ph-user"></i>
+      <span>내정보</span>
+    </a>
+  </nav>
+
+  <script>window.APP_VER = '{{ v }}';</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+      });
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

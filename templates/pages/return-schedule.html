@@ -1,0 +1,22 @@
+{% extends 'workspace.html' %}
+{% from '_macros/ui.html' import btn %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-arrow-u-down-left" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">반납관리</span>
+      <span class="panel-subtitle" id="rtSubtitle">예정/진행/완료</span>
+    </div>
+    <div class="panel-actions">
+      <select id="rtFilter" class="ctrl" style="width:140px;height:28px">
+        <option value="all">전체</option>
+        <option value="upcoming" selected>예정 (D-30 이내)</option>
+        <option value="overdue">만기 초과</option>
+        <option value="this_month">이번달</option>
+      </select>
+    </div>
+  </div>
+  <div id="rtGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+{% endblock %}

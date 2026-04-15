@@ -3,48 +3,74 @@
  */
 
 export const MENU = [
-  { group: '업로드센터', icon: 'fileup', children: [
-    { href: '/upload',           label: '업로드하기', icon: 'uploadicon' },
-    { href: '/upload/list',      label: '업로드내역', icon: 'listcheck' },
-  ]},
+  { href: '/status/operation', label: '통합 리포트', icon: 'chart' },
+
   { group: '입력', icon: 'plus', children: [
-    { href: '/input/task',       label: '업무생성',   icon: 'userplus' },
-    { href: '/input/operation',  label: '운영업무',   icon: 'circleplus' },
-    { href: '/input/asset',      label: '자산등록',   icon: 'gridplus' },
-    { href: '/input/contract',   label: '계약등록',   icon: 'clipplus2' },
-    { href: '/fund',             label: '입출금등록', icon: 'listplus' },
+    { href: '/input/operation', label: '운영업무 입력', icon: 'play' },
+    { href: '/upload',          label: '일괄 업로드',   icon: 'fileup' },
+    { href: '/input',           label: '개별 입력',     icon: 'circleplus' },
+    { href: '/input/history',   label: '입력 이력',     icon: 'listcheck' },
   ]},
-  { group: '조회', icon: 'searchck', children: [
-    { href: '/total',     label: '통합관리',   icon: 'monitorck' },
-    { href: '/tasks',     label: '업무관리',   icon: 'usercheck' },
-    { href: '/operation', label: '운영관리',   icon: 'circlecheck' },
-    { href: '/asset',     label: '자산관리',   icon: 'gridcheck' },
-    { href: '/contract',  label: '계약관리',   icon: 'clipcheck' },
-    { href: '/customer',  label: '고객관리',   icon: 'users' },
-    { href: '/billing',   label: '수납관리',   icon: 'dollar' },
-    { href: '/ledger',    label: '입출금관리', icon: 'listcheck' },
-    { href: '/loan',      label: '할부관리',   icon: 'dollar' },
-  ]},
+
   { group: '현황', icon: 'trending', children: [
-    { href: '/status/overdue',  label: '미납현황', icon: 'alert' },
-    { href: '/status/idle',     label: '휴차현황', icon: 'pause' },
-    { href: '/status/expiring', label: '만기도래', icon: 'clock' },
+    { href: '/status/overdue', label: '미납',      icon: 'alert' },
+    { href: '/status/idle',    label: '휴차',      icon: 'pause' },
+    { href: '/status/ignition',label: '시동제어',  icon: 'alert' },
   ]},
-  { group: '회사관리', icon: 'building', children: [
-    { href: '/admin/company',  label: '회사정보',     icon: 'info' },
-    { href: '/admin/staff',    label: '직원관리',     icon: 'users' },
-    { href: '/admin/card',     label: '법인카드관리', icon: 'wallet' },
-    { href: '/admin/account',  label: '계좌관리',     icon: 'fund' },
-    { href: '/admin/vendor',   label: '거래처관리',   icon: 'contract' },
-    { href: '/admin/member',   label: '회원사관리',   icon: 'users' },
-    { href: '/admin/lease',    label: '임대관리',     icon: 'asset' },
-    { href: '/admin/contract', label: '계약서관리',   icon: 'fileplus' },
-    { href: '/admin/seal',     label: '인감/도장',    icon: 'circlecheck' },
-    { href: '/admin/notice',   label: '고지서업무',  icon: 'alert' },
-    { href: '/admin/approval', label: '전자결재',    icon: 'clipcheck' },
-    { href: '/admin/leave',    label: '휴가관리',    icon: 'clock' },
-    { href: '/dev',            label: '개발도구',    icon: 'settings' },
-    { href: '/dev/car-master', label: '차종마스터',  icon: 'gridplus' },
+
+  { group: '조회', icon: 'searchck', children: [
+    { subgroup: '자산관리', icon: 'gridcheck' },
+    { href: '/asset',     label: '자산 목록' },
+    { href: '/loan',      label: '할부 관리' },
+    { href: '/insurance', label: '보험 관리' },
+    { href: '/gps',       label: 'GPS 장착' },
+    { href: '/disposal',  label: '매각 차량' },
+
+    { subgroup: '운영관리', icon: 'circlecheck' },
+    { href: '/operation',          label: '전체 이력' },
+    { href: '/operation/contact',  label: '고객 응대' },
+    { href: '/operation/delivery', label: '출고·반납' },
+    { href: '/return-schedule',    label: '반납 일정' },
+    { href: '/operation/maint',    label: '정비 이력' },
+    { href: '/operation/accident', label: '사고 이력' },
+    { href: '/admin/notice',       label: '과태료' },
+    { href: '/operation/wash',     label: '세차' },
+    { href: '/operation/fuel',     label: '주유' },
+
+    { subgroup: '영업관리', icon: 'clipcheck' },
+    { href: '/contract', label: '계약 관리' },
+    { href: '/customer', label: '고객 관리' },
+    { href: '/product',  label: '상품 관리' },
+
+    { subgroup: '재무관리', icon: 'dollar' },
+    { href: '/billing',   label: '수납 관리' },
+    { href: '/autodebit', label: '자동이체' },
+    { href: '/ledger',    label: '입출금 내역' },
+    { href: '/finance',   label: '재무 보고' },
+  ]},
+
+  { group: '설정', icon: 'settings', children: [
+    { subgroup: '회사·인사', icon: 'building' },
+    { href: '/admin/company', label: '회사 정보' },
+    { href: '/admin/staff',   label: '직원 관리' },
+    { href: '/admin/leave',   label: '휴가 관리' },
+
+    { subgroup: '거래 마스터', icon: 'contract' },
+    { href: '/admin/member', label: '회원사 관리' },
+    { href: '/admin/vendor', label: '거래처 관리' },
+
+    { subgroup: '자금', icon: 'wallet' },
+    { href: '/admin/card',    label: '법인카드' },
+    { href: '/admin/account', label: '계좌 관리' },
+
+    { subgroup: '문서·결재', icon: 'fileplus' },
+    { href: '/admin/contract', label: '계약서 관리' },
+    { href: '/admin/seal',     label: '인감 관리' },
+    { href: '/admin/approval', label: '전자결재' },
+
+    { subgroup: '시스템', icon: 'code' },
+    { href: '/dev/car-master', label: '차종 등록' },
+    { href: '/dev',            label: '개발도구' },
   ]},
 ];
 
@@ -97,7 +123,120 @@ const ICONS = {
   clipcheck:  '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
 };
 
-const svg = (name) => `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ICONS.dot}</svg>`;
+// 기존 아이콘 이름 → Phosphor (중복 없이 고유 매핑)
+const PH_MAP = {
+  // ── 대분류 그룹 ──
+  plus:       'ph-plus-circle',        // 입력
+  trending:   'ph-trend-up',           // 현황
+  searchck:   'ph-magnifying-glass',   // 조회
+  settings:   'ph-gear-six',           // 행정/설정
+
+  // ── 입력 소메뉴 ──
+  play:       'ph-stack-plus',         // 운영업무 (입력)
+  fileup:     'ph-upload-simple',      // 업로드센터
+  circleplus: 'ph-keyboard',           // 직접입력
+  listcheck:  'ph-list-checks',        // 입력내역
+
+  // ── 현황 소메뉴 ──
+  alert:      'ph-warning-circle',     // 미납현황
+  pause:      'ph-pause-circle',       // 휴차현황
+  clock:      'ph-clock-countdown',    // 만기도래
+
+  // ── 조회 중분류 ──
+  gridcheck:  'ph-car',                // 자산·차량
+  circlecheck:'ph-stack',              // 운영·정비 (조회)
+  clipcheck:  'ph-handshake',          // 영업·계약
+  dollar:     'ph-currency-krw',       // 재무·수납
+
+  // ── 행정/설정 소메뉴 ──
+  info:       'ph-info',               // 회사정보
+  users:      'ph-users-three',        // 직원관리
+  wallet:     'ph-credit-card',        // 법인카드
+  fund:       'ph-bank',               // 계좌관리
+  contract:   'ph-briefcase',          // 거래처관리
+  building:   'ph-buildings',          // 회원사관리
+  fileplus:   'ph-file-text',          // 계약서관리
+  stamp:      'ph-stamp',              // 인감/도장
+  approval:   'ph-check-square',       // 전자결재
+  leave:      'ph-calendar-check',     // 휴가관리
+  database:   'ph-database',           // 차종마스터
+  code:       'ph-code',               // 개발도구
+
+  // ── 기타/공용 ──
+  home:       'ph-house',
+  chart:      'ph-chart-line',
+  search:     'ph-magnifying-glass',
+  check:      'ph-check',
+  chevron:    'ph-caret-down',
+  logout:     'ph-sign-out',
+  dot:        'ph-dot-outline',
+
+  // ── 하위 호환 (기존 이름이 남아있을 수 있음) ──
+  uploadicon: 'ph-upload-simple',
+  gridplus:   'ph-squares-four',
+  userplus:   'ph-user-plus',
+  usercheck:  'ph-user-check',
+  clipplus2:  'ph-clipboard',
+  walletplus: 'ph-credit-card',
+  walletsearch:'ph-credit-card',
+  monitorck:  'ph-monitor',
+  clipboard:  'ph-shield-check',       // 보험 용
+  filesearch: 'ph-file-magnifying-glass',
+};
+
+const svg = (name) => {
+  const cls = PH_MAP[name] || 'ph-circle';
+  return `<i class="ph ${cls}"></i>`;
+};
+
+/** 서브그룹 단위로 children을 그룹핑해서 렌더 */
+function renderChildren(children, fullUrl, groupName) {
+  // 서브그룹으로 버킷 분할
+  const buckets = []; // [{subgroup, icon, items}]
+  let current = { subgroup: null, icon: null, items: [] };
+  for (const c of children) {
+    if (c.subgroup) {
+      if (current.items.length || current.subgroup) buckets.push(current);
+      current = { subgroup: c.subgroup, icon: c.icon || null, items: [] };
+    } else {
+      current.items.push(c);
+    }
+  }
+  if (current.items.length) buckets.push(current);
+
+  return buckets.map(bucket => {
+    if (!bucket.subgroup) {
+      // 대분류 직속 자식 — 번호 없음
+      return bucket.items.map(c => renderLink(c, fullUrl)).join('');
+    }
+    const hasActive = bucket.items.some(c => c.href === fullUrl);
+    const openKey = `submenu_${groupName}_${bucket.subgroup}`;
+    const savedOpen = localStorage.getItem(openKey);
+    const isOpen = hasActive || (savedOpen === '1');
+
+    return `<div class="sidebar-subgroup-wrap${isOpen ? ' is-open' : ''}" data-key="${openKey}">
+      <div class="sidebar-subgroup" data-toggle="1">
+        ${bucket.icon ? svg(bucket.icon) : ''}
+        <span class="sidebar-link-label">${bucket.subgroup}</span>
+        <svg class="sidebar-subgroup-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="sidebar-subgroup-body">
+        ${bucket.items.map((c, i) => renderLink(c, fullUrl, i + 1)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLink(c, fullUrl, idx) {
+  const active = c.href === fullUrl ? ' is-active' : '';
+  const num = idx ? `<span class="sidebar-num">${idx}</span>` : '';
+  return `<a class="sidebar-link sidebar-child${active}" href="${c.href}">
+    ${num}
+    ${c.icon ? svg(c.icon) : ''}
+    <span class="sidebar-link-label">${c.label}</span>
+    <span class="sidebar-count"></span>
+  </a>`;
+}
 
 export function renderMenu(container, items) {
   const fullUrl = window.location.pathname;
@@ -115,13 +254,7 @@ export function renderMenu(container, items) {
           <svg class="sidebar-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="sidebar-group-body">
-          ${it.children.map(c => {
-            const active = c.href === fullUrl ? ' is-active' : '';
-            return `<a class="sidebar-link sidebar-child${active}" href="${c.href}">
-              ${c.icon ? svg(c.icon) : ''}
-              <span class="sidebar-link-label">${c.label}</span>
-            </a>`;
-          }).join('')}
+          ${renderChildren(it.children, fullUrl, it.group)}
         </div>
       </div>`;
     } else if (it.divider) {
@@ -136,12 +269,22 @@ export function renderMenu(container, items) {
   });
   container.innerHTML = html;
 
-  // 아코디언 토글
+  // 아코디언 토글 (대분류)
   container.querySelectorAll('.sidebar-group-head').forEach(head => {
     head.addEventListener('click', () => {
       const group = head.parentElement;
       const isOpen = group.classList.toggle('is-open');
       localStorage.setItem(head.dataset.key, isOpen ? '1' : '0');
+    });
+  });
+
+  // 아코디언 토글 (서브그룹)
+  container.querySelectorAll('.sidebar-subgroup[data-toggle]').forEach(head => {
+    head.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wrap = head.parentElement;
+      const isOpen = wrap.classList.toggle('is-open');
+      localStorage.setItem(wrap.dataset.key, isOpen ? '1' : '0');
     });
   });
 

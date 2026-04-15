@@ -8,7 +8,10 @@
 <!-- 좌: 목록 -->
 <section class="panel">
   <div class="panel-head">
-    <div><span class="panel-title">회원사 목록</span></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-buildings" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">회원사 목록</span>
+    </div>
     <div class="panel-actions">
       {{ btn('plus', '신규', id='memberNew') }}
     </div>
@@ -19,7 +22,8 @@
 <!-- 우: 등록/수정 폼 -->
 <section class="panel">
   <div class="panel-head">
-    <div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-pencil-simple" style="color:var(--c-text-muted)"></i>
       <span class="panel-title" id="memberFormTitle">회원사 등록</span>
     </div>
     <div class="panel-actions">

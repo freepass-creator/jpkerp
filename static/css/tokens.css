@@ -31,11 +31,17 @@
 
   /* ── 폰트 ── */
   --font-sans:   'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-size-xs: 10px;
-  --font-size-sm: 11px;
-  --font-size:    12px;
-  --font-size-md: 13px;
-  --font-size-lg: 14px;
+  /* ── 폰트 3단계로 통일 ──
+     - 보조(11): 부제목/캡션/안내문
+     - 메인(12): 거의 모든 텍스트 — 버튼/메뉴/표/폼/그리드/본문
+     - 상단(13): 상단바 상태표시만
+  */
+  --font-size-xs: 11px;      /* 보조 */
+  --font-size-sm: 11px;      /* 보조 */
+  --font-size:    12px;      /* 메인 */
+  --font-size-md: 12px;      /* 메인 */
+  --font-size-lg: 12px;      /* 메인 */
+  --font-size-xl: 13px;      /* 상단바 상태표시만 */
   --fw:           400;
   --fw-medium:    500;
   --fw-bold:      600;
@@ -57,7 +63,12 @@
   --ctrl-border:   var(--c-border-strong);
   --ctrl-border-w: 1px;
   --ctrl-font:     var(--font-size);
-  --ctrl-icon:     14px;
+
+  /* ── 아이콘 3단계 규격 ── */
+  --icon-sm:       14px;   /* 버튼/인라인 (기본) */
+  --icon-md:       16px;   /* 메뉴/사이드바 */
+  --icon-lg:       20px;   /* 카드/특수강조 */
+  --ctrl-icon:     var(--icon-sm);
 
   /* ── 패널 ── */
   --panel-head-h:   52px;

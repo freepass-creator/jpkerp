@@ -1,5 +1,19 @@
 {% extends 'workspace.html' %}
-{% block topbar_extra %}<span class="topbar-status" id="adminTitle"></span>{% endblock %}
+{% block topbar_extra %}<span id="adminTitle">계좌관리</span>{% endblock %}
 {% block workspace %}
-<div id="adminGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>
+<section class="panel">
+  <div class="panel-head">
+    <div style="display:flex;align-items:center;gap:6px">
+      <i class="ph ph-bank" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">계좌</span>
+    </div>
+    <div class="panel-actions" style="margin-left:auto">
+      <div class="search-box" style="width:200px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="adminSearch" placeholder="검색">
+      </div>
+    </div>
+  </div>
+  <div id="adminGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
 {% endblock %}

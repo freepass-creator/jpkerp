@@ -1,0 +1,32 @@
+{% extends 'base-mobile.html' %}
+{% block main %}
+<div class="m-section">
+  <div class="m-section-title">운영 현황</div>
+  <div class="m-cat-grid">
+    <a class="m-cat-btn" href="#">
+      <div class="m-cat-icon" style="background:#3b82f6"><i class="ph ph-steering-wheel"></i></div>
+      <div class="m-cat-body"><div class="m-cat-title">운영현황</div><div class="m-cat-sub">운행중 차량</div></div>
+      <i class="ph ph-caret-right m-cat-arrow"></i>
+    </a>
+    <a class="m-cat-btn" href="#">
+      <div class="m-cat-icon" style="background:#ef4444"><i class="ph ph-warning-circle"></i></div>
+      <div class="m-cat-body"><div class="m-cat-title">미납현황</div><div class="m-cat-sub">연체/미납 차량</div></div>
+      <i class="ph ph-caret-right m-cat-arrow"></i>
+    </a>
+    <a class="m-cat-btn" href="#">
+      <div class="m-cat-icon" style="background:#f59e0b"><i class="ph ph-hourglass"></i></div>
+      <div class="m-cat-body"><div class="m-cat-title">만기도래</div><div class="m-cat-sub">계약만료 임박</div></div>
+      <i class="ph ph-caret-right m-cat-arrow"></i>
+    </a>
+    <a class="m-cat-btn" href="#">
+      <div class="m-cat-icon" style="background:#6b7280"><i class="ph ph-parking"></i></div>
+      <div class="m-cat-body"><div class="m-cat-title">휴차현황</div><div class="m-cat-sub">유휴 차량</div></div>
+      <i class="ph ph-caret-right m-cat-arrow"></i>
+    </a>
+  </div>
+  <div class="m-empty" style="margin-top:16px">
+    <i class="ph ph-info"></i>
+    현황 상세는 곧 연결됩니다
+  </div>
+</div>
+{% endblock %}

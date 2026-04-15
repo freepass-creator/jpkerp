@@ -78,24 +78,55 @@ async function ocrBase64(base64) {
 
 /**
  * 파일 → OCR 텍스트
- * PDF: 페이지별 이미지 변환 후 각각 OCR → 합침
+ * PDF: 페이지별 이미지 변환 후 병렬 OCR → 합침
  * 이미지: 그대로 OCR
+ * @param {File} file
+ * @param {object} opts
+ * @param {number} opts.concurrency — 동시 호출 수 (기본 6)
+ * @param {number} opts.scale — PDF 렌더 배율 (기본 1.5)
+ * @param {function} opts.onProgress — ({stage, done, total, message}) => void
  */
-export async function ocrFile(file) {
+export async function ocrFile(file, opts = {}) {
+  const { concurrency = 6, scale = 1.5, onProgress } = opts;
+  const progress = (stage, done, total, message) => {
+    if (onProgress) onProgress({ stage, done, total, message });
+  };
   const ext = file.name.split('.').pop().toLowerCase();
   let fullText = '';
 
   if (ext === 'pdf') {
-    const images = await pdfToImages(file);
-    const texts = [];
-    for (const img of images) {
-      const t = await ocrBase64(img);
-      texts.push(t);
-    }
+    progress('render', 0, 1, 'PDF 페이지 렌더링 중...');
+    const images = await pdfToImages(file, scale);
+    const total = images.length;
+    progress('render', total, total, `${total}장 렌더 완료`);
+
+    // 병렬 워커 풀: 각 워커가 다음 인덱스를 가져가 OCR
+    const texts = new Array(total);
+    let nextIdx = 0;
+    let done = 0;
+    progress('ocr', 0, total, `OCR 0/${total}`);
+
+    await Promise.all(Array.from({ length: Math.min(concurrency, total) }, async () => {
+      while (true) {
+        const i = nextIdx++;
+        if (i >= total) break;
+        try {
+          texts[i] = await ocrBase64(images[i]);
+        } catch (e) {
+          texts[i] = '';
+          console.warn(`[OCR] page ${i + 1} failed:`, e);
+        }
+        done++;
+        progress('ocr', done, total, `OCR ${done}/${total}`);
+      }
+    }));
+
     fullText = texts.join('\n\n--- 페이지 구분 ---\n\n');
   } else {
+    progress('ocr', 0, 1, 'OCR 중...');
     const base64 = await fileToBase64(file);
     fullText = await ocrBase64(base64);
+    progress('ocr', 1, 1, 'OCR 완료');
   }
 
   const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);

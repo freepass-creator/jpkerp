@@ -1,0 +1,101 @@
+{% extends 'base-mobile.html' %}
+{% block main %}
+<div class="m-screen">
+  <!-- 현재 차량 정보 헤더 -->
+  <div class="m-current" id="currentCar">
+    <div class="m-current-row"><span class="m-current-k">회사명</span><span class="m-current-v" id="curCompany">—</span></div>
+    <div class="m-current-row"><span class="m-current-k">차량번호</span><span class="m-current-v" id="curNumber">—</span></div>
+    <div class="m-current-row"><span class="m-current-k">세부모델</span><span class="m-current-v" id="curModel">—</span></div>
+  </div>
+
+  <!-- 카드 4개 -->
+  <div class="m-quad" id="catGrid" style="margin-top:12px">
+    <button class="m-quad-btn" data-type="product" style="--tint:#7c3aed">
+      <i class="m-quad-ic ph-fill ph-sparkle"></i>
+      <div class="m-quad-txt">
+        <div class="m-quad-label">상품화</div>
+        <div class="m-quad-sub">상품화 작업 사진</div>
+      </div>
+      <span class="m-quad-badge" data-count="0">0</span>
+      <i class="m-quad-arr ph ph-caret-right"></i>
+    </button>
+    <button class="m-quad-btn" data-type="delivery" style="--tint:#059669">
+      <i class="m-quad-ic ph-fill ph-truck"></i>
+      <div class="m-quad-txt">
+        <div class="m-quad-label">출고</div>
+        <div class="m-quad-sub">인도 전 차량 사진</div>
+      </div>
+      <span class="m-quad-badge" data-count="0">0</span>
+      <i class="m-quad-arr ph ph-caret-right"></i>
+    </button>
+    <button class="m-quad-btn" data-type="return" style="--tint:#0891b2">
+      <i class="m-quad-ic ph-fill ph-arrow-u-down-left"></i>
+      <div class="m-quad-txt">
+        <div class="m-quad-label">반납</div>
+        <div class="m-quad-sub">반납 후 검차 사진</div>
+      </div>
+      <span class="m-quad-badge" data-count="0">0</span>
+      <i class="m-quad-arr ph ph-caret-right"></i>
+    </button>
+    <button class="m-quad-btn" data-type="file" style="--tint:#6b6b6b">
+      <i class="m-quad-ic ph-fill ph-paperclip"></i>
+      <div class="m-quad-txt">
+        <div class="m-quad-label">파일</div>
+        <div class="m-quad-sub">PDF · 문서 · 기타</div>
+      </div>
+      <span class="m-quad-badge" data-count="0">0</span>
+      <i class="m-quad-arr ph ph-caret-right"></i>
+    </button>
+  </div>
+
+  <!-- 업로드 중 -->
+  <div class="m-pending" id="pendingSection" hidden>
+    <div class="m-pending-head">
+      <span id="pendingCount">0</span>개 업로드 중
+    </div>
+    <div id="recentFeed" class="m-thumb-grid"></div>
+  </div>
+</div>
+
+<!-- 차량번호 검색 (하단 고정) -->
+<div class="m-dock">
+  <div class="m-search-wrap">
+    <div class="m-search-pill">
+      <i class="ph ph-magnifying-glass"></i>
+      <input type="text" id="carInput" placeholder="차량번호 · 회사명 · 모델 검색" autocomplete="off" inputmode="text">
+      <button type="button" class="m-search-clear" id="carClear" hidden><i class="ph ph-x-circle-fill"></i></button>
+    </div>
+    <div class="m-suggest" id="suggestList" hidden></div>
+  </div>
+  <div id="recentCars" class="m-pills"></div>
+</div>
+
+<!-- 숨은 파일 입력 -->
+<input type="file" id="fileCamera" accept="image/*" capture="environment" hidden>
+<input type="file" id="fileGallery" accept="image/*" multiple hidden>
+<input type="file" id="fileAny" multiple hidden>
+
+<!-- 액션 시트 -->
+<div class="m-sheet-overlay" id="sheetOverlay" hidden></div>
+<div class="m-sheet" id="actionSheet" hidden>
+  <div class="m-sheet-handle"></div>
+  <div class="m-sheet-title" id="sheetTitle">업로드 방법</div>
+  <button class="m-sheet-btn" data-act="camera">
+    <i class="ph ph-camera"></i>
+    <div class="m-sheet-btn-title">카메라로 촬영</div>
+  </button>
+  <button class="m-sheet-btn" data-act="gallery">
+    <i class="ph ph-images"></i>
+    <div class="m-sheet-btn-title">앨범에서 선택</div>
+  </button>
+  <button class="m-sheet-btn" data-act="file" id="sheetFileBtn" style="display:none">
+    <i class="ph ph-file"></i>
+    <div class="m-sheet-btn-title">파일 선택</div>
+  </button>
+  <button class="m-sheet-btn m-sheet-cancel" data-act="cancel">취소</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/m/upload.js') }}?v={{ v }}"></script>
+{% endblock %}

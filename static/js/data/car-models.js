@@ -236,6 +236,7 @@ export const CAR_MODELS = [
   // ─── 추가: 지프 ──────────────
   { maker: '지프', model: '랭글러', sub: '랭글러 JL 17~', year_start: '17', year_end: '현재', code: 'JL', category: '중형 SUV' },
   { maker: '지프', model: '그랜드체로키', sub: '그랜드체로키 WL 21~', year_start: '21', year_end: '현재', code: 'WL', category: '대형 SUV' },
+  { maker: '지프', model: '어벤저', sub: '어벤저 24~', year_start: '24', year_end: '현재', code: '-', category: '소형 SUV' },
   // ─── 추가: 링컨 / 캐딜락 ──────────────
   { maker: '링컨', model: '에비에이터', sub: '에비에이터 19~', year_start: '19', year_end: '현재', code: '-', category: '대형 SUV' },
   { maker: '캐딜락', model: 'CT5', sub: 'CT5 19~', year_start: '19', year_end: '현재', code: '-', category: '중형 세단' },

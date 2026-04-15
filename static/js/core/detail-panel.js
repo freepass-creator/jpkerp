@@ -56,14 +56,16 @@ export function openDetail(opts) {
       ${sections.map(sec => `
         <div class="detail-section">
           <div class="detail-section-title">${esc(sec.label)}</div>
-          <table class="detail-table">
-            ${sec.rows.filter(r => r.value && r.value !== '-' && r.value !== '0').map(r => `
-              <tr>
-                <td class="detail-td-label">${esc(r.label)}</td>
-                <td class="detail-td-value">${esc(r.value)}</td>
-              </tr>
-            `).join('')}
-          </table>
+          ${sec.html ? sec.html : `
+            <table class="detail-table">
+              ${(sec.rows || []).filter(r => r.value && r.value !== '-' && r.value !== '0').map(r => `
+                <tr>
+                  <td class="detail-td-label">${esc(r.label)}</td>
+                  <td class="detail-td-value">${esc(r.value)}</td>
+                </tr>
+              `).join('')}
+            </table>
+          `}
         </div>
       `).join('')}
     </div>
