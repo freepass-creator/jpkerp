@@ -3,7 +3,7 @@
   "short_name": "JPK",
   "description": "JPK ERP 운영팀 현장용 모바일 앱",
   "start_url": "/m",
-  "scope": "/m",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#fbfbfa",

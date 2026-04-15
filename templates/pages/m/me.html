@@ -17,7 +17,7 @@
     Safari 하단 <i class="ph ph-export"></i> 공유 → <strong>"홈 화면에 추가"</strong>
   </div>
 
-  <a class="m-btn" href="/?desktop=1" style="margin-top:8px">
+  <a class="m-btn" href="/?desktop=1" id="btnDesktop" style="margin-top:8px">
     <i class="ph ph-monitor"></i> 데스크탑 버전으로
   </a>
   <button class="m-btn" id="btnLogout" style="margin-top:8px;color:#e03e3e">
@@ -30,13 +30,20 @@
   import { signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 
   // 로그인 정보 표시 (auth.js 가 __mUser 세팅)
-  const ready = setInterval(() => {
-    if (!window.__mUser) return;
-    clearInterval(ready);
-    document.getElementById('myName').textContent = window.__mUser.name || '—';
-    document.getElementById('myEmail').textContent = window.__mUser.email || '';
-    document.getElementById('myRole').textContent = window.__mUser.role || '';
-  }, 100);
+  (async () => {
+    const u = await (window.__mUserReady || Promise.resolve(null));
+    if (!u) return;
+    document.getElementById('myName').textContent = u.name || '—';
+    document.getElementById('myEmail').textContent = u.email || '';
+    document.getElementById('myRole').textContent = u.role || '';
+  })();
+
+  // 데스크탑 버튼 — 현재 경로 기준으로 /m 제거
+  document.getElementById('btnDesktop').addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = location.pathname.replace(/^\/m(\/|$)/, '/') || '/';
+    location.href = target + '?desktop=1';
+  });
 
   document.getElementById('btnLogout').addEventListener('click', async () => {
     if (!confirm('로그아웃 하시겠어요?')) return;

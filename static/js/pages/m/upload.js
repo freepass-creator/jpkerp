@@ -34,14 +34,16 @@ const getUploader = () => {
 let currentCar = '';
 let selectedType = '';
 let countsUnsub = null;
-let feedUnsub = null;
+const blobUrls = new Map(); // thumbId → blob URL (revoke 위해)
 
 // 자산/회원사 로컬 캐시
-let assetsByCar = new Map();   // car_number → asset
-let membersByCode = new Map(); // partner_code → member
+let assetsByCar = new Map();
+let membersByCode = new Map();
+let assetsUnsub = null;
+let membersUnsub = null;
 
 function watchCatalog() {
-  watchAssets((items) => {
+  assetsUnsub = watchAssets((items) => {
     assetsByCar = new Map();
     items.forEach((a) => {
       const cn = (a.car_number || '').trim();
@@ -49,12 +51,21 @@ function watchCatalog() {
     });
     updateCarInfo();
   });
-  watchMembers((items) => {
+  membersUnsub = watchMembers((items) => {
     membersByCode = new Map();
     items.forEach((m) => membersByCode.set(m.partner_code || m.member_id, m));
     updateCarInfo();
   });
 }
+
+// 페이지 떠날 때 구독 정리 (SW pre-cache / pagehide 모두 대응)
+window.addEventListener('pagehide', () => {
+  try { countsUnsub && countsUnsub(); } catch {}
+  try { assetsUnsub && assetsUnsub(); } catch {}
+  try { membersUnsub && membersUnsub(); } catch {}
+  blobUrls.forEach((u) => URL.revokeObjectURL(u));
+  blobUrls.clear();
+});
 
 function updateCarInfo() {
   const panel = $('#currentCar');
@@ -114,12 +125,16 @@ function renderRecent() {
   host.innerHTML = recent.map((car) =>
     `<button class="m-pill ${car === currentCar ? 'is-active' : ''}" data-car="${car}">${car}</button>`
   ).join('');
-  host.querySelectorAll('.m-pill').forEach((el) => {
-    el.addEventListener('click', () => {
-      const c = el.dataset.car;
-      $('#carInput').value = c;
-      setCar(c);
-    });
+}
+// 리스트 재렌더링시마다 리스너 중복 추가 방지 — delegation 한번만 등록
+function wireRecent() {
+  const host = $('#recentCars');
+  host.addEventListener('click', (e) => {
+    const pill = e.target.closest('.m-pill');
+    if (!pill) return;
+    const c = pill.dataset.car;
+    $('#carInput').value = c;
+    setCar(c);
   });
 }
 
@@ -277,6 +292,7 @@ async function uploadOne(file, type) {
 function injectPending(file, id) {
   const host = $('#recentFeed');
   const url = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+  if (url) blobUrls.set(id, url);
   const div = document.createElement('div');
   div.className = 'm-thumb is-uploading';
   div.id = id;
@@ -290,7 +306,12 @@ function injectPending(file, id) {
   host.prepend(div);
   updatePendingVisibility();
 }
+function revokeBlob(id) {
+  const u = blobUrls.get(id);
+  if (u) { URL.revokeObjectURL(u); blobUrls.delete(id); }
+}
 function markDone(id) {
+  revokeBlob(id);
   const el = document.getElementById(id);
   if (!el) return;
   el.remove();
@@ -305,7 +326,7 @@ function markError(id, msg) {
   if (s) s.textContent = '실패';
   const p = el.querySelector('.m-thumb-progress');
   if (p) p.remove();
-  el.addEventListener('click', () => { el.remove(); updatePendingVisibility(); });
+  el.addEventListener('click', () => { revokeBlob(id); el.remove(); updatePendingVisibility(); });
 }
 
 // ── 타일 → 시트 ─────────────
@@ -419,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
   wireCatButtons();
   wireSheet();
   wireInputs();
+  wireRecent();
   watchCatalog();
   renderRecent();
   setCar('');

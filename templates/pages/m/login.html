@@ -159,12 +159,17 @@
 
   <script type="module">
     import { auth, db } from '{{ url_for("static", filename="js/firebase/config.js") }}';
-    import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { ref, get, set } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js';
 
     const $ = (id) => document.getElementById(id);
     const params = new URLSearchParams(location.search);
-    const next = params.get('next') || '/m';
+    // next 파라미터는 URLSearchParams 가 자동 디코드
+    const rawNext = params.get('next') || '/m';
+    const next = rawNext.startsWith('/') ? rawNext : '/m';
+
+    // 이미 로그인된 상태면 바로 리다이렉트 (뒤로가기 오동작 방지)
+    onAuthStateChanged(auth, (user) => { if (user) location.replace(next); });
 
     const show = (id) => {
       document.querySelectorAll('.panel').forEach((p) => p.classList.remove('is-active'));
