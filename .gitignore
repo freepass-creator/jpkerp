@@ -8,3 +8,5 @@ __pycache__/
 venv/
 .DS_Store
 .vscode/
+# 로컬 아이콘 생성용 폰트 (런타임에 불필요, CDN 사용)
+static/fonts/
