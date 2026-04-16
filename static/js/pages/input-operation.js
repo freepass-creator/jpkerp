@@ -211,12 +211,13 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field" style="grid-column:1/-1">${sel('pc_kind', '작업구분', ['정비','사고수리','상품화','세차'])}</div>
       </div>
-      <div class="form-grid" style="margin-top:8px">
-        <div class="field" style="grid-column:1/-1;color:var(--c-text-muted);font-size:var(--font-size-sm);padding:10px;background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:var(--r-md)">
-          작업구분을 선택하면 해당 세부 양식이 표시됩니다. 선택 후 아래 세부 항목을 채워 등록하세요.
-        </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-tag"></i>작업구분</div>
+      ${sel('pc_kind', '', ['정비','사고수리','상품화','세차']).replace('<label></label>', '')}
+      <div style="margin-top:10px;color:var(--c-text-muted);font-size:var(--font-size-sm);padding:10px;background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:var(--r-md)">
+        작업구분을 선택하면 해당 세부 양식이 표시됩니다.
       </div>
     </div>`;
   } else if (currentType === 'ioc') {
