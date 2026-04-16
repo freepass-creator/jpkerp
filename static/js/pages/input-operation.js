@@ -863,7 +863,7 @@ function renderForm() {
         <div class="field" style="grid-column:1/-1">
           <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
             ${sel('contact_type', '유형', ['일반문의','컴플레인','계약문의','정비요청','사고접수','반납협의','연장문의','기타'])}
-            ${sel('contact_result', '처리결과', ['진행중','처리완료','보류','에스컬레이션'])}
+            ${sel('contact_result', '처리결과', ['진행중','처리완료','보류','처리불가'])}
           </div>
         </div>
       </div>
