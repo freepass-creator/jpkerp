@@ -114,7 +114,7 @@ ROUTES = [
     ('/product',           'pages/product.html',       '상품관리',   'product'),
     ('/finance',           'pages/finance.html',       '재무관리',   'finance'),
     ('/operation/contact',  'pages/operation.html',    '고객응대',   'op_contact'),
-    ('/operation/delivery', 'pages/operation.html',    '출고·반납',  'op_delivery'),
+    ('/operation/delivery', 'pages/operation.html',    '입출고센터',  'op_delivery'),
     ('/operation/maint',    'pages/operation.html',    '정비이력',   'op_maint'),
     ('/operation/accident', 'pages/operation.html',    '사고이력',   'op_accident'),
     ('/operation/wash',     'pages/operation.html',    '세차',       'op_wash'),

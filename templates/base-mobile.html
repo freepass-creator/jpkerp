@@ -52,8 +52,8 @@
   <nav class="m-tabbar">
     {% set t = active_tab or '' %}
     <a class="m-tab {% if t == 'upload' %}is-active{% endif %}" href="{{ url_for('m_upload') }}">
-      <i class="ph{% if t == 'upload' %}-fill{% endif %} ph-arrows-in-line-horizontal"></i>
-      <span>입출고센터</span>
+      <i class="ph{% if t == 'upload' %}-fill{% endif %} ph-upload-simple"></i>
+      <span>업로드</span>
     </a>
     <a class="m-tab {% if t == 'input' %}is-active{% endif %}" href="{{ url_for('m_input') }}">
       <i class="ph{% if t == 'input' %}-fill{% endif %} ph-plus-circle"></i>
