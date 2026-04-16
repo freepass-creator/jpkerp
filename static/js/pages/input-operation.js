@@ -850,7 +850,7 @@ function renderForm() {
     </div>`;
   }
 
-  // 차량 조회 패널 (모든 업무 공통 — 맨 위)
+  // 차량 조회 패널 (모든 업무 공통 — 맨 위, 좌우 4개씩 균형)
   const carInfoPanel = `
     <div id="iocCarInfo" class="ioc-car-info" hidden style="margin:0 var(--sp-5) var(--sp-3)">
       <div class="ioc-car-col">
@@ -858,15 +858,14 @@ function renderForm() {
         <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
         <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
         <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
+        <div class="ioc-car-row"><span class="k">색상</span><span class="v" data-f="color">—</span></div>
       </div>
       <div class="ioc-car-col">
         <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약 / 상태</div>
         <div class="ioc-car-row"><span class="k">계약자</span><span class="v" data-f="contractor">—</span></div>
         <div class="ioc-car-row"><span class="k">연락처</span><span class="v" data-f="phone">—</span></div>
-        <div class="ioc-car-row"><span class="k">등록번호</span><span class="v" data-f="regNo">—</span></div>
         <div class="ioc-car-row"><span class="k">계약상태</span><span class="v" data-f="carStatus">—</span></div>
         <div class="ioc-car-row"><span class="k">미납여부</span><span class="v" data-f="unpaidYn">—</span></div>
-        <div class="ioc-car-row"><span class="k">계약기간</span><span class="v" data-f="period">—</span></div>
       </div>
     </div>`;
   host.innerHTML = carInfoPanel + sections;
@@ -924,6 +923,7 @@ function renderForm() {
         setField('company', a.partner_code || '—');
         setField('car', a.car_number);
         setField('model', a.detail_model || a.car_model || '—');
+        setField('color', a.ext_color || '—');
         const today = new Date().toISOString().slice(0, 10);
         const cands = contracts.filter(c => c.car_number === a.car_number);
         const active = cands.find(c => c.contract_status === '계약진행' && (!c.end_date || c.end_date >= today))
