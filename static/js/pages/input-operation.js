@@ -1187,24 +1187,9 @@ function renderForm() {
     });
   }
 
-  // 차량번호 입력 → 차량정보 자동 표시
+  // 차량번호 — 이전 입력값 복원 (보조글씨는 자동조회 패널로 대체)
   const carInput = host.querySelector('[name="car_number"]');
-  let carInfoEl = document.createElement('div');
-  carInfoEl.style.cssText = 'font-size:var(--font-size-xs);color:var(--c-text-muted);padding:2px 0';
-  carInput?.parentNode?.appendChild(carInfoEl);
-  carInput?.addEventListener('input', () => {
-    const car = carInput.value.trim();
-    const a = assets.find(x => x.car_number === car);
-    const c = contracts.find(x => x.car_number === car);
-    if (a || c) {
-      carInfoEl.innerHTML = [
-        a?.car_model, a?.ext_color, c?.contractor_name, c?.contractor_phone
-      ].filter(Boolean).join(' · ');
-    } else {
-      carInfoEl.textContent = '';
-    }
-  });
-  if (lastCarNumber) { carInput.value = lastCarNumber; carInput.dispatchEvent(new Event('input')); }
+  if (lastCarNumber && carInput) { carInput.value = lastCarNumber; carInput.dispatchEvent(new Event('input')); }
 
   // 제목 자동완성 (이전 입력 기반)
   const titleInput = host.querySelector('[name="title"]');
