@@ -125,16 +125,16 @@ const DEFAULT_TYPES = [
   { key: 'ioc',         label: '입출고센터',     sub: '출고·반납·강제회수·차량이동',     direction: 'out' },
   { key: 'pc',          label: '차량케어센터',   sub: '정비·사고수리·상품화·세차 통합',    direction: 'out' },
   { key: 'contact',     label: '고객센터',       sub: '통화/상담/컴플레인/문의',         direction: 'out' },
-  { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',               direction: 'out' },
+  { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',               direction: 'out', hidden: true },
   { key: 'maint',       label: '정비',           sub: '소모품교체 + 기능수리',           direction: 'out', hidden: true },
   { key: 'accident',    label: '사고접수',       sub: '사고 발생/보험접수',        direction: 'out' },
   { key: 'repair',      label: '사고수리',       sub: '판금/도색/수리',             direction: 'out', hidden: true },
   { key: 'product',     label: '상품화',         sub: '반납 후 재상품화',           direction: 'out', hidden: true },
-  { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out' },
-  { key: 'collect',     label: '미수관리',       sub: '독촉/내용증명/법적조치',     direction: 'out' },
-  { key: 'insurance',   label: '보험관리',       sub: '보험배서/연령변경/갱신',     direction: 'out' },
+  { key: 'insurance',   label: '보험배서관리',   sub: '연령변경·갱신·신규·해지',     direction: 'out' },
+  { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out', hidden: true },
+  { key: 'collect',     label: '미수관리',       sub: '독촉/내용증명/법적조치',     direction: 'out', hidden: true },
   { key: 'wash',        label: '세차',           sub: '세차/실내크리닝',           direction: 'out', hidden: true },
-  { key: 'fuel',        label: '연료보충',       sub: '주유/전기충전',              direction: 'out' },
+  { key: 'fuel',        label: '연료보충',       sub: '주유/전기충전',              direction: 'out', hidden: true },
 ];
 
 const ORDER_KEY = 'jpk.op.order';
@@ -252,6 +252,12 @@ function renderForm() {
           <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
             ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수'])}
             ${sel('handover_by', '이동방식', ['탁송','직접'])}
+            <div class="field" data-role="key-return" style="display:none">
+              <label>차키 회수</label>
+              <div class="btn-group" style="flex-wrap:wrap;gap:4px">
+                <span class="btn-opt btn-toggle" data-name="key_returned" data-val="">회수완료</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="3" placeholder="탁송기사 연락처 · 특이사항 · 참고" class="ctrl" style="height:auto;padding:6px 8px"></textarea></div>
@@ -1261,8 +1267,15 @@ function renderForm() {
     const mount = host.querySelector('#iocPhotoUploader');
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
 
-    // 차량 자동조회는 위 공통 블록에서 처리됨
-
+    // 업무구분 → 차키 회수 토글 (정상반납/강제회수 시에만 표시)
+    const kindGroup = host.querySelector('.btn-group[data-name="ioc_kind"]');
+    const keyField = host.querySelector('[data-role="key-return"]');
+    const syncKeyField = () => {
+      const v = host.querySelector('input[name="ioc_kind"]')?.value || '';
+      if (keyField) keyField.style.display = (v === '정상반납' || v === '강제회수') ? '' : 'none';
+    };
+    kindGroup?.addEventListener('click', () => setTimeout(syncKeyField, 10));
+    syncKeyField();
   } else {
     iocUploader = null;
   }
@@ -2011,7 +2024,7 @@ async function submitForm() {
       'equip_navi', 'equip_blackbox', 'equip_hipass', 'equip_charger', 'equip_triangle', 'equip_fire',
       'extra_mileage', 'extra_fuel', 'extra_damage',
       'from_location', 'to_location', 'transfer_reason',
-      'handover_by', 'carrier_name', 'carrier_phone',
+      'handover_by', 'carrier_name', 'carrier_phone', 'key_returned',
       'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
       'acc_type', 'acc_role',
