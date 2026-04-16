@@ -100,19 +100,26 @@
 }
 .loc-fav-btn:hover .loc-fav-del { opacity: 1; color: var(--c-danger); }
 
-/* 일자 입력 + 퀵버튼 한줄 */
+/* 일자 입력 + 퀵버튼 한줄 — 다른 입력칸과 동일한 폭 */
 .date-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  width: 100%;
   min-width: 0;
 }
-.date-row input[type="date"] { flex: 0 0 auto; min-width: 130px; }
+.date-row input[type="date"] {
+  flex: 0 0 auto;
+  width: 130px;
+}
 .date-quick {
   display: flex;
-  gap: 3px;
-  flex-wrap: nowrap;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
+.dq-btn { padding: 3px 6px; }
 .dq-btn {
   padding: 3px 8px;
   background: var(--c-bg-sub);
