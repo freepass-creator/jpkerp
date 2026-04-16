@@ -22,6 +22,14 @@ const $ = (s) => document.querySelector(s);
 const RECENT_KEY = 'jpk.op.recent_cars';
 const FAV_KEY = 'jpk.op.favorites';
 const LOC_KEY = 'jpk.op.locations';
+const INS_KEY = 'jpk.op.insurance_co';
+function loadInsCo() { try { return JSON.parse(localStorage.getItem(INS_KEY)) || []; } catch { return []; } }
+function saveInsCo(name) {
+  if (!name) return;
+  const list = loadInsCo().filter(x => x !== name);
+  list.unshift(name);
+  localStorage.setItem(INS_KEY, JSON.stringify(list.slice(0, 20)));
+}
 function loadLocations() { try { return JSON.parse(localStorage.getItem(LOC_KEY)) || []; } catch { return []; } }
 function saveLocation(place) {
   if (!place) return;
@@ -1493,6 +1501,35 @@ function renderForm() {
     });
   });
 
+  // 보험사 즐겨찾기 pill — insurance_company / other_insurance 아래
+  const insFavs = loadInsCo();
+  if (insFavs.length) {
+    host.querySelectorAll('input[name="insurance_company"],input[name="other_insurance"]').forEach(inp => {
+      const wrap = document.createElement('div');
+      wrap.className = 'loc-favs';
+      wrap.style.marginTop = '4px';
+      wrap.innerHTML = insFavs.slice(0, 8).map(x =>
+        `<span class="loc-fav-btn" data-v="${x}">${x}<button type="button" class="loc-fav-del" data-v="${x}">✕</button></span>`
+      ).join('');
+      inp.parentNode.appendChild(wrap);
+      wrap.querySelectorAll('.loc-fav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (e.target.classList.contains('loc-fav-del')) return;
+          inp.value = btn.dataset.v;
+        });
+      });
+      wrap.querySelectorAll('.loc-fav-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const name = btn.dataset.v;
+          const list = loadInsCo().filter(x => x !== name);
+          localStorage.setItem(INS_KEY, JSON.stringify(list));
+          btn.closest('.loc-fav-btn').remove();
+        });
+      });
+    });
+  }
+
   // 거래처 datalist — 모든 vendor/업체 input에
   const vendorDl = document.createElement('datalist');
   vendorDl.id = 'opVendorList';
@@ -1525,15 +1562,23 @@ function renderForm() {
     }
   });
 
-  // btn-group 클릭 바인딩
+  // btn-group 클릭 바인딩 (토글 지원: 활성 버튼 재클릭시 선택해제)
   host.querySelectorAll('.btn-group').forEach(group => {
     const hidden = group.previousElementSibling;
-    if (hidden) hidden.value = group.querySelector('.btn-opt.is-active')?.dataset.val || '';
+    if (hidden && hidden.tagName === 'INPUT') {
+      hidden.value = group.querySelector('.btn-opt.is-active')?.dataset.val || '';
+    }
     group.querySelectorAll('.btn-opt').forEach(opt => {
       opt.addEventListener('click', () => {
+        const wasActive = opt.classList.contains('is-active');
         group.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
-        opt.classList.add('is-active');
-        if (hidden) hidden.value = opt.dataset.val;
+        if (!wasActive) {
+          opt.classList.add('is-active');
+          if (hidden && hidden.tagName === 'INPUT') hidden.value = opt.dataset.val;
+        } else {
+          // 재클릭 → 해제
+          if (hidden && hidden.tagName === 'INPUT') hidden.value = '';
+        }
       });
     });
   });
@@ -1942,6 +1987,8 @@ async function submitForm() {
     if (data.return_location) saveFavorite(data.return_location);
     if (data.from_location) saveLocation(data.from_location);
     if (data.to_location) saveLocation(data.to_location);
+    if (data.insurance_company) saveInsCo(data.insurance_company);
+    if (data.other_insurance) saveInsCo(data.other_insurance);
     // 연속 입력: 차량번호 유지
     lastCarNumber = data.car_number || '';
     renderForm();
