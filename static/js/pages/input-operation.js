@@ -888,6 +888,36 @@ function renderForm() {
     </div>`;
   host.innerHTML = carInfoPanel + sections;
 
+  // 차량케어 유형(maint/repair/product/wash)에는 첨부파일 섹션 자동 추가
+  if (['maint', 'repair', 'product', 'wash'].includes(currentType)) {
+    const ATTACH_HINT = {
+      maint:   { title: '정비 첨부', desc: '정비 영수증 · 점검표 · 부품 사진', required: false },
+      repair:  { title: '사고수리 첨부', desc: '견적서 필수 · 판금·도색 사진', required: true },
+      product: { title: '상품화 첨부', desc: '작업 전/후 사진 · 견적서 · 용품 영수증', required: false },
+      wash:    { title: '세차 첨부', desc: '세차 전/후 사진', required: false },
+    }[currentType] || { title: '첨부파일', desc: '관련 문서·사진', required: false };
+    const attachSection = document.createElement('div');
+    attachSection.className = 'form-section';
+    attachSection.id = 'pcAttachSection';
+    attachSection.dataset.required = ATTACH_HINT.required ? '1' : '0';
+    attachSection.innerHTML = `
+      <div class="form-section-title">
+        <i class="ph ph-paperclip"></i>${ATTACH_HINT.title}
+        ${ATTACH_HINT.required ? '<span style="color:var(--c-danger);margin-left:4px">*</span>' : ''}
+      </div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1">
+          <div id="pcPhotoUploader"></div>
+          <div style="margin-top:6px;font-size:var(--font-size-xs);color:${ATTACH_HINT.required ? 'var(--c-danger)' : 'var(--c-text-muted)'}">${ATTACH_HINT.desc}</div>
+        </div>
+      </div>
+    `;
+    host.appendChild(attachSection);
+    // 업로더 생성
+    const mount = attachSection.querySelector('#pcPhotoUploader');
+    if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf,.xlsx,.xls', multiple: true });
+  }
+
   // 입출고센터 — 사진 업로더 + 인터랙션 초기화
   // 일자 퀵버튼 (달력 옆에 한줄로)
   host.querySelectorAll('input[type="date"][name="date"]').forEach((dateInp) => {
@@ -1633,6 +1663,25 @@ async function submitForm() {
       } catch (e) {
         console.error('[ioc upload]', e);
         showToast('사진 업로드 실패: ' + (e.message || e), 'error');
+        return;
+      }
+    }
+  }
+
+  // 차량케어 (정비/수리/상품화/세차): 첨부파일 업로드
+  if (['maint', 'repair', 'product', 'wash'].includes(currentType)) {
+    const files = iocUploader ? iocUploader.getFiles() : [];
+    // 사고수리: 견적서 필수
+    if (currentType === 'repair' && !files.length) {
+      showToast('사고수리는 견적서 첨부가 필수입니다', 'error');
+      return;
+    }
+    if (files.length) {
+      try {
+        data.photos = await uploadFilesToStorage(files, { type: currentType, car: data.car_number });
+      } catch (e) {
+        console.error('[pc upload]', e);
+        showToast('첨부파일 업로드 실패: ' + (e.message || e), 'error');
         return;
       }
     }
