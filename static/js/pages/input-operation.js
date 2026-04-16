@@ -65,6 +65,8 @@ function saveTitle(type, title) {
 const OP_ICONS = {
   // ⚫ 입출고센터 (모바일→웹 통합)
   ioc:       { name: 'ph-arrows-in-line-horizontal', color: '#37352f' },
+  // ⚫ 상품화센터 (정비+사고수리+상품화 통합)
+  pc:        { name: 'ph-sparkle',                    color: '#8b5cf6' },
   // 🔵 고객 소통
   contact:   { name: 'ph-phone',              color: '#3b82f6' },  // blue-500
   collect:   { name: 'ph-envelope',           color: '#2563eb' },  // blue-600
@@ -98,12 +100,14 @@ function opIcon(key) {
 }
 
 const DEFAULT_TYPES = [
-  { key: 'ioc',         label: '입출고센터',     sub: '출고·반납·강제회수·차량이동·상품화 통합', direction: 'out' },
-  { key: 'contact',     label: '고객센터',       sub: '통화/상담/컴플레인/문의',  direction: 'out' },
-  { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',          direction: 'out' },
-  { key: 'maint',       label: '정비',           sub: '소모품교체 + 기능수리',      direction: 'out' },
+  { key: 'ioc',         label: '입출고센터',     sub: '출고·반납·강제회수·차량이동',     direction: 'out' },
+  { key: 'pc',          label: '상품화센터',     sub: '정비·사고수리·상품화 통합',        direction: 'out' },
+  { key: 'contact',     label: '고객센터',       sub: '통화/상담/컴플레인/문의',         direction: 'out' },
+  { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',               direction: 'out' },
+  { key: 'maint',       label: '정비',           sub: '소모품교체 + 기능수리',           direction: 'out', hidden: true },
   { key: 'accident',    label: '사고접수',       sub: '사고 발생/보험접수',        direction: 'out' },
-  { key: 'repair',      label: '사고수리',       sub: '판금/도색/수리',             direction: 'out' },
+  { key: 'repair',      label: '사고수리',       sub: '판금/도색/수리',             direction: 'out', hidden: true },
+  { key: 'product',     label: '상품화',         sub: '반납 후 재상품화',           direction: 'out', hidden: true },
   { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out' },
   { key: 'collect',     label: '미수관리',       sub: '독촉/내용증명/법적조치',     direction: 'out' },
   { key: 'insurance',   label: '보험관리',       sub: '보험배서/연령변경/갱신',     direction: 'out' },
@@ -117,12 +121,11 @@ function loadTypes() {
     const saved = JSON.parse(localStorage.getItem(ORDER_KEY));
     if (saved?.length) {
       const ordered = saved.map(k => DEFAULT_TYPES.find(t => t.key === k)).filter(Boolean);
-      // 새로 추가된 항목도 뒤에 붙이기
       const missing = DEFAULT_TYPES.filter(t => !saved.includes(t.key));
-      return [...ordered, ...missing];
+      return [...ordered, ...missing].filter(t => !t.hidden);
     }
   } catch {}
-  return [...DEFAULT_TYPES];
+  return DEFAULT_TYPES.filter(t => !t.hidden);
 }
 function saveOrder(types) {
   localStorage.setItem(ORDER_KEY, JSON.stringify(types.map(t => t.key)));
@@ -196,7 +199,22 @@ function renderForm() {
   // 유형별 폼 생성
   let sections = '';
 
-  if (currentType === 'ioc') {
+  if (currentType === 'pc') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <div class="field" style="grid-column:1/-1">${sel('pc_kind', '작업구분', ['정비','사고수리','상품화'])}</div>
+      </div>
+      <div class="form-grid" style="margin-top:8px">
+        <div class="field" style="grid-column:1/-1;color:var(--c-text-muted);font-size:var(--font-size-sm);padding:10px;background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:var(--r-md)">
+          작업구분을 선택하면 해당 세부 양식이 표시됩니다. 선택 후 아래 세부 항목을 채워 등록하세요.
+        </div>
+      </div>
+    </div>`;
+  } else if (currentType === 'ioc') {
     sections = `
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
@@ -205,7 +223,7 @@ function renderForm() {
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         <div class="field" style="grid-column:1/-1">
           <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
-            ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}
+            ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수'])}
             ${sel('handover_by', '이동방식', ['탁송','직접'])}
           </div>
         </div>
@@ -978,6 +996,32 @@ function renderForm() {
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
   }
 
+  // 상품화센터 — 작업구분 선택시 실제 폼(maint/repair/product) 전환
+  if (currentType === 'pc') {
+    const pcGroup = host.querySelector('.btn-group[data-name="pc_kind"]');
+    // 입력값 보존
+    const preserveDate = host.querySelector('input[name="date"]')?.value;
+    const preserveCar = host.querySelector('input[name="car_number"]')?.value;
+    pcGroup?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-opt'); if (!btn) return;
+      const v = btn.dataset.val;
+      const map = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product' };
+      const t = map[v]; if (!t) return;
+      currentType = t;
+      // 재렌더 후 값 복원
+      renderForm();
+      const host2 = $('#opFormHost');
+      if (preserveDate) { const d = host2.querySelector('input[name="date"]'); if (d) d.value = preserveDate; }
+      if (preserveCar) {
+        const c = host2.querySelector('input[name="car_number"]');
+        if (c) { c.value = preserveCar; c.dispatchEvent(new Event('input')); c.dispatchEvent(new Event('change')); }
+      }
+      // 타이틀 앞에 '상품화센터 ›' 표시
+      const ft = $('#opFormTitle');
+      if (ft) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>상품화센터</span><span style="color:var(--c-text-muted);font-weight:var(--fw)">›</span><span>${v}</span></span>`;
+    });
+  }
+
   if (currentType === 'ioc') {
     if (iocUploader) iocUploader.clear();
     const mount = host.querySelector('#iocPhotoUploader');
@@ -1579,7 +1623,6 @@ async function submitForm() {
       '정상반납': { type: 'return',   direction: 'in'  },
       '강제회수': { type: 'force',    direction: 'in'  },
       '차량이동': { type: 'transfer', direction: 'out' },
-      '상품화':   { type: 'product',  direction: 'out' },
     };
     const m = KIND_MAP[kind] || KIND_MAP['정상출고'];
     currentType = m.type;
