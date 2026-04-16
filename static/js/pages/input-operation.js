@@ -2335,6 +2335,8 @@ function getPenaltyRows() {
   });
 }
 
+let _penaltyRows = [];
+
 function renderPenaltyMatchList() {
   const ctx = $('#opContextHost');
   if (!ctx) return;
@@ -2346,6 +2348,7 @@ function renderPenaltyMatchList() {
   if (filterStatus === '처리완료') rows = rows.filter(r => r._processed);
   else if (filterStatus === '미처리') rows = rows.filter(r => !r._processed);
   rows.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+  _penaltyRows = rows;
 
   const sub = $('#opContextSubtitle');
   if (sub) sub.textContent = `${rows.length}건`;
@@ -2355,29 +2358,127 @@ function renderPenaltyMatchList() {
     return;
   }
 
-  ctx.innerHTML = rows.map(r => {
-    const hist = r._historyLabel !== '최초'
-      ? `<span style="color:var(--c-danger);font-weight:600">${r._historyLabel}</span>`
-      : `<span style="color:var(--c-text-muted)">${r._historyLabel}</span>`;
-    const status = r._processed
-      ? '<span style="color:var(--c-success)">처리완료</span>'
-      : '<span style="color:var(--c-danger)">미처리</span>';
-    const amount = Number(r.amount || 0).toLocaleString();
-    const matched = r._contract
-      ? `${r._contractor} · ${r._carInfo || '—'}`
-      : '<span style="color:var(--c-danger)">계약 미매칭</span>';
-    return `
-      <div class="dash-card" style="display:flex;flex-direction:column;gap:4px;padding:10px;margin-bottom:6px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>${r.car_number || '—'}</strong>
-          <span style="font-size:var(--font-size-sm)">${hist} · ${status}</span>
-        </div>
-        <div style="font-size:var(--font-size-sm);color:var(--c-text-sub)">${matched}</div>
-        <div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">
-          ${r.date || ''} · ${r.location || ''} · ${amount}원
-        </div>
-      </div>`;
-  }).join('');
+  const th = (w, label, align = 'left') => `<th style="padding:6px 8px;border-bottom:1px solid var(--c-border);background:var(--c-bg-sub);text-align:${align};font-weight:600;font-size:var(--font-size-xs);color:var(--c-text-sub);white-space:nowrap;width:${w}">${label}</th>`;
+  const td = (v, align = 'left', extra = '') => `<td style="padding:6px 8px;border-bottom:1px solid var(--c-border);text-align:${align};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${extra}">${v}</td>`;
+
+  ctx.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:var(--font-size-sm);table-layout:fixed">
+      <thead>
+        <tr>
+          ${th('90px', '차량번호')}
+          ${th('', '위반일시')}
+          ${th('90px', '계약자')}
+          ${th('100px', '계약시작일')}
+          ${th('100px', '계약종료일')}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map((r, i) => {
+          const contractor = r._contract
+            ? (r._contractor || '—')
+            : '<span style="color:var(--c-danger)">미매칭</span>';
+          const startDate = r._contract?.start_date || '<span style="color:var(--c-text-muted)">—</span>';
+          const endDate = r._contract?.end_date || '<span style="color:var(--c-text-muted)">—</span>';
+          const violationDt = r.date || '—';
+          return `
+            <tr data-pen-idx="${i}" style="cursor:pointer" onmouseover="this.style.background='var(--c-bg-sub)'" onmouseout="this.style.background=''">
+              ${td(`<strong>${r.car_number || '—'}</strong>`)}
+              ${td(violationDt)}
+              ${td(contractor)}
+              ${td(startDate)}
+              ${td(endDate)}
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  // 이벤트 위임 (매번 재바인딩 — innerHTML 갱신 후 리스너 유지용)
+  ctx.onclick = (e) => {
+    const card = e.target.closest('[data-pen-idx]');
+    if (!card) return;
+    const idx = parseInt(card.dataset.penIdx, 10);
+    if (_penaltyRows[idx]) openPenaltyPreview(_penaltyRows[idx]);
+  };
+}
+
+function openPenaltyPreview(row) {
+  const asset = row._asset;
+  const contract = row._contract;
+  const carModel = asset ? `${asset.manufacturer || ''} ${asset.car_model || ''}`.trim() : '';
+  const contractor = contract?.contractor_name || row._contractor || '';
+  const fileName = [row.car_number, contractor || '미매칭', carModel].filter(Boolean).join(' ');
+  const fileUrl = row.file_url || '';
+  const isPdf = /\.pdf(\?|$)/i.test(fileUrl);
+  const isImage = /\.(png|jpe?g|gif|heic|webp)(\?|$)/i.test(fileUrl);
+
+  const { style, body } = buildConfirmationContent({
+    company_name: row.payer_name || '',
+    car_number: row.car_number || '',
+    car_model: carModel,
+    vin: asset?.vin || row.vin || '',
+    contractor_name: contractor,
+    contractor_phone: contract?.contractor_phone || '',
+    contractor_reg_no: contract?.contractor_reg_no || '',
+    start_date: contract?.start_date || '',
+    end_date: contract?.end_date || '',
+    violation_date: row.date || '',
+  });
+
+  const noticeSection = !fileUrl
+    ? `<div style="padding:60px;text-align:center;color:#999">고지서 파일이 없습니다</div>`
+    : isImage
+      ? `<img src="${fileUrl}" alt="고지서">`
+      : isPdf
+        ? `<iframe src="${fileUrl}" title="고지서"></iframe>`
+        : `<a href="${fileUrl}" target="_blank">고지서 열기</a>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>${fileName}</title>
+<style>
+${style}
+/* 뷰어 추가 스타일 */
+html, body { height: auto; }
+body { padding: 0; background: #ececec; }
+.toolbar { position: sticky; top: 0; z-index: 100; display: flex; gap: 10px; align-items: center; padding: 10px 16px; background: #fff; border-bottom: 1px solid #ddd; }
+.toolbar button { padding: 8px 16px; font-size: 14px; cursor: pointer; border: 1px solid #888; border-radius: 4px; background: #fff; }
+.toolbar button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.toolbar .fname { flex: 1; color: #555; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page { width: 210mm; min-height: 297mm; background: #fff; margin: 16px auto; box-shadow: 0 2px 8px rgba(0,0,0,.1); padding: 20mm 15mm; page-break-after: always; }
+.page:last-of-type { page-break-after: auto; }
+.page-image { display: flex; align-items: center; justify-content: center; padding: 0; overflow: hidden; }
+.page-image img { max-width: 100%; max-height: 297mm; object-fit: contain; }
+.page-image iframe { width: 100%; height: 297mm; border: 0; }
+@media print {
+  body { background: #fff; }
+  .toolbar { display: none; }
+  .page { margin: 0; padding: 20mm 15mm; box-shadow: none; }
+  .page-image { padding: 0; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button class="primary" onclick="window.print()">📄 PDF 저장 (인쇄)</button>
+  <button onclick="window.close()">닫기</button>
+  <div class="fname">파일명: ${fileName}</div>
+</div>
+<div class="page page-image">
+  ${noticeSection}
+</div>
+<div class="page">
+  ${body}
+</div>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank');
+  if (!w) { showToast('팝업이 차단되었습니다', 'error'); return; }
+  w.document.write(html);
+  w.document.close();
+  w.document.title = fileName;
 }
 
 async function handlePenaltyFiles(files) {
@@ -2448,7 +2549,7 @@ async function handlePenaltyFiles(files) {
           doc_type: p.doc_type,
           car_number: p.car_number,
           vin: asset?.vin || '',
-          date: dateOnly,
+          date: p.date || '',
           title: p.description || p.doc_type || '과태료',
           penalty_amount: p.penalty_amount,
           fine_amount: p.fine_amount,

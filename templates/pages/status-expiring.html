@@ -1,5 +1,26 @@
 {% extends 'workspace.html' %}
 {% block topbar_extra %}<span class="topbar-status">만기도래</span>{% endblock %}
+{% block workspace_layout %}layout-55{% endblock %}
 {% block workspace %}
-<div id="expiringGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <i class="ph ph-hourglass" style="color:var(--c-warn)"></i>
+      <span class="panel-title">만기 도래</span>
+      <span class="panel-subtitle" id="expiringCount">집계 중...</span>
+    </div>
+  </div>
+  <div id="expiringGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <i class="ph ph-clock-counter-clockwise" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title" id="expHistoryTitle">이력관리</span>
+      <span class="panel-subtitle" id="expHistorySub">좌측에서 계약을 선택하세요</span>
+    </div>
+  </div>
+  <div id="expHistory" style="flex:1;min-height:0;overflow:auto"></div>
+</section>
 {% endblock %}
