@@ -73,7 +73,14 @@ def mobile_autoredirect():
 
 @app.context_processor
 def inject_globals():
-    v = str(int(time.time())) if app.debug else '0.1.0'
+    if app.debug:
+        v = str(int(time.time()))  # 로컬: 매 요청마다 다름
+    else:
+        # Vercel 환경: 배포 커밋 SHA 사용 → 배포마다 자동 버전업
+        v = (os.environ.get('VERCEL_GIT_COMMIT_SHA')
+             or os.environ.get('VERCEL_DEPLOYMENT_ID')
+             or os.environ.get('APP_VERSION')
+             or '0.1.0')[:12]
     return {'v': v}
 
 ROUTES = [
@@ -162,13 +169,15 @@ def login():
 def m_login():
     return render_template('pages/m/login.html')
 
-# ── PWA Service Worker (루트 스코프 필요) ──────
-from flask import send_from_directory
+# ── PWA Service Worker (루트 스코프 필요, 버전 동기화) ──────
+from flask import send_from_directory, make_response
 @app.route('/sw.js')
 def sw():
-    resp = send_from_directory(app.static_folder, 'sw.js', mimetype='application/javascript')
+    body = render_template('sw.js')
+    resp = make_response(body)
+    resp.headers['Content-Type'] = 'application/javascript'
     resp.headers['Service-Worker-Allowed'] = '/'
-    resp.headers['Cache-Control'] = 'no-cache'
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return resp
 
 @app.route('/manifest.webmanifest')
@@ -178,8 +187,8 @@ def manifest_root():
 
 # ── 모바일 (운영팀 현장용) ────────────────────
 MOBILE_ROUTES = [
-    ('/m',          'pages/m/upload.html', '업로드', 'm_upload',  'upload'),
-    ('/m/upload',   'pages/m/upload.html', '업로드', 'm_upload_alias', 'upload'),
+    ('/m',          'pages/m/upload.html', '입출고센터', 'm_upload',  'upload'),
+    ('/m/upload',   'pages/m/upload.html', '입출고센터', 'm_upload_alias', 'upload'),
     ('/m/input',    'pages/m/input.html',  '입력',   'm_input',   'input'),
     ('/m/status',   'pages/m/status.html', '현황',   'm_status',  'status'),
     ('/m/search',   'pages/m/search.html', '조회',   'm_search',  'search'),

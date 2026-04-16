@@ -17,7 +17,7 @@ const fmtDate = (s) => {
 const TYPES = [
   { key: 'all',         label: '전체',           icon: '📋' },
   { key: 'contact',     label: '고객응대',       icon: '📞' },
-  { key: 'delivery',    label: '출고(인도)',     icon: '🚗' },
+  { key: 'delivery',    label: '정상출고',       icon: '🚗' },
   { key: 'return',      label: '정상반납',       icon: '🔙' },
   { key: 'force',       label: '강제회수',       icon: '🚨' },
   { key: 'transfer',    label: '차량이동',       icon: '🔄' },
@@ -34,6 +34,25 @@ const TYPES = [
 ];
 
 const OP_TYPES = ['contact', 'delivery', 'return', 'force', 'transfer', 'key', 'maint', 'product', 'accident', 'repair', 'penalty', 'collect', 'insurance', 'wash', 'fuel'];
+
+// 구분 라벨 — 출고·반납 페이지 전용
+const GUBUN_LABEL = {
+  delivery: '정상출고',
+  return:   '정상반납',
+  force:    '강제회수',
+  transfer: '차량이동',
+  product:  '상품화',
+  maint:    '정비',
+  repair:   '사고수리',
+  accident: '사고접수',
+  penalty:  '과태료',
+  contact:  '고객응대',
+  collect:  '미수관리',
+  key:      '차키관리',
+  insurance:'보험',
+  wash:     '세차',
+  fuel:     '연료',
+};
 
 // URL 별 프리셋 — 좌측 유형 리스트 & 기본 선택
 const URL_PRESETS = {
@@ -106,8 +125,8 @@ function refreshGrid() {
   gridApi = agGrid.createGrid($('#opViewGrid'), {
     columnDefs: [
       { headerName: '일자', field: 'date', width: 85, valueFormatter: p => fmtDate(p.value) },
-      { headerName: '유형', field: 'type', width: 75,
-        valueFormatter: p => EVENT_TYPES[p.value] || p.value || '-' },
+      { headerName: '구분', field: 'type', width: 90,
+        valueFormatter: p => GUBUN_LABEL[p.value] || EVENT_TYPES[p.value] || p.value || '-' },
       { headerName: '차량번호', field: 'car_number', width: 90 },
       { headerName: '회사', field: 'company_name', width: 110 },
       { headerName: '모델', field: 'detail_model', width: 90 },

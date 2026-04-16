@@ -2,7 +2,7 @@
  * sw.js — JPK 모바일 Service Worker
  * 전략: 네트워크 우선 + 오프라인 폴백 (오래된 데이터 안보여주기)
  */
-const VERSION = 'jpk-m-v1';
+const VERSION = 'jpk-m-{{ v }}';
 const SHELL = [
   '/m',
   '/static/css/tokens.css',
