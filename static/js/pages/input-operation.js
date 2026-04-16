@@ -183,7 +183,12 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}
+        <div class="field" style="grid-column:1/-1">
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <div>${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}</div>
+            <div>${sel('handover_by', '이동방식', ['직접','탁송'])}</div>
+          </div>
+        </div>
       </div>
       <!-- 차량 자동조회 결과 (2컬럼: 스펙 / 상태) -->
       <div id="iocCarInfo" class="ioc-car-info" hidden>
@@ -203,11 +208,10 @@ function renderForm() {
     </div>
 
     <div class="form-section" id="iocMoveSection">
-      <div class="form-section-title"><i class="ph ph-arrows-left-right"></i>이동 · 인수정보</div>
+      <div class="form-section-title"><i class="ph ph-arrows-left-right"></i>이동정보</div>
       <div class="form-grid">
         <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="예: 강남지점"></div>
         <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="예: 고객자택"></div>
-        ${sel('handover_by', '이동방식', ['직접','탁송'])}
         <div class="field" data-role="carrier"><label>탁송기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..."></div>
       </div>
     </div>
