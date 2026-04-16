@@ -207,7 +207,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="예: 강남지점"></div>
         <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="예: 고객자택"></div>
-        ${sel('handover_by', '이동방식', ['고객직접','직접이동','탁송기사'])}
+        ${sel('handover_by', '이동방식', ['직접','탁송'])}
         <div class="field" data-role="carrier"><label>탁송기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..."></div>
       </div>
     </div>
@@ -922,7 +922,7 @@ function renderForm() {
     const handoverGroup = host.querySelector('.btn-group[data-name="handover_by"]');
     const syncCarrier = () => {
       const v = host.querySelector('input[name="handover_by"]')?.value || '고객직접';
-      const show = v === '탁송기사';
+      const show = v === '탁송';
       host.querySelectorAll('[data-role="carrier"]').forEach(el => {
         el.style.display = show ? '' : 'none';
       });
