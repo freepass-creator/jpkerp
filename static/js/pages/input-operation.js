@@ -296,21 +296,17 @@ function renderForm() {
       <div class="form-section-title"><i class="ph ph-scales"></i>과실비율</div>
       <div class="form-grid">
         <div class="field" style="grid-column:1/-1">
-          <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-            <div style="flex:1;min-width:0">
-              <label>내 과실</label>
-              <input type="hidden" name="fault_pct">
-              <div class="btn-group" data-name="fault_pct" style="flex-wrap:wrap;gap:4px">
-                ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}" style="min-width:40px;text-align:center">${o}</span>`).join('')}
-              </div>
-            </div>
-            <div style="flex:0 0 auto">
-              <label>기타비율</label>
-              <div style="position:relative;display:inline-flex;align-items:center">
-                <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" maxlength="2" placeholder="00" style="width:46px;padding:0 18px 0 6px;text-align:right">
-                <span style="position:absolute;right:6px;color:var(--c-text-muted);font-size:var(--font-size-sm);pointer-events:none">%</span>
-              </div>
-            </div>
+          <label>내 과실</label>
+          <input type="hidden" name="fault_pct">
+          <div class="btn-group" data-name="fault_pct" style="flex-wrap:wrap;gap:4px">
+            ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}" style="min-width:40px;text-align:center">${o}</span>`).join('')}
+          </div>
+        </div>
+        <div class="field">
+          <label>기타비율</label>
+          <div style="position:relative;display:inline-flex;align-items:center">
+            <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" maxlength="2" placeholder="00" style="width:60px;padding:0 18px 0 8px;text-align:right">
+            <span style="position:absolute;right:6px;color:var(--c-text-muted);font-size:var(--font-size-sm);pointer-events:none">%</span>
           </div>
         </div>
       </div>
