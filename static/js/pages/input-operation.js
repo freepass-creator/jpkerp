@@ -186,7 +186,8 @@ function renderForm() {
         <div class="field" style="grid-column:1/-1">
           <div style="display:flex;gap:24px;flex-wrap:wrap">
             <div>${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}</div>
-            <div>${sel('handover_by', '이동방식', ['직접','탁송'])}</div>
+            <div>${sel('handover_by', '이동방식', ['탁송','직접'])}</div>
+            <div class="field" data-role="carrier-inline" style="min-width:160px"><label>탁송기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..."></div>
           </div>
         </div>
       </div>
@@ -212,7 +213,6 @@ function renderForm() {
       <div class="form-grid">
         <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="예: 강남지점"></div>
         <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="예: 고객자택"></div>
-        <div class="field" data-role="carrier"><label>탁송기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..."></div>
       </div>
     </div>
 
@@ -925,9 +925,9 @@ function renderForm() {
     // 인수구분 → 탁송기사 필드 show/hide
     const handoverGroup = host.querySelector('.btn-group[data-name="handover_by"]');
     const syncCarrier = () => {
-      const v = host.querySelector('input[name="handover_by"]')?.value || '고객직접';
+      const v = host.querySelector('input[name="handover_by"]')?.value || '탁송';
       const show = v === '탁송';
-      host.querySelectorAll('[data-role="carrier"]').forEach(el => {
+      host.querySelectorAll('[data-role="carrier-inline"]').forEach(el => {
         el.style.display = show ? '' : 'none';
       });
     };
