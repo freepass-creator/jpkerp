@@ -179,17 +179,36 @@ function renderForm() {
   if (currentType === 'ioc') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">입출고센터 — 사진 등록</div>
+      <div class="form-section-title">기본정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         ${sel('ioc_kind', '구분', ['정상출고','정상반납','강제회수','차량이동','상품화'])}
-        <div class="field" style="grid-column:1/-1"><label>제목 (선택)</label><input type="text" name="title" placeholder="비워두면 구분+사진수로 자동생성"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="특이사항"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">사진 · 파일</div>
+      <div class="form-grid">
         <div class="field" style="grid-column:1/-1">
-          <label>사진 · 파일</label>
           <div id="iocPhotoUploader"></div>
         </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">내용</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>제목 (선택)</label><input type="text" name="title" placeholder="비워두면 구분+사진수로 자동생성"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="3" placeholder="특이사항"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">담당</div>
+      <div class="form-grid">
+        <div class="field"><label>담당자</label><input type="text" name="handler" placeholder="담당 직원명"></div>
+        <div class="field"><label>참여자</label><input type="text" name="participants" placeholder="관련 직원 (쉼표 구분)"></div>
       </div>
     </div>`;
   } else if (currentType === 'maintenance') {
