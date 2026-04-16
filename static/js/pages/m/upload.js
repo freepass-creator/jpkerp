@@ -300,11 +300,34 @@ async function uploadSession(files, type) {
   await Promise.all(workers);
   if (!results.length) return;
 
-  // event 1건 생성
+  // event 1건 생성 (추가정보 포함)
+  await saveIocEvent(type, results);
+  toast(`${TITLE_MAP[type]} 등록 완료 (${results.length}장)`);
+}
+
+function readExtras() {
+  return {
+    from_location: ($('#mFromLocation')?.value || '').trim(),
+    to_location:   ($('#mToLocation')?.value || '').trim(),
+    carrier_phone: ($('#mCarrierPhone')?.value || '').trim(),
+    note:          ($('#mMemo')?.value || '').trim(),
+  };
+}
+
+function clearExtras() {
+  ['#mFromLocation','#mToLocation','#mCarrierPhone','#mMemo'].forEach((s) => {
+    const el = $(s); if (el) el.value = '';
+  });
+}
+
+async function saveIocEvent(type, photoResults) {
   const today = new Date().toISOString().slice(0, 10);
   const asset = assetsByCar.get(currentCar);
   const member = asset ? membersByCode.get(asset.partner_code) : null;
-  await saveEvent({
+  const uploader = getUploader();
+  const extras = readExtras();
+  const nPhotos = photoResults?.length || 0;
+  const ev = {
     type,
     date: today,
     car_number: currentCar,
@@ -312,16 +335,36 @@ async function uploadSession(files, type) {
     detail_model: asset?.detail_model || '',
     partner_code: asset?.partner_code || '',
     company_name: member?.company_name || '',
-    title: `${TITLE_MAP[type] || type} (${results.length}장)`,
-    memo: '',
-    photos: results,
+    title: nPhotos ? `${TITLE_MAP[type]} (${nPhotos}장)` : (TITLE_MAP[type] || type),
     uploader_uid: uploader.uid,
     uploader_name: uploader.name,
     uploader_email: uploader.email,
     source: 'mobile',
-    direction: type === 'return' ? 'in' : 'out',
-  });
-  toast(`${TITLE_MAP[type]} 등록 완료 (${results.length}장)`);
+    direction: type === 'return' || type === 'force' ? 'in' : 'out',
+  };
+  if (nPhotos) ev.photos = photoResults;
+  if (extras.from_location) ev.from_location = extras.from_location;
+  if (extras.to_location)   ev.to_location = extras.to_location;
+  if (extras.carrier_phone) ev.carrier_phone = extras.carrier_phone;
+  if (extras.note)          ev.note = extras.note;
+  await saveEvent(ev);
+  clearExtras();
+}
+
+// ── 사진 없이 기록만 저장 ──────
+async function submitTextOnly() {
+  if (!currentCar) { toast('차량번호를 먼저 선택하세요'); return; }
+  await window.__mUserReady;
+  // 마지막으로 고른 카테고리 사용, 없으면 기본 delivery
+  const type = selectedType || 'delivery';
+  const extras = readExtras();
+  if (!extras.note && !extras.from_location && !extras.to_location && !extras.carrier_phone) {
+    toast('메모 또는 이동 정보를 입력하세요'); return;
+  }
+  pushRecent(currentCar);
+  renderRecent();
+  await saveIocEvent(type, []);
+  toast('기록 저장 완료');
 }
 
 function injectPending(file, id) {
@@ -477,4 +520,5 @@ document.addEventListener('DOMContentLoaded', () => {
   watchCatalog();
   renderRecent();
   setCar('');
+  $('#mSubmitText')?.addEventListener('click', submitTextOnly);
 });

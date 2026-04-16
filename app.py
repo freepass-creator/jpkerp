@@ -187,8 +187,8 @@ def manifest_root():
 
 # ── 모바일 (운영팀 현장용) ────────────────────
 MOBILE_ROUTES = [
-    ('/m',          'pages/m/upload.html', '입출고센터', 'm_upload',  'upload'),
-    ('/m/upload',   'pages/m/upload.html', '입출고센터', 'm_upload_alias', 'upload'),
+    ('/m',          'pages/m/upload.html', '입출고', 'm_upload',  'upload'),
+    ('/m/upload',   'pages/m/upload.html', '입출고', 'm_upload_alias', 'upload'),
     ('/m/input',    'pages/m/input.html',  '입력',   'm_input',   'input'),
     ('/m/status',   'pages/m/status.html', '현황',   'm_status',  'status'),
     ('/m/search',   'pages/m/search.html', '조회',   'm_search',  'search'),

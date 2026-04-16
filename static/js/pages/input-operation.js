@@ -185,11 +185,20 @@ function renderForm() {
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         ${sel('ioc_kind', '업무구분', ['정상출고','정상반납','강제회수','차량이동','상품화'])}
       </div>
-      <!-- 차량 자동조회 결과 -->
+      <!-- 차량 자동조회 결과 (2컬럼: 스펙 / 상태) -->
       <div id="iocCarInfo" class="ioc-car-info" hidden>
-        <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
-        <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
-        <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
+        <div class="ioc-car-col">
+          <div class="ioc-car-col-title"><i class="ph ph-car"></i>차량 스펙</div>
+          <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
+          <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
+          <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
+        </div>
+        <div class="ioc-car-col">
+          <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약 / 상태</div>
+          <div class="ioc-car-row"><span class="k">계약자</span><span class="v" data-f="contractor">—</span></div>
+          <div class="ioc-car-row"><span class="k">계약종료</span><span class="v" data-f="endDate">—</span></div>
+          <div class="ioc-car-row"><span class="k">차량상태</span><span class="v" data-f="carStatus">—</span></div>
+        </div>
       </div>
     </div>
 
@@ -835,23 +844,33 @@ function renderForm() {
     // 차량번호 입력 → 자동 조회
     const carInput = host.querySelector('input[name="car_number"]');
     const infoEl = host.querySelector('#iocCarInfo');
+    const setField = (f, val) => { const el = infoEl.querySelector(`[data-f="${f}"]`); if (el) el.textContent = val || '—'; };
     const refreshCarInfo = () => {
       const cn = (carInput?.value || '').trim();
       if (!cn) { infoEl.hidden = true; return; }
       const a = assets.find(x => x.car_number === cn);
+      infoEl.hidden = false;
       if (!a) {
-        infoEl.hidden = false;
-        infoEl.querySelector('[data-f="company"]').textContent = '등록되지 않은 차량';
-        infoEl.querySelector('[data-f="car"]').textContent = cn;
-        infoEl.querySelector('[data-f="model"]').textContent = '—';
+        setField('company', '등록되지 않은 차량');
+        setField('car', cn);
+        setField('model', '—');
+        setField('contractor', '—');
+        setField('endDate', '—');
+        setField('carStatus', '—');
         return;
       }
-      // member lookup — assets 로 partner_code 는 알지만 회사명은 members 필요
-      // 간단히 car_model + partner_code 로 표시
-      infoEl.hidden = false;
-      infoEl.querySelector('[data-f="company"]').textContent = a.partner_code || '—';
-      infoEl.querySelector('[data-f="car"]').textContent = a.car_number;
-      infoEl.querySelector('[data-f="model"]').textContent = a.detail_model || a.car_model || '—';
+      // 스펙
+      setField('company', a.partner_code || '—');
+      setField('car', a.car_number);
+      setField('model', a.detail_model || a.car_model || '—');
+      // 계약 (활성 계약 우선 — contract_status가 계약진행/계약완료 + end_date 미래)
+      const today = new Date().toISOString().slice(0, 10);
+      const cands = contracts.filter(c => c.car_number === a.car_number);
+      const active = cands.find(c => c.contract_status === '계약진행' && (!c.end_date || c.end_date >= today))
+                   || cands.sort((x, y) => String(y.start_date || '').localeCompare(String(x.start_date || '')))[0];
+      setField('contractor', active?.contractor_name || '—');
+      setField('endDate', active?.end_date || '—');
+      setField('carStatus', a.status || active?.contract_status || '—');
     };
     carInput?.addEventListener('input', refreshCarInfo);
     carInput?.addEventListener('change', refreshCarInfo);

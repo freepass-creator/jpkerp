@@ -16,17 +16,33 @@
   gap: 6px;
 }
 
-/* 차량 자동조회 결과 패널 */
+/* 차량 자동조회 결과 패널 — 2컬럼 */
 .ioc-car-info {
   margin-top: var(--sp-3);
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: var(--c-bg-sub);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
 }
+@media (max-width: 720px) {
+  .ioc-car-info { grid-template-columns: 1fr; }
+}
+.ioc-car-col { display: flex; flex-direction: column; gap: 4px; }
+.ioc-car-col-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--c-text-muted);
+  font-weight: var(--fw-medium);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.ioc-car-col-title i { font-size: var(--icon-sm); opacity: 0.7; }
 .ioc-car-row {
   display: flex;
   align-items: center;

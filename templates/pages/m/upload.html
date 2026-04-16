@@ -48,6 +48,36 @@
     </button>
   </div>
 
+  <!-- 추가 정보 (선택) -->
+  <details class="m-details" style="margin-top:12px">
+    <summary style="padding:12px 14px;background:#fff;border:1px solid #e3e2de;border-radius:10px;font-size:13px;color:#37352f;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">
+      <i class="ph ph-note" style="color:#9b9a97"></i>
+      상세 입력 (메모·이동·탁송)
+      <i class="ph ph-caret-down" style="margin-left:auto;color:#9b9a97"></i>
+    </summary>
+    <div style="margin-top:8px;background:#fff;border:1px solid #e3e2de;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label style="font-size:11px;color:#9b9a97;font-weight:500">출발지</label>
+        <input type="text" class="m-input" id="mFromLocation" placeholder="예: 강남지점" style="height:40px;font-size:14px;margin-top:4px">
+      </div>
+      <div>
+        <label style="font-size:11px;color:#9b9a97;font-weight:500">도착지</label>
+        <input type="text" class="m-input" id="mToLocation" placeholder="예: 고객자택" style="height:40px;font-size:14px;margin-top:4px">
+      </div>
+      <div>
+        <label style="font-size:11px;color:#9b9a97;font-weight:500">탁송기사 연락처</label>
+        <input type="tel" class="m-input" id="mCarrierPhone" placeholder="010-..." style="height:40px;font-size:14px;margin-top:4px">
+      </div>
+      <div>
+        <label style="font-size:11px;color:#9b9a97;font-weight:500">메모</label>
+        <textarea class="m-input" id="mMemo" placeholder="특이사항" rows="3" style="height:auto;padding:10px 14px;font-size:14px;margin-top:4px;resize:vertical"></textarea>
+      </div>
+      <button type="button" class="m-btn m-btn-primary" id="mSubmitText">
+        <i class="ph ph-check"></i> 기록만 저장 (사진 없이)
+      </button>
+    </div>
+  </details>
+
   <!-- 업로드 중 -->
   <div class="m-pending" id="pendingSection" hidden>
     <div class="m-pending-head">
