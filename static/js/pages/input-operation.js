@@ -542,8 +542,6 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field"><label>정비업체</label><input type="text" name="vendor" list="vendorMaintList" placeholder="업체명"><datalist id="vendorMaintList">${vendorList}</datalist></div>
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('maint_status', '작업상태', ['입고','진행중','완료'])}
       </div>
     </div>
@@ -579,7 +577,6 @@ function renderForm() {
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 반납 후 상품화"></div>
         ${sel('product_status', '작업상태', ['입고','진행중','완료'])}
-        <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         <div class="field"><label>예상출고일</label><input type="date" name="expected_delivery"></div>
       </div>
     </div>
@@ -656,7 +653,6 @@ function renderForm() {
         <div class="field is-required"><label>총 수리비</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>보험처리금액</label><input type="text" name="insurance_amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>자기부담금</label><input type="text" name="self_pay" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>수리업체</label><input type="text" name="vendor" list="repairVendorList"><datalist id="repairVendorList">${repairVendors}</datalist></div>
       </div>
     </div>
     <div class="form-section">
@@ -735,7 +731,6 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field"><label>세차업체</label><input type="text" name="vendor" placeholder="세차장명"></div>
         ${sel('wash_work_status', '작업상태', ['입고','진행중','완료'])}
       </div>
     </div>
@@ -1113,10 +1108,17 @@ function renderForm() {
     const header = document.createElement('div');
     header.className = 'form-section';
     header.id = 'pcKindHeader';
+    const vList = vendors.map(v => `<option value="${v.vendor_name}">`).join('');
+    const preserveVendor = host.querySelector('input[name="vendor"]')?.value || '';
+    const preserveMileage = host.querySelector('input[name="mileage"]')?.value || '';
     header.innerHTML = `
       <div class="form-section-title"><i class="ph ph-tag"></i>작업구분</div>
-      <div class="btn-group" data-name="pc_kind_inline">
+      <div class="btn-group" data-name="pc_kind_inline" style="margin-bottom:var(--sp-3)">
         ${['정비','사고수리','상품화','세차'].map(k => `<span class="btn-opt${k===curLabel?' is-active':''}" data-val="${k}">${k}</span>`).join('')}
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>업체</label><input type="text" name="vendor" list="pcVendorList" placeholder="정비소/수리업체/세차장" value="${preserveVendor}"><datalist id="pcVendorList">${vList}</datalist></div>
+        <div class="field"><label>현 주행거리 (km)</label><input type="text" name="mileage" inputmode="numeric" placeholder="0" value="${preserveMileage}"></div>
       </div>
     `;
     // 기본정보(첫 form-section) 뒤에 삽입
