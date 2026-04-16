@@ -168,7 +168,7 @@ function renderForm() {
   if (subEl) subEl.textContent = t.sub || '';
 
   const host = $('#opFormHost');
-  const carList = `<datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">${a.car_model || ''}</option>`).join('')}</datalist>`;
+  const carList = `<datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">`).join('')}</datalist>`;
   const chk = (name, label) => `<span class="btn-opt btn-toggle" data-name="${name}" data-val="">${label}</span>`;
   const chkGroup = (items) => `<div class="btn-group" style="flex-wrap:wrap">${items}</div>`;
   const sel = (name, label, opts) => `<div class="field"></label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}">${o}</span>`).join('')}</div></div>`;
@@ -183,6 +183,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        ${sel('ioc_kind', '업무구분', ['정상출고','정상반납','강제회수','차량이동','상품화'])}
       </div>
       <!-- 차량 자동조회 결과 -->
       <div id="iocCarInfo" class="ioc-car-info" hidden>
@@ -192,21 +193,13 @@ function renderForm() {
       </div>
     </div>
 
-    <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-tag"></i>업무구분</div>
-      <div class="form-grid">
-        ${sel('ioc_kind', '구분', ['정상출고','정상반납','강제회수','차량이동','상품화'])}
-      </div>
-    </div>
-
     <div class="form-section" id="iocMoveSection">
       <div class="form-section-title"><i class="ph ph-arrows-left-right"></i>이동 · 인수정보</div>
       <div class="form-grid">
         <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="예: 강남지점"></div>
         <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="예: 고객자택"></div>
         ${sel('handover_by', '인수구분', ['고객직접','탁송기사'])}
-        <div class="field" data-role="carrier"><label>탁송기사명</label><input type="text" name="carrier_name" placeholder="이름"></div>
-        <div class="field" data-role="carrier"><label>기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..."></div>
+        <div class="field" data-role="carrier"><label>탁송기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..."></div>
       </div>
     </div>
 
