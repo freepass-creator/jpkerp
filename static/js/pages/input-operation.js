@@ -23,7 +23,20 @@ const RECENT_KEY = 'jpk.op.recent_cars';
 const FAV_KEY = 'jpk.op.favorites';
 const LOC_KEY = 'jpk.op.locations';
 const INS_KEY = 'jpk.op.insurance_co';
-function loadInsCo() { try { return JSON.parse(localStorage.getItem(INS_KEY)) || []; } catch { return []; } }
+// 국내 자동차 보험사 기본 목록 (가나다순)
+const DEFAULT_INS_CO = [
+  '삼성화재', '현대해상', 'DB손해보험', 'KB손해보험', '메리츠화재',
+  '한화손해보험', '롯데손해보험', '흥국화재', 'MG손해보험', 'AXA손해보험',
+  '캐롯손해보험', '하나손해보험'
+];
+function loadInsCo() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(INS_KEY)) || [];
+    // 사용자 저장 + 기본 목록 병합 (중복 제거, 사용자 저장을 우선 배치)
+    const merged = [...saved, ...DEFAULT_INS_CO.filter(x => !saved.includes(x))];
+    return merged;
+  } catch { return [...DEFAULT_INS_CO]; }
+}
 function saveInsCo(name) {
   if (!name) return;
   const list = loadInsCo().filter(x => x !== name);
@@ -294,7 +307,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-scales"></i>과실비율</div>
+      <div class="form-section-title"><i class="ph ph-scales"></i>과실 · 금액</div>
       <div class="form-grid">
         <div class="field" style="grid-column:1/-1">
           <label>내 과실</label>
@@ -309,18 +322,28 @@ function renderForm() {
             </div>
           </div>
         </div>
+        <div class="field"><label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
+        ${sel('rental_car', '대차', ['미정','대차제공','대차없음'])}
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-shield-check"></i>보험 처리</div>
-      <div class="form-grid">
-        <div class="field"><label>상대 차량번호</label><input type="text" name="accident_other" placeholder="예: 12가3456"></div>
-        <div class="field"><label>상대 보험사</label><input type="text" name="other_insurance" placeholder="상대 보험사"></div>
-        <div class="field"><label>상대 접수번호</label><input type="text" name="other_insurance_no" placeholder="상대측 접수번호"></div>
-        <div class="field"><label>우리 보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
-        <div class="field"><label>우리 접수번호</label><input type="text" name="insurance_no"></div>
-        <div class="field"><label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
-        ${sel('rental_car', '대차', ['미정','대차제공','대차없음'])}
+      <div class="form-section-title"><i class="ph ph-shield-check"></i>보험 정보</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5)">
+        <div>
+          <div style="font-size:var(--font-size-sm);font-weight:var(--fw-bold);color:var(--c-primary);margin-bottom:var(--sp-2);padding-bottom:var(--sp-1);border-bottom:1px solid var(--c-primary-bg)">우리쪽</div>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
+            <div class="field"><label>접수번호</label><input type="text" name="insurance_no"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:var(--font-size-sm);font-weight:var(--fw-bold);color:var(--c-text-sub);margin-bottom:var(--sp-2);padding-bottom:var(--sp-1);border-bottom:1px solid var(--c-border)">상대쪽</div>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="field"><label>상대 차량번호</label><input type="text" name="accident_other" placeholder="예: 12가3456"></div>
+            <div class="field"><label>보험사</label><input type="text" name="other_insurance" placeholder="상대 보험사"></div>
+            <div class="field"><label>접수번호</label><input type="text" name="other_insurance_no" placeholder="상대측 접수번호"></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="form-section">
