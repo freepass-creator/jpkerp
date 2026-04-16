@@ -302,13 +302,7 @@ function renderForm() {
             ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}">${o}</span>`).join('')}
           </div>
         </div>
-        <div class="field"><label>기타</label>
-          <input type="hidden" name="fault_pct_etc">
-          <div class="btn-group" data-name="fault_pct_etc">
-            <span class="btn-opt" data-val="기타">기타</span>
-          </div>
-        </div>
-        <div class="field"><label>직접 입력</label><input type="text" name="fault_ratio" placeholder="예: 15%"></div>
+        <div class="field" style="grid-column:1/-1"><label>직접 입력 (기타)</label><input type="text" name="fault_ratio" placeholder="예: 15%"></div>
       </div>
     </div>
     <div class="form-section">
