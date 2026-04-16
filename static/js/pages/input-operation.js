@@ -1116,7 +1116,11 @@ function renderForm() {
         ${['정비','사고수리','상품화','세차'].map(k => `<span class="btn-opt${k===curLabel?' is-active':''}" data-val="${k}">${k}</span>`).join('')}
       </div>
     `;
-    host.insertBefore(header, host.firstChild);
+    // 기본정보(첫 form-section) 뒤에 삽입
+    const firstSec = host.querySelector('.form-section');
+    if (firstSec && firstSec.nextSibling) host.insertBefore(header, firstSec.nextSibling);
+    else if (firstSec) host.appendChild(header);
+    else host.insertBefore(header, host.firstChild);
     header.querySelector('.btn-group').addEventListener('click', (e) => {
       const btn = e.target.closest('.btn-opt'); if (!btn) return;
       const v = btn.dataset.val;
