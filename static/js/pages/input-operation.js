@@ -303,7 +303,7 @@ function renderForm() {
               ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}" style="min-width:40px;text-align:center">${o}</span>`).join('')}
             </div>
             <div style="position:relative;display:inline-flex;align-items:center">
-              <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" placeholder="예: 00" style="width:80px;padding-right:20px;text-align:right">
+              <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" maxlength="3" placeholder="00" style="width:52px;padding:0 18px 0 6px;text-align:right">
               <span style="position:absolute;right:6px;color:var(--c-text-muted);font-size:var(--font-size-sm);pointer-events:none">%</span>
             </div>
           </div>
