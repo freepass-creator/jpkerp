@@ -797,6 +797,15 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-certificate"></i>보험증권 업로드</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1">
+          <div id="insurancePhotoUploader"></div>
+          <div style="margin-top:6px;font-size:var(--font-size-xs);color:var(--c-text-muted)">보험증권 PDF/이미지 · 배서확인서 등</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
       <div class="form-section-title"><i class="ph ph-note"></i>메모</div>
       <div class="form-grid">
         <div class="field" style="grid-column:1/-1"><textarea name="note" rows="2" placeholder="출고 고객명, 변경 사유 등"></textarea></div>
@@ -1169,6 +1178,11 @@ function renderForm() {
 
   if (currentType === 'contact') {
     const mount = host.querySelector('#contactPhotoUploader');
+    if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
+  }
+
+  if (currentType === 'insurance') {
+    const mount = host.querySelector('#insurancePhotoUploader');
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
   }
 
