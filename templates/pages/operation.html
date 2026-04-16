@@ -1,16 +1,10 @@
 {% extends 'workspace.html' %}
 {% block topbar_extra %}<span class="topbar-status">운영관리</span>{% endblock %}
-{% block workspace_layout %}layout-37{% endblock %}
 {% block workspace %}
 <section class="panel">
   <div class="panel-head">
-    <div><span class="panel-title">구분</span></div>
-  </div>
-  <div class="panel-body" id="opViewList" style="overflow-y:auto"></div>
-</section>
-<section class="panel">
-  <div class="panel-head">
     <div>
+      <i class="ph ph-list" style="color:var(--c-text-muted)"></i>
       <span class="panel-title" id="opViewTitle">전체</span>
       <span class="panel-subtitle" id="opViewCount"></span>
     </div>

@@ -85,27 +85,9 @@ let activeType = 'all';
 let gridApi = null;
 
 function renderList() {
+  // 좌측 리스트 패널 제거 — 그리드 단일 레이아웃
   const host = $('#opViewList');
-  const scope = scopeFilter();
-  const list = visibleTypes();
-  host.innerHTML = list.map(t => {
-    const count = t.key === 'all'
-      ? allEvents.filter(e => scope.includes(e.type)).length
-      : allEvents.filter(e => e.type === t.key).length;
-    return `<div class="op-type${activeType === t.key ? ' is-active' : ''}" data-type="${t.key}">
-      <span class="op-type__icon">${t.icon}</span>
-      <span class="op-type__label">${t.label}</span>
-      <span class="op-type__sub">${count}건</span>
-    </div>`;
-  }).join('');
-
-  host.querySelectorAll('.op-type').forEach(el => {
-    el.addEventListener('click', () => {
-      activeType = el.dataset.type;
-      renderList();
-      refreshGrid();
-    });
-  });
+  if (host) host.remove();
 }
 
 function getFilteredEvents() {
