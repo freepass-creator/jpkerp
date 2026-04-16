@@ -13,6 +13,8 @@ import { watchVendors } from '../firebase/vendors.js';
 import { showToast } from '../core/toast.js';
 import { createPhotoUploader, uploadFilesToStorage } from '../core/photo-ui.js';
 import { ocrFile, extractAmount, extractDate, extractCarNumber } from '../core/ocr.js';
+import { uploadPenaltyFile } from '../firebase/file-storage.js';
+import { generateRentalConfirmation } from '../core/doc-generator.js';
 
 let iocUploader = null;
 
@@ -102,6 +104,7 @@ const OP_ICONS = {
   force:     { name: 'ph-warning-octagon',    color: '#dc2626' },  // red-600
   accident:  { name: 'ph-car-profile',        color: '#ef4444' },  // red-500
   penalty:   { name: 'ph-prohibit',           color: '#b91c1c' },  // red-700
+  penalty_notice: { name: 'ph-receipt',       color: '#b91c1c' },  // red-700 (과태료처리)
 
   // 🟠 관리·수리
   maint:     { name: 'ph-wrench',             color: '#f97316' },  // orange-500
@@ -132,6 +135,7 @@ const DEFAULT_TYPES = [
   { key: 'product',     label: '상품화',         sub: '반납 후 재상품화',           direction: 'out', hidden: true },
   { key: 'insurance',   label: '보험배서관리',   sub: '연령변경·갱신·신규·해지',     direction: 'out' },
   { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out', hidden: true },
+  { key: 'penalty_notice', label: '과태료처리',  sub: '고지서 OCR · 확인서 병합 다운로드', direction: 'out' },
   { key: 'collect',     label: '미수관리',       sub: '독촉/내용증명/법적조치',     direction: 'out', hidden: true },
   { key: 'wash',        label: '세차',           sub: '세차/실내크리닝',           direction: 'out', hidden: true },
   { key: 'fuel',        label: '연료보충',       sub: '주유/전기충전',              direction: 'out', hidden: true },
@@ -217,6 +221,14 @@ function renderForm() {
   $('#opFormTitle').innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon(t.key)}<span>${t.label}</span></span>`;
   const subEl = $('#opFormSubtitle');
   if (subEl) subEl.textContent = t.sub || '';
+
+  // 과태료처리 모드: 폼 대신 업로드 UI, 등록/초기화 버튼 숨김
+  if (currentType === 'penalty_notice') {
+    togglePenaltyButtons(true);
+    renderPenaltyNoticeMode();
+    return;
+  }
+  togglePenaltyButtons(false);
 
   const host = $('#opFormHost');
   const carList = `<datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">`).join('')}</datalist>`;

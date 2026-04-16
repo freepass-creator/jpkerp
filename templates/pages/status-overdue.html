@@ -1,5 +1,14 @@
 {% extends 'workspace.html' %}
 {% block topbar_extra %}<span class="topbar-status">미납현황</span>{% endblock %}
 {% block workspace %}
-<div id="overdueGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <i class="ph ph-warning-circle" style="color:var(--c-danger)"></i>
+      <span class="panel-title">미납 현황</span>
+      <span class="panel-subtitle" id="overdueCount">집계 중...</span>
+    </div>
+  </div>
+  <div id="overdueGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
 {% endblock %}

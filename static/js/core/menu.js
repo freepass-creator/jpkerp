@@ -33,7 +33,6 @@ export const MENU = [
     { href: '/return-schedule',    label: '반납 일정' },
     { href: '/operation/maint',    label: '정비 이력' },
     { href: '/operation/accident', label: '사고 이력' },
-    { href: '/admin/notice',       label: '과태료' },
     { href: '/operation/wash',     label: '세차' },
     { href: '/operation/fuel',     label: '주유' },
 
