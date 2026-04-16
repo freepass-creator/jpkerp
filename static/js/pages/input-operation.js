@@ -1161,14 +1161,13 @@ function renderForm() {
     });
   }
 
-  // opFormTitle 갱신 — pc 상태면 브레드크럼
+  // pc 상태면 타이틀은 '차량케어센터' 고정 (하위 구분은 섹션으로 표시)
   if (_pcActive && currentType !== 'pc') {
-    const KIND_MAP_REV = { maint: '정비', repair: '사고수리', product: '상품화', wash: '세차' };
-    const v = KIND_MAP_REV[currentType] || '';
+    const pcType = TYPES.find(x => x.key === 'pc');
     const ft = $('#opFormTitle');
-    if (ft) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>차량케어센터</span><span style="color:var(--c-text-muted);font-weight:var(--fw)">›</span><span>${v}</span></span>`;
+    if (ft && pcType) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>${pcType.label}</span></span>`;
     const sub = $('#opFormSubtitle');
-    if (sub) sub.textContent = '';
+    if (sub && pcType) sub.textContent = pcType.sub || '';
   }
 
   if (currentType === 'ioc') {
