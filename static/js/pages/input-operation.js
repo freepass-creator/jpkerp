@@ -140,7 +140,8 @@ let allEvents = [];
 let vendors = [];
 let currentType = null;
 let lastCarNumber = '';
-let _pcActive = false;  // 차량케어센터 진입 여부 (작업구분 헤더 유지용)
+let _pcActive = false;
+let _pcSubType = '';  // 차량케어센터 선택 하위타입 (maint/repair/product/wash)
 
 function renderList() {
   const host = $('#opList');
@@ -246,7 +247,7 @@ function renderForm() {
   } else if (currentType === 'maintenance') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">정비 정보</div>
+      <div class="form-section-title"><i class="ph ph-wrench"></i>정비 정보</div>
       <div class="form-grid">
         <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -263,7 +264,7 @@ function renderForm() {
   } else if (currentType === 'accident') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">사고 기본</div>
+      <div class="form-section-title"><i class="ph ph-warning"></i>사고 기본</div>
       <div class="form-grid">
         <div class="field is-required"><label>사고일시</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -272,7 +273,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">사고 구분</div>
+      <div class="form-section-title"><i class="ph ph-tag"></i>사고 구분</div>
       <div class="form-grid">
         <div class="field"><label>사고형태</label>${chkGroup(
           chk('acc_single','단독') + chk('acc_both','쌍방'))}</div>
@@ -285,14 +286,14 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">과실비율</div>
+      <div class="form-section-title"><i class="ph ph-scales"></i>과실비율</div>
       <div class="form-grid">
         ${sel('fault_pct', '내 과실', ['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%','기타'])}
         <div class="field"><label>기타(직접입력)</label><input type="text" name="fault_ratio" placeholder="예: 15%"></div>
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">상대방</div>
+      <div class="form-section-title"><i class="ph ph-user-focus"></i>상대방</div>
       <div class="form-grid">
         <div class="field"><label>상대방</label><input type="text" name="accident_other" placeholder="이름/차량번호"></div>
         <div class="field"><label>상대방연락처</label><input type="text" name="accident_other_phone" placeholder="010-0000-0000"></div>
@@ -300,7 +301,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">보험 처리</div>
+      <div class="form-section-title"><i class="ph ph-shield-check"></i>보험 처리</div>
       <div class="form-grid">
         <div class="field"><label>우리보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
         <div class="field"><label>접수번호</label><input type="text" name="insurance_no"></div>
@@ -318,7 +319,7 @@ function renderForm() {
   } else if (currentType === 'penalty') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">과태료 정보</div>
+      <div class="form-section-title"><i class="ph ph-prohibit"></i>과태료 정보</div>
       <div class="form-grid">
         <div class="field is-required"></label>위반일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -337,7 +338,7 @@ function renderForm() {
   } else if (currentType === 'delivery') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">출고 기본</div>
+      <div class="form-section-title"><i class="ph ph-truck"></i>출고 기본</div>
       <div class="form-grid">
         <div class="field is-required"></label>출고일</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -348,7 +349,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">차량 상태</div>
+      <div class="form-section-title"><i class="ph ph-gauge"></i>차량 상태</div>
       <div class="form-grid">
         <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
@@ -357,7 +358,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">키 인도</div>
+      <div class="form-section-title"><i class="ph ph-key"></i>키 인도</div>
       <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
         ${chk('key_main', '메인키')}
         ${chk('key_sub', '보조키')}
@@ -366,7 +367,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">출고 필수 확인</div>
+      <div class="form-section-title"><i class="ph ph-check-square"></i>출고 필수 확인</div>
       <div class="form-grid" style="grid-template-columns:repeat(3,1fr)">
         ${chk('check_gps', 'GPS 확인')}
         ${chk('check_contract', '계약서 확인')}
@@ -377,7 +378,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">차량 사진</div>
+      <div class="form-section-title"><i class="ph ph-camera"></i>차량 사진</div>
       <label id="photoDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--c-text-muted);transition:background var(--t-fast)">
         <input type="file" id="photoFile" multiple accept="image/*" hidden>
         <span style="font-size:20px">📷</span>
@@ -386,7 +387,7 @@ function renderForm() {
       <div class="photo-grid" id="photoGrid" style="margin-top:8px"></div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">비품 확인</div>
+      <div class="form-section-title"><i class="ph ph-clipboard"></i>비품 확인</div>
       <div class="form-grid">
         ${chk('equip_navi', '내비게이션')}
         ${chk('equip_blackbox', '블랙박스')}
@@ -405,7 +406,7 @@ function renderForm() {
   } else if (currentType === 'return') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">반납 기본</div>
+      <div class="form-section-title"><i class="ph ph-arrow-u-down-left"></i>반납 기본</div>
       <div class="form-grid">
         <div class="field is-required"></label>반납일</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -414,7 +415,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">차량 상태</div>
+      <div class="form-section-title"><i class="ph ph-gauge"></i>차량 상태</div>
       <div class="form-grid">
         <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
@@ -425,7 +426,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">키 회수</div>
+      <div class="form-section-title"><i class="ph ph-key"></i>키 회수</div>
       <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
         ${chk('key_main', '메인키')}
         ${chk('key_sub', '보조키')}
@@ -434,7 +435,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">추가청구</div>
+      <div class="form-section-title"><i class="ph ph-receipt"></i>추가청구</div>
       <div class="form-grid">
         <div class="field"></label>과주행 추가금</label><input type="text" name="extra_mileage" inputmode="numeric" placeholder="0"></div>
         <div class="field"></label>연료부족 추가금</label><input type="text" name="extra_fuel" inputmode="numeric" placeholder="0"></div>
@@ -451,7 +452,7 @@ function renderForm() {
   } else if (currentType === 'force') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">강제회수 정보</div>
+      <div class="form-section-title"><i class="ph ph-warning-octagon"></i>강제회수 정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>회수일</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -462,7 +463,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">차량 상태</div>
+      <div class="form-section-title"><i class="ph ph-gauge"></i>차량 상태</div>
       <div class="form-grid">
         <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
@@ -471,7 +472,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">키 회수</div>
+      <div class="form-section-title"><i class="ph ph-key"></i>키 회수</div>
       <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
         ${chk('key_main', '메인키')}
         ${chk('key_sub', '보조키')}
@@ -480,7 +481,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">미수/정산</div>
+      <div class="form-section-title"><i class="ph ph-wallet"></i>미수/정산</div>
       <div class="form-grid">
         <div class="field"><label>미납금액</label><input type="text" name="unpaid_amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>손해배상청구</label><input type="text" name="damage_claim" inputmode="numeric" placeholder="0"></div>
@@ -492,7 +493,7 @@ function renderForm() {
   } else if (currentType === 'transfer') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">이동 정보</div>
+      <div class="form-section-title"><i class="ph ph-arrows-left-right"></i>이동 정보</div>
       <div class="form-grid">
         <div class="field is-required"></label>이동일</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -509,7 +510,7 @@ function renderForm() {
   } else if (currentType === 'key') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">차키 전달/분출</div>
+      <div class="form-section-title"><i class="ph ph-key"></i>차키 전달/분출</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -518,7 +519,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">키 종류 (해당 체크, 메인키 기본)</div>
+      <div class="form-section-title"><i class="ph ph-list-checks"></i>키 종류 (해당 체크, 메인키 기본)</div>
       <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
         ${chk('key_main', '메인키')}
         ${chk('key_sub', '보조키')}
@@ -537,30 +538,31 @@ function renderForm() {
     const vendorList = vendors.filter(v => ['정비소','타이어','부품','도색/판금'].includes(v.vendor_type)).map(v => `<option value="${v.vendor_name}">`).join('');
     sections = `
     <div class="form-section">
-      <div class="form-section-title">정비 기본</div>
+      <div class="form-section-title"><i class="ph ph-info"></i>정비 기본</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         <div class="field"><label>정비업체</label><input type="text" name="vendor" list="vendorMaintList" placeholder="업체명"><datalist id="vendorMaintList">${vendorList}</datalist></div>
         <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
+        ${sel('maint_status', '작업상태', ['입고','진행중','완료'])}
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">소모품 교체 <button type="button" class="btn" id="addPartsRow" style="margin-left:auto">+ 항목추가</button></div>
+      <div class="form-section-title"><i class="ph ph-wrench"></i>소모품 교체 <button type="button" class="btn" id="addPartsRow" style="margin-left:auto">+ 항목추가</button></div>
       <table class="grid-table" id="partsTable">
         <thead><tr><th>항목</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
     <div class="form-section">
-      <div class="form-section-title">기능수리 <button type="button" class="btn" id="addFixRow" style="margin-left:auto">+ 항목추가</button></div>
+      <div class="form-section-title"><i class="ph ph-hammer"></i>기능수리 <button type="button" class="btn" id="addFixRow" style="margin-left:auto">+ 항목추가</button></div>
       <table class="grid-table" id="fixTable">
         <thead><tr><th>수리내용</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
     <div class="form-section">
-      <div class="form-section-title">합계</div>
+      <div class="form-section-title"><i class="ph ph-calculator"></i>합계</div>
       <div class="form-grid">
         <div class="field"><label>총 금액</label><input type="text" name="amount" inputmode="numeric" placeholder="자동 계산" readonly id="maintTotal"></div>
         <div class="field"><label>다음정비예정</label><input type="date" name="next_maint_date"></div>
@@ -571,53 +573,53 @@ function renderForm() {
   } else if (currentType === 'product') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">상품화 기본</div>
+      <div class="form-section-title"><i class="ph ph-sparkle"></i>상품화 기본</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 반납 후 상품화"></div>
-        ${sel('product_status', '진행상태', ['시작','진행중','완료'])}
+        ${sel('product_status', '작업상태', ['입고','진행중','완료'])}
         <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         <div class="field"><label>예상출고일</label><input type="date" name="expected_delivery"></div>
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">부속품 설치 <button type="button" class="btn prod-add" data-table="prodAccessory" style="margin-left:auto">+ 추가</button></div>
+      <div class="form-section-title"><i class="ph ph-puzzle-piece"></i>부속품 설치 <button type="button" class="btn prod-add" data-table="prodAccessory" style="margin-left:auto">+ 추가</button></div>
       <table class="grid-table prod-table" id="prodAccessory">
         <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
     <div class="form-section">
-      <div class="form-section-title">세차/광택 <button type="button" class="btn prod-add" data-table="prodWash" style="margin-left:auto">+ 추가</button></div>
+      <div class="form-section-title"><i class="ph ph-drop"></i>세차/광택 <button type="button" class="btn prod-add" data-table="prodWash" style="margin-left:auto">+ 추가</button></div>
       <table class="grid-table prod-table" id="prodWash">
         <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
     <div class="form-section">
-      <div class="form-section-title">외판수리 <button type="button" class="btn prod-add" data-table="prodBody" style="margin-left:auto">+ 추가</button></div>
+      <div class="form-section-title"><i class="ph ph-paint-brush"></i>외판수리 <button type="button" class="btn prod-add" data-table="prodBody" style="margin-left:auto">+ 추가</button></div>
       <table class="grid-table prod-table" id="prodBody">
         <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
     <div class="form-section">
-      <div class="form-section-title">소모품교체 <button type="button" class="btn prod-add" data-table="prodParts" style="margin-left:auto">+ 추가</button></div>
+      <div class="form-section-title"><i class="ph ph-wrench"></i>소모품교체 <button type="button" class="btn prod-add" data-table="prodParts" style="margin-left:auto">+ 추가</button></div>
       <table class="grid-table prod-table" id="prodParts">
         <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
     <div class="form-section">
-      <div class="form-section-title">기능수리 <button type="button" class="btn prod-add" data-table="prodFix" style="margin-left:auto">+ 추가</button></div>
+      <div class="form-section-title"><i class="ph ph-hammer"></i>기능수리 <button type="button" class="btn prod-add" data-table="prodFix" style="margin-left:auto">+ 추가</button></div>
       <table class="grid-table prod-table" id="prodFix">
         <thead><tr><th>항목</th><th style="width:90px">업체</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
     <div class="form-section">
-      <div class="form-section-title">차량 상태</div>
+      <div class="form-section-title"><i class="ph ph-gauge"></i>차량 상태</div>
       <div class="form-grid">
         ${sel('exterior', '외관', ['양호','경미흠집','손상있음'])}
         ${sel('interior', '실내', ['양호','보통','청소필요'])}
@@ -662,7 +664,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field"><label>입고일</label><input type="date" name="repair_in_date"></div>
         <div class="field"><label>출고예정일</label><input type="date" name="repair_out_date"></div>
-        ${sel('repair_status', '수리상태', ['견적중','수리중','수리완료','출고완료'])}
+        ${sel('repair_status', '작업상태', ['입고','진행중','완료'])}
         ${sel('rental_car', '대차', ['미제공','대차중','대차반납'])}
       </div>
     </div>
@@ -677,7 +679,7 @@ function renderForm() {
   } else if (currentType === 'collect') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">미수관리</div>
+      <div class="form-section-title"><i class="ph ph-envelope"></i>미수관리</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -688,7 +690,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">조치 내역</div>
+      <div class="form-section-title"><i class="ph ph-checks"></i>조치 내역</div>
       <div class="form-grid">
         ${sel('collect_action', '조치', ['전화독촉','문자발송','내용증명발송','법적조치예고','법적조치진행','기타'])}
         ${sel('collect_result', '결과', ['납부약속','즉시납부','연락불가','거부','기타'])}
@@ -701,7 +703,7 @@ function renderForm() {
   } else if (currentType === 'insurance') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">보험관리</div>
+      <div class="form-section-title"><i class="ph ph-shield-check"></i>보험관리</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -710,7 +712,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">배서 정보</div>
+      <div class="form-section-title"><i class="ph ph-file-text"></i>배서 정보</div>
       <div class="form-grid">
         ${sel('age_before', '변경 전 연령', ['21세','26세','만30세','만35세','전연령'])}
         ${sel('age_after', '변경 후 연령', ['21세','26세','만30세','만35세','전연령'])}
@@ -729,15 +731,16 @@ function renderForm() {
   } else if (currentType === 'wash') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">세차/광택 기본</div>
+      <div class="form-section-title"><i class="ph ph-drop"></i>세차/광택 기본</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         <div class="field"><label>세차업체</label><input type="text" name="vendor" placeholder="세차장명"></div>
+        ${sel('wash_work_status', '작업상태', ['입고','진행중','완료'])}
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">항목 <button type="button" class="btn" id="addWashRow" style="margin-left:auto">+ 항목추가</button></div>
+      <div class="form-section-title"><i class="ph ph-list"></i>항목 <button type="button" class="btn" id="addWashRow" style="margin-left:auto">+ 항목추가</button></div>
       <table class="grid-table" id="washTable">
         <thead><tr><th>항목</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
         <tbody></tbody>
@@ -753,7 +756,7 @@ function renderForm() {
   } else if (currentType === 'inspect') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">차량 점검</div>
+      <div class="form-section-title"><i class="ph ph-magnifying-glass"></i>차량 점검</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -764,7 +767,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">외관 점검</div>
+      <div class="form-section-title"><i class="ph ph-car"></i>외관 점검</div>
       <div class="form-grid">
         ${sel('exterior', '외관상태', ['양호','경미흠집','손상있음'])}
         ${sel('interior', '실내상태', ['양호','보통','청소필요'])}
@@ -773,7 +776,7 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">비품 확인</div>
+      <div class="form-section-title"><i class="ph ph-clipboard"></i>비품 확인</div>
       <div class="form-grid">
         ${chk('equip_navi', '내비게이션')}
         ${chk('equip_blackbox', '블랙박스')}
@@ -792,7 +795,7 @@ function renderForm() {
   } else if (currentType === 'fuel') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">주유/충전 정보</div>
+      <div class="form-section-title"><i class="ph ph-gas-pump"></i>주유/충전 정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -809,7 +812,7 @@ function renderForm() {
   } else if (currentType === 'insurance') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">보험 정보</div>
+      <div class="form-section-title"><i class="ph ph-shield"></i>보험 정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -1870,6 +1873,7 @@ async function submitForm() {
       'product_status', 'product_maint', 'maint_detail', 'maint_cost', 'maint_vendor', 'expected_delivery',
       'repair_type', 'repair_in_date', 'repair_out_date', 'repair_estimate', 'insurance_amount', 'self_pay', 'repair_status',
       'damage_area', 'damage_frame',
+      'maint_status', 'wash_work_status',
       'collect_action', 'collect_result', 'promise_date',
       'force_reason', 'unpaid_amount', 'damage_claim', 'legal_action',
       'assignee', 'participants',
