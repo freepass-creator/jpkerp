@@ -28,7 +28,7 @@ export const MENU = [
 
     { subgroup: '운영관리', icon: 'circlecheck' },
     { href: '/operation',          label: '전체 이력' },
-    { href: '/operation/contact',  label: '고객 응대' },
+    { href: '/operation/contact',  label: '고객센터' },
     { href: '/operation/delivery', label: '입출고센터' },
     { href: '/return-schedule',    label: '반납 일정' },
     { href: '/operation/maint',    label: '정비 이력' },

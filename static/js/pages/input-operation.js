@@ -99,7 +99,7 @@ function opIcon(key) {
 
 const DEFAULT_TYPES = [
   { key: 'ioc',         label: '입출고센터',     sub: '출고·반납·강제회수·차량이동·상품화 통합', direction: 'out' },
-  { key: 'contact',     label: '고객응대',       sub: '통화/상담/컴플레인',       direction: 'out' },
+  { key: 'contact',     label: '고객센터',       sub: '통화/상담/컴플레인/문의',  direction: 'out' },
   { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',          direction: 'out' },
   { key: 'maint',       label: '정비',           sub: '소모품교체 + 기능수리',      direction: 'out' },
   { key: 'accident',    label: '사고접수',       sub: '사고 발생/보험접수',        direction: 'out' },
@@ -826,17 +826,48 @@ function renderForm() {
   } else if (currentType === 'contact') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title">고객 응대</div>
+      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
       <div class="form-grid">
-        <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 대여료 문의"></div>
-        <div class="field"></label>고객명</label><input type="text" name="customer_name"></div>
-        <div class="field"></label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+      </div>
+      <div id="iocCarInfo" class="ioc-car-info" hidden>
+        <div class="ioc-car-col">
+          <div class="ioc-car-col-title"><i class="ph ph-car"></i>차량 스펙</div>
+          <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
+          <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
+          <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
+        </div>
+        <div class="ioc-car-col">
+          <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약 / 상태</div>
+          <div class="ioc-car-row"><span class="k">계약자</span><span class="v" data-f="contractor">—</span></div>
+          <div class="ioc-car-row"><span class="k">계약종료</span><span class="v" data-f="endDate">—</span></div>
+          <div class="ioc-car-row"><span class="k">차량상태</span><span class="v" data-f="carStatus">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-phone"></i>응대구분</div>
+      <div class="form-grid">
         ${sel('contact_type', '유형', ['일반문의','컴플레인','계약문의','정비요청','사고접수','반납협의','연장문의','기타'])}
         ${sel('contact_result', '처리결과', ['처리완료','진행중','보류','에스컬레이션'])}
-        <div class="field"></label>담당자</label><input type="text" name="handler" placeholder="처리 담당자"></div>
-        <div class="field" style="grid-column:1/-1"></label>통화내용</label><textarea name="note" rows="3" placeholder="상담 내용 기록"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-user"></i>고객정보</div>
+      <div class="form-grid">
+        <div class="field"><label>고객명</label><input type="text" name="customer_name"></div>
+        <div class="field"><label>연락처</label><input type="text" name="customer_phone" inputmode="tel" placeholder="010-0000-0000"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-note"></i>상담내용</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>제목</label><input type="text" name="title" placeholder="예: 대여료 문의"></div>
+        <div class="field" style="grid-column:1/-1"><label>통화·상담 내용</label><textarea name="note" rows="4" placeholder="상담 내용 기록"></textarea></div>
       </div>
     </div>`;
 
@@ -857,73 +888,63 @@ function renderForm() {
   host.innerHTML = sections;
 
   // 입출고센터 — 사진 업로더 + 인터랙션 초기화
+  // 차량 자동조회 공통 (ioc / contact 등)
+  if (['ioc', 'contact'].includes(currentType)) {
+    const carInput = host.querySelector('input[name="car_number"]');
+    const infoEl = host.querySelector('#iocCarInfo');
+    if (carInput && infoEl) {
+      const setField = (f, val) => { const el = infoEl.querySelector(`[data-f="${f}"]`); if (el) el.textContent = val || '—'; };
+      const refreshCarInfo = () => {
+        const cn = (carInput?.value || '').trim();
+        if (!cn) { infoEl.hidden = true; return; }
+        const a = assets.find(x => x.car_number === cn);
+        infoEl.hidden = false;
+        if (!a) {
+          setField('company', '등록되지 않은 차량'); setField('car', cn); setField('model', '—');
+          setField('contractor', '—'); setField('endDate', '—'); setField('carStatus', '—');
+          return;
+        }
+        setField('company', a.partner_code || '—');
+        setField('car', a.car_number);
+        setField('model', a.detail_model || a.car_model || '—');
+        const today = new Date().toISOString().slice(0, 10);
+        const cands = contracts.filter(c => c.car_number === a.car_number);
+        const active = cands.find(c => c.contract_status === '계약진행' && (!c.end_date || c.end_date >= today))
+                     || cands.sort((x, y) => String(y.start_date || '').localeCompare(String(x.start_date || '')))[0];
+        let carStatus = '대기';
+        if (active && active.contract_status === '계약진행') {
+          carStatus = `계약중 (${active.contractor_name || '—'})`;
+          setField('contractor', active.contractor_name || '—');
+          setField('endDate', active.end_date || '—');
+          // 고객센터: 고객명/연락처 자동 채움
+          if (currentType === 'contact') {
+            const nameInp = host.querySelector('input[name="customer_name"]');
+            const phoneInp = host.querySelector('input[name="customer_phone"]');
+            if (nameInp && !nameInp.value) nameInp.value = active.contractor_name || '';
+            if (phoneInp && !phoneInp.value) phoneInp.value = active.contractor_phone || '';
+          }
+        } else if (a.status === 'idle' || a.status === '휴차') { carStatus = '휴차'; setField('contractor', '—'); setField('endDate', '—');
+        } else if (a.status === 'product' || a.status === '상품화') { carStatus = '상품화 중'; setField('contractor', '—'); setField('endDate', '—');
+        } else if (a.status === 'disposal' || a.status === '매각') { carStatus = '매각'; setField('contractor', '—'); setField('endDate', '—');
+        } else {
+          const last = cands.sort((x, y) => String(y.end_date || '').localeCompare(String(x.end_date || '')))[0];
+          if (last) { setField('contractor', last.contractor_name || '—'); setField('endDate', last.end_date || '—'); carStatus = last.contract_status === '계약완료' ? '반납완료' : '대기'; }
+          else { setField('contractor', '—'); setField('endDate', '—'); }
+        }
+        setField('carStatus', carStatus);
+      };
+      carInput.addEventListener('input', refreshCarInfo);
+      carInput.addEventListener('change', refreshCarInfo);
+      refreshCarInfo();
+    }
+  }
+
   if (currentType === 'ioc') {
     if (iocUploader) iocUploader.clear();
     const mount = host.querySelector('#iocPhotoUploader');
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
 
-    // 차량번호 입력 → 자동 조회
-    const carInput = host.querySelector('input[name="car_number"]');
-    const infoEl = host.querySelector('#iocCarInfo');
-    const setField = (f, val) => { const el = infoEl.querySelector(`[data-f="${f}"]`); if (el) el.textContent = val || '—'; };
-    const refreshCarInfo = () => {
-      const cn = (carInput?.value || '').trim();
-      if (!cn) { infoEl.hidden = true; return; }
-      const a = assets.find(x => x.car_number === cn);
-      infoEl.hidden = false;
-      if (!a) {
-        setField('company', '등록되지 않은 차량');
-        setField('car', cn);
-        setField('model', '—');
-        setField('contractor', '—');
-        setField('endDate', '—');
-        setField('carStatus', '—');
-        return;
-      }
-      // 스펙
-      setField('company', a.partner_code || '—');
-      setField('car', a.car_number);
-      setField('model', a.detail_model || a.car_model || '—');
-      // 계약 (활성 계약 우선 — contract_status가 계약진행/계약완료 + end_date 미래)
-      const today = new Date().toISOString().slice(0, 10);
-      const cands = contracts.filter(c => c.car_number === a.car_number);
-      const active = cands.find(c => c.contract_status === '계약진행' && (!c.end_date || c.end_date >= today))
-                   || cands.sort((x, y) => String(y.start_date || '').localeCompare(String(x.start_date || '')))[0];
-      // 차량 상태 판별
-      let carStatus = '대기';
-      if (active && active.contract_status === '계약진행') {
-        carStatus = `계약중 (${active.contractor_name || '—'})`;
-        setField('contractor', active.contractor_name || '—');
-        setField('endDate', active.end_date || '—');
-      } else if (a.status === 'idle' || a.status === '휴차') {
-        carStatus = '휴차';
-        setField('contractor', '—');
-        setField('endDate', '—');
-      } else if (a.status === 'product' || a.status === '상품화') {
-        carStatus = '상품화 중';
-        setField('contractor', '—');
-        setField('endDate', '—');
-      } else if (a.status === 'disposal' || a.status === '매각') {
-        carStatus = '매각';
-        setField('contractor', '—');
-        setField('endDate', '—');
-      } else {
-        // 계약 끝났거나 없는 경우
-        const lastContract = cands.sort((x, y) => String(y.end_date || '').localeCompare(String(x.end_date || '')))[0];
-        if (lastContract) {
-          setField('contractor', lastContract.contractor_name || '—');
-          setField('endDate', lastContract.end_date || '—');
-          carStatus = lastContract.contract_status === '계약완료' ? '반납완료' : '대기';
-        } else {
-          setField('contractor', '—');
-          setField('endDate', '—');
-        }
-      }
-      setField('carStatus', carStatus);
-    };
-    carInput?.addEventListener('input', refreshCarInfo);
-    carInput?.addEventListener('change', refreshCarInfo);
-    refreshCarInfo();
+    // 차량 자동조회는 위 공통 블록에서 처리됨
 
     // 즐겨찾기 장소 렌더
     const renderLocFavs = () => {
@@ -1191,17 +1212,7 @@ function renderForm() {
     }
   }
 
-  // 담당자 지정 (모든 업무 공통)
-  const assignSection = document.createElement('div');
-  assignSection.className = 'form-section';
-  assignSection.innerHTML = `
-    <div class="form-section-title">담당자 / 참여자</div>
-    <div class="form-grid">
-      <div class="field"><label>담당자</label><input type="text" name="assignee" placeholder="담당 직원명"></div>
-      <div class="field"><label>참여자</label><input type="text" name="participants" placeholder="관련 직원 (쉼표 구분)"></div>
-    </div>
-  `;
-  host.appendChild(assignSection);
+  // 담당자는 로그인 정보로 자동 저장 (별도 UI 없음)
 
   // 사진 드래그앤드롭 + 클릭 → 여러 장 미리보기
   const photoDrop = host.querySelector('#photoDrop');

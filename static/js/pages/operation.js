@@ -17,7 +17,7 @@ const fmtDate = (s) => {
 
 const TYPES = [
   { key: 'all',         label: '전체',           icon: '📋' },
-  { key: 'contact',     label: '고객응대',       icon: '📞' },
+  { key: 'contact',     label: '고객센터',       icon: '📞' },
   { key: 'delivery',    label: '정상출고',       icon: '🚗' },
   { key: 'return',      label: '정상반납',       icon: '🔙' },
   { key: 'force',       label: '강제회수',       icon: '🚨' },
