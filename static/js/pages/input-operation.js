@@ -203,11 +203,14 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}
         <div class="field" style="grid-column:1/-1">
-          <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
-            ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}
+          <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
             ${sel('handover_by', '이동방식', ['탁송','직접'])}
-            <div class="field" data-role="carrier-inline" style="min-width:180px;flex:1"><label>탁송기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..." class="ctrl" style="height:var(--ctrl-h)"></div>
+            <div data-role="carrier-inline" style="flex:1;min-width:160px">
+              <label style="font-size:var(--font-size-sm);color:var(--c-text-muted);font-weight:var(--fw-medium);display:block;margin-bottom:var(--sp-1)">탁송기사 연락처</label>
+              <input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..." class="ctrl" style="width:100%">
+            </div>
           </div>
         </div>
       </div>
