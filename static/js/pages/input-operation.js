@@ -878,11 +878,11 @@ function renderForm() {
     const quick = document.createElement('div');
     quick.className = 'date-quick';
     quick.innerHTML = `
-      <button type="button" class="dq-btn" data-act="prev" title="하루 전">◀</button>
+      <button type="button" class="dq-btn" data-act="prev" title="하루 전"><i class="ph ph-caret-left"></i></button>
       <button type="button" class="dq-btn" data-act="yday">어제</button>
       <button type="button" class="dq-btn" data-act="today">오늘</button>
       <button type="button" class="dq-btn" data-act="tmrw" title="예약용">내일</button>
-      <button type="button" class="dq-btn" data-act="next" title="하루 뒤">▶</button>
+      <button type="button" class="dq-btn" data-act="next" title="하루 뒤"><i class="ph ph-caret-right"></i></button>
     `;
     dateInp.parentNode.appendChild(quick);
     const fmt = (d) => d.toISOString().slice(0, 10);

@@ -125,6 +125,11 @@
   color: var(--c-primary);
 }
 .dq-btn:active { transform: scale(0.97); }
+.dq-btn i {
+  font-size: var(--icon-sm);
+  line-height: 1;
+  display: inline-flex;
+}
 
 /* 차량번호 자동완성 드롭다운 */
 .car-suggest {
