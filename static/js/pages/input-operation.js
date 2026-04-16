@@ -868,9 +868,37 @@ function renderForm() {
       const cands = contracts.filter(c => c.car_number === a.car_number);
       const active = cands.find(c => c.contract_status === '계약진행' && (!c.end_date || c.end_date >= today))
                    || cands.sort((x, y) => String(y.start_date || '').localeCompare(String(x.start_date || '')))[0];
-      setField('contractor', active?.contractor_name || '—');
-      setField('endDate', active?.end_date || '—');
-      setField('carStatus', a.status || active?.contract_status || '—');
+      // 차량 상태 판별
+      let carStatus = '대기';
+      if (active && active.contract_status === '계약진행') {
+        carStatus = `계약중 (${active.contractor_name || '—'})`;
+        setField('contractor', active.contractor_name || '—');
+        setField('endDate', active.end_date || '—');
+      } else if (a.status === 'idle' || a.status === '휴차') {
+        carStatus = '휴차';
+        setField('contractor', '—');
+        setField('endDate', '—');
+      } else if (a.status === 'product' || a.status === '상품화') {
+        carStatus = '상품화 중';
+        setField('contractor', '—');
+        setField('endDate', '—');
+      } else if (a.status === 'disposal' || a.status === '매각') {
+        carStatus = '매각';
+        setField('contractor', '—');
+        setField('endDate', '—');
+      } else {
+        // 계약 끝났거나 없는 경우
+        const lastContract = cands.sort((x, y) => String(y.end_date || '').localeCompare(String(x.end_date || '')))[0];
+        if (lastContract) {
+          setField('contractor', lastContract.contractor_name || '—');
+          setField('endDate', lastContract.end_date || '—');
+          carStatus = lastContract.contract_status === '계약완료' ? '반납완료' : '대기';
+        } else {
+          setField('contractor', '—');
+          setField('endDate', '—');
+        }
+      }
+      setField('carStatus', carStatus);
     };
     carInput?.addEventListener('input', refreshCarInfo);
     carInput?.addEventListener('change', refreshCarInfo);
