@@ -14,7 +14,7 @@ import { showToast } from '../core/toast.js';
 import { createPhotoUploader, uploadFilesToStorage } from '../core/photo-ui.js';
 import { ocrFile, extractAmount, extractDate, extractCarNumber } from '../core/ocr.js';
 import { uploadPenaltyFile } from '../firebase/file-storage.js';
-import { generateRentalConfirmation } from '../core/doc-generator.js';
+import { generateRentalConfirmation, buildConfirmationContent } from '../core/doc-generator.js';
 
 let iocUploader = null;
 
@@ -2276,11 +2276,11 @@ function renderPenaltyNoticeMode() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-funnel"></i>조회 필터</div>
       <div class="form-grid">
-        <div class="field"><label>날짜</label><input type="date" id="penFilterDate" value="${today}"></div>
+        <div class="field"><label>날짜</label><input type="date" id="penFilterDate" value=""></div>
         <div class="field"><label>상태</label>
           <select id="penFilterStatus">
-            <option value="">전체</option>
-            <option value="미처리" selected>미처리</option>
+            <option value="" selected>전체</option>
+            <option value="미처리">미처리</option>
             <option value="처리완료">처리완료</option>
           </select>
         </div>
@@ -2388,17 +2388,38 @@ async function handlePenaltyFiles(files) {
 
   for (const file of files) {
     const id = `pen_${Date.now()}_${Math.random().toString(36).slice(2, 4)}`;
-    if (status) status.insertAdjacentHTML('beforeend', `
-      <div id="${id}" class="dash-card" style="display:flex;align-items:center;gap:8px;padding:8px">
-        <span>⏳</span><span style="font-size:var(--font-size-sm)">${file.name} — OCR 중...</span>
-      </div>`);
+    if (status) status.insertAdjacentHTML('beforeend', `<div id="${id}" class="dash-card"></div>`);
+    const row = document.getElementById(id);
+
+    // upload.js와 동일한 진행율 UI
+    const renderProgress = ({ stage, done, total, message }) => {
+      if (!row) return;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      const icon = stage === 'render' ? '📄' : '🔍';
+      const label = stage === 'render' ? 'PDF 렌더링' : 'OCR 분석';
+      row.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:6px;padding:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:var(--font-size-lg)">${icon}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${file.name}</div>
+              <div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">${label} · ${message || ''}</div>
+            </div>
+            <div style="font-size:11px;color:var(--c-text-muted);font-variant-numeric:tabular-nums">${done}/${total} (${pct}%)</div>
+          </div>
+          <div style="height:4px;background:var(--c-border);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:var(--c-primary);transition:width .15s"></div>
+          </div>
+        </div>`;
+    };
+    renderProgress({ stage: 'render', done: 0, total: 1, message: '시작' });
 
     try {
-      const result = await ocrFile(file);
+      const result = await ocrFile(file, { concurrency: 6, scale: 1.5, onProgress: renderProgress });
       const texts = result.text.split('--- 페이지 구분 ---').map(t => t.trim()).filter(Boolean);
       const allText = texts.length ? texts : [result.text];
 
-      let saved = 0;
+      let saved = 0, dup = 0;
       for (const txt of allText) {
         const lines = txt.split('\n').map(l => l.trim()).filter(Boolean);
         if (!penaltyModule?.detect(txt)) continue;
@@ -2408,9 +2429,18 @@ async function handlePenaltyFiles(files) {
         const asset = assets.find(a => a.car_number === p.car_number);
         const contract = contracts.find(c => c.car_number === p.car_number && c.contract_status !== '계약해지');
 
+        // 중복 체크 — 고지서번호 또는 (차번 + 위반일)
+        const dateOnly = (p.date || '').split(' ')[0];
+        const prevPenalties = allEvents.filter(e => e.event_type === 'penalty' && e.car_number === p.car_number);
+        const isDup = prevPenalties.some(e =>
+          (p.notice_no && e.notice_no === p.notice_no) ||
+          (dateOnly && (e.date || '').startsWith(dateOnly))
+        );
+        if (isDup) { dup++; continue; }
+
         let fileUrl = '';
         try {
-          fileUrl = await uploadPenaltyFile(file, p.car_number, (p.date || '').split(' ')[0]);
+          fileUrl = await uploadPenaltyFile(file, p.car_number, dateOnly);
         } catch (e) { console.warn('[penalty file upload]', e); }
 
         await saveEvent({
@@ -2418,7 +2448,7 @@ async function handlePenaltyFiles(files) {
           doc_type: p.doc_type,
           car_number: p.car_number,
           vin: asset?.vin || '',
-          date: (p.date || '').split(' ')[0],
+          date: dateOnly,
           title: p.description || p.doc_type || '과태료',
           penalty_amount: p.penalty_amount,
           fine_amount: p.fine_amount,
@@ -2445,11 +2475,17 @@ async function handlePenaltyFiles(files) {
         saved++;
       }
 
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = `<span>✅</span><span style="font-size:var(--font-size-sm)">${file.name} — ${saved}건 등록</span>`;
+      if (row) row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px">
+          <span>✅</span>
+          <span style="font-size:var(--font-size-sm)">${file.name} — ${saved}건 등록${dup ? ` · ${dup}건 중복` : ''}</span>
+        </div>`;
     } catch (e) {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = `<span>❌</span><span style="font-size:var(--font-size-sm);color:var(--c-danger)">${file.name} — ${e.message}</span>`;
+      if (row) row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px">
+          <span>❌</span>
+          <span style="font-size:var(--font-size-sm);color:var(--c-danger)">${file.name} — ${e.message}</span>
+        </div>`;
     }
   }
 

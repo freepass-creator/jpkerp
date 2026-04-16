@@ -1,12 +1,10 @@
 /**
- * pages/status-overdue.js — 미납 관리
- * 좌: 미납자 목록 (계약자별 그룹)
- * 우: 상세 — 회차별 명세 + 빠른 수금 입력 + 독촉 이력
+ * pages/status-overdue.js — 미납 관리 (목록 단일)
+ * 계약자별 그룹 · 연체일 · 조치 이력 집계
  */
-import { watchBillings, computeTotalDue, addPaymentToBilling } from '../firebase/billings.js';
+import { watchBillings, computeTotalDue } from '../firebase/billings.js';
 import { watchContracts } from '../firebase/contracts.js';
 import { watchEvents } from '../firebase/events.js';
-import { showToast } from '../core/toast.js';
 
 const $ = (s) => document.querySelector(s);
 const fmt = (v) => Number(v || 0).toLocaleString('ko-KR');
@@ -17,13 +15,15 @@ const fmtDate = (s) => {
 };
 
 let gridApi, contracts = [], billings = [], events = [];
-let selectedKey = null;
 let currentFilter = 'all';
+let selectedKey = null;
 
 function getRows() {
   const today = new Date().toISOString().slice(0, 10);
   const todayDate = new Date(today);
-  const byContract = new Map();
+
+  // 계약자별 집계
+  const byKey = new Map();
   billings.forEach(b => {
     const due = computeTotalDue(b);
     const paid = Number(b.paid_total) || 0;
@@ -31,8 +31,8 @@ function getRows() {
     if (!b.due_date || b.due_date >= today) return;
     const c = contracts.find(x => x.contract_code === b.contract_code) || {};
     const key = b.contract_code || `${c.contractor_name || '-'}|${c.car_number || '-'}`;
-    if (!byContract.has(key)) {
-      byContract.set(key, {
+    if (!byKey.has(key)) {
+      byKey.set(key, {
         key,
         contract_code: b.contract_code,
         contractor_name: c.contractor_name || '-',
@@ -43,19 +43,42 @@ function getRows() {
         bill_count: 0,
         max_days: 0,
         earliest_due: '',
-        latest_due: '',
       });
     }
-    const row = byContract.get(key);
+    const row = byKey.get(key);
     const days = Math.floor((todayDate - new Date(b.due_date)) / 86400000);
     row.unpaid_total += (due - paid);
     row.bill_count += 1;
     row.max_days = Math.max(row.max_days, days);
     if (!row.earliest_due || b.due_date < row.earliest_due) row.earliest_due = b.due_date;
-    if (!row.latest_due || b.due_date > row.latest_due) row.latest_due = b.due_date;
   });
 
-  let rows = [...byContract.values()];
+  // 조치 이력 집계 — events.collect (+ 기타 독촉성 타입)
+  byKey.forEach(row => {
+    const myEvents = events.filter(e =>
+      e.type === 'collect' &&
+      (e.contract_code === row.contract_code || e.car_number === row.car_number)
+    );
+    row.sms_count = myEvents.filter(e => /문자|알림톡|SMS/i.test(e.collect_action || '')).length;
+    row.call_count = myEvents.filter(e => /전화|통화/i.test(e.collect_action || '')).length;
+    row.legal_count = myEvents.filter(e => /내용증명|법적/i.test(e.collect_action || '')).length;
+    row.total_actions = myEvents.length;
+    // 최근 조치
+    const latest = [...myEvents].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0];
+    if (latest) {
+      row.last_action = latest.collect_action || '';
+      row.last_result = latest.collect_result || '';
+      row.last_action_date = latest.date || '';
+      row.promise_date = latest.promise_date || '';
+    } else {
+      row.last_action = '-';
+      row.last_result = '';
+      row.last_action_date = '';
+      row.promise_date = '';
+    }
+  });
+
+  let rows = [...byKey.values()];
   if (currentFilter === '7') rows = rows.filter(r => r.max_days >= 7);
   else if (currentFilter === '14') rows = rows.filter(r => r.max_days >= 14);
   else if (currentFilter === '30') rows = rows.filter(r => r.max_days >= 30);
@@ -72,200 +95,156 @@ function refresh() {
     const total = rows.reduce((s, r) => s + r.unpaid_total, 0);
     sub.textContent = `${rows.length}명 · ${fmt(total)}원`;
   }
-  // 선택 유지
-  if (selectedKey) renderDetail(selectedKey);
+  if (selectedKey) renderHistory(selectedKey);
 }
 
-function renderDetail(key) {
-  const host = $('#overdueDetail');
-  const titleEl = $('#overdueDetailTitle');
-  const subEl = $('#overdueDetailSub');
-  const actionsEl = $('#overdueDetailActions');
+function renderHistory(key) {
+  const host = $('#overdueHistory');
+  const titleEl = $('#overdueHistoryTitle');
+  const subEl = $('#overdueHistorySub');
   const today = new Date().toISOString().slice(0, 10);
   const todayDate = new Date(today);
 
-  // 해당 계약의 전체 billings
   const rows = getRows();
   const row = rows.find(r => r.key === key);
   if (!row) {
-    titleEl.textContent = '상세';
+    titleEl.textContent = '이력관리';
     subEl.textContent = '좌측에서 계약자를 선택하세요';
-    actionsEl.innerHTML = '';
     host.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">선택 안됨</div>';
     return;
   }
 
-  titleEl.innerHTML = `${row.contractor_name} <span style="color:var(--c-text-muted);font-weight:var(--fw)">· ${row.car_number}</span>`;
-  subEl.textContent = `미납 ${fmt(row.unpaid_total)}원 · ${row.bill_count}회차 · 최장 ${row.max_days}일`;
+  titleEl.innerHTML = `${row.contractor_name}`;
+  subEl.textContent = `${row.car_number} · ${row.contractor_phone || ''} · 미납 ${fmt(row.unpaid_total)}원`;
 
-  // 액션 버튼
-  const phone = row.contractor_phone || '';
-  actionsEl.innerHTML = `
-    ${phone ? `<a href="tel:${phone}" class="btn" title="전화걸기"><i class="ph ph-phone"></i> ${phone}</a>` : ''}
-    <button class="btn" id="overdueSendSms"><i class="ph ph-chat-circle-dots"></i> 알림톡</button>
-  `;
-
-  // 회차별 명세
+  // 회차별 청구·납부 표
   const cBills = billings
     .filter(b => b.contract_code === row.contract_code || (!b.contract_code && b.car_number === row.car_number))
     .sort((a, b) => String(a.due_date || '').localeCompare(String(b.due_date || '')));
+  const billsHtml = cBills.length ? `
+    <table class="grid-table" style="width:100%;margin-top:8px">
+      <thead>
+        <tr><th style="width:40px">회차</th><th style="width:80px">청구일</th><th class="is-num">청구액</th><th class="is-num">납부</th><th class="is-num">미납</th><th style="width:80px">상태</th></tr>
+      </thead>
+      <tbody>
+        ${cBills.map(b => {
+          const due = computeTotalDue(b);
+          const paid = Number(b.paid_total) || 0;
+          const unpaid = due - paid;
+          const days = b.due_date ? Math.floor((todayDate - new Date(b.due_date)) / 86400000) : 0;
+          const isOd = unpaid > 0 && b.due_date && b.due_date < today;
+          const status = paid >= due ? '완납' : (paid > 0 ? '부분' : (isOd ? `${days}일연체` : '미수'));
+          const color = paid >= due ? 'var(--c-success)' : (isOd && days >= 30 ? '#991b1b' : isOd && days >= 7 ? 'var(--c-danger)' : 'var(--c-warn)');
+          return `<tr><td>${b.seq || '-'}</td><td>${fmtDate(b.due_date)}</td><td class="is-num">${fmt(due)}</td><td class="is-num" style="color:var(--c-success)">${fmt(paid)}</td><td class="is-num" style="color:${unpaid?'var(--c-danger)':'var(--c-text-muted)'};font-weight:${unpaid?600:400}">${fmt(unpaid)}</td><td><span style="color:${color};font-weight:500">${status}</span></td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>` : '<div style="color:var(--c-text-muted);padding:12px">청구 내역 없음</div>';
 
-  const rowsHtml = cBills.map(b => {
-    const due = computeTotalDue(b);
-    const paid = Number(b.paid_total) || 0;
-    const unpaid = due - paid;
-    const isOverdue = unpaid > 0 && b.due_date && b.due_date < today;
-    const days = b.due_date ? Math.floor((todayDate - new Date(b.due_date)) / 86400000) : 0;
-    const status = paid >= due ? '완납' : (paid > 0 ? '부분입금' : (isOverdue ? `${days}일 연체` : '미수'));
-    const statusColor = paid >= due ? 'var(--c-success)' : (isOverdue && days >= 30 ? '#991b1b' : isOverdue && days >= 7 ? 'var(--c-danger)' : 'var(--c-warn)');
-    return `
-      <tr data-id="${b.billing_id}">
-        <td>${b.seq || '-'}</td>
-        <td>${fmtDate(b.due_date)}</td>
-        <td class="is-num">${fmt(due)}</td>
-        <td class="is-num" style="color:var(--c-success)">${fmt(paid)}</td>
-        <td class="is-num" style="color:${unpaid ? 'var(--c-danger)' : 'var(--c-text-muted)'};font-weight:${unpaid ? 600 : 400}">${fmt(unpaid)}</td>
-        <td><span style="color:${statusColor};font-weight:500">${status}</span></td>
-        <td>
-          ${unpaid > 0 ? `<button class="btn btn-xs pay-btn" data-id="${b.billing_id}" data-unpaid="${unpaid}"><i class="ph ph-currency-krw"></i> 수금</button>` : ''}
-        </td>
-      </tr>`;
-  }).join('');
+  // 독촉·조치 이력 타임라인
+  const collectEvs = events
+    .filter(e => e.type === 'collect' && (e.contract_code === row.contract_code || e.car_number === row.car_number))
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 
-  // 독촉 이력 (events collect 타입)
-  const collectEvents = events
-    .filter(e => e.type === 'collect' && (e.car_number === row.car_number || e.contract_code === row.contract_code))
-    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
-    .slice(0, 5);
-  const collectHtml = collectEvents.length ? `
-    <div style="margin-top:16px;padding:0 16px">
-      <div class="form-section-title" style="font-size:var(--font-size-sm);font-weight:600;color:var(--c-text-muted);margin-bottom:8px">
-        <i class="ph ph-envelope"></i> 최근 독촉 이력
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px">
-        ${collectEvents.map(e => `
-          <div style="display:flex;gap:8px;font-size:var(--font-size-sm);padding:4px 0;border-bottom:1px solid var(--c-border)">
-            <span style="color:var(--c-text-muted);width:80px">${fmtDate(e.date)}</span>
-            <span style="flex:1">${e.collect_action || '-'} · ${e.collect_result || ''}</span>
-            <span style="color:var(--c-text-muted)">${e.handler || ''}</span>
-          </div>`).join('')}
-      </div>
-    </div>` : '';
+  const historyHtml = collectEvs.length ? `
+    <div style="display:flex;flex-direction:column;gap:4px">
+      ${collectEvs.map(e => {
+        const actionIcon = /문자|알림톡|SMS/i.test(e.collect_action || '') ? 'ph-chat-circle-dots'
+          : /전화|통화/i.test(e.collect_action || '') ? 'ph-phone'
+          : /내용증명|법적/i.test(e.collect_action || '') ? 'ph-scales'
+          : 'ph-circle';
+        const actionColor = /법적/i.test(e.collect_action || '') ? '#991b1b'
+          : /문자|알림톡/i.test(e.collect_action || '') ? '#3b82f6'
+          : /전화/i.test(e.collect_action || '') ? '#2563eb'
+          : 'var(--c-text-muted)';
+        const resultColor = e.collect_result === '즉시납부' ? 'var(--c-success)'
+          : e.collect_result === '납부약속' ? 'var(--c-warn)'
+          : (e.collect_result === '연락불가' || e.collect_result === '거부') ? 'var(--c-danger)'
+          : 'var(--c-text)';
+        return `
+          <div style="display:flex;gap:10px;padding:8px 12px;border-bottom:1px solid var(--c-border)">
+            <i class="ph ${actionIcon}" style="color:${actionColor};font-size:16px;flex-shrink:0;margin-top:2px"></i>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;gap:8px;align-items:baseline">
+                <span style="font-size:var(--font-size);font-weight:600">${e.collect_action || '조치'}</span>
+                <span style="font-size:var(--font-size-sm);color:${resultColor};font-weight:500">${e.collect_result || ''}</span>
+                <span style="font-size:var(--font-size-xs);color:var(--c-text-muted);margin-left:auto">${fmtDate(e.date)}</span>
+              </div>
+              ${e.promise_date ? `<div style="font-size:var(--font-size-sm);color:var(--c-text-sub)">약속일 ${fmtDate(e.promise_date)}</div>` : ''}
+              ${e.note ? `<div style="font-size:var(--font-size-sm);color:var(--c-text-sub);margin-top:2px;white-space:pre-wrap">${e.note}</div>` : ''}
+              ${e.handler ? `<div style="font-size:var(--font-size-xs);color:var(--c-text-muted);margin-top:2px">담당: ${e.handler}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>` : '<div style="color:var(--c-text-muted);padding:16px;text-align:center">조치 이력 없음</div>';
+
+  // 조치 카운트 요약
+  const summary = `
+    <div style="display:flex;gap:12px;padding:10px 12px;background:var(--c-bg-sub);border-bottom:1px solid var(--c-border);font-size:var(--font-size-sm)">
+      <span><i class="ph ph-phone" style="color:#2563eb"></i> 전화 ${row.call_count || 0}회</span>
+      <span><i class="ph ph-chat-circle-dots" style="color:#3b82f6"></i> 문자 ${row.sms_count || 0}회</span>
+      <span><i class="ph ph-scales" style="color:#991b1b"></i> 법적조치 ${row.legal_count || 0}회</span>
+      <span style="margin-left:auto;color:var(--c-text-muted)">총 ${row.total_actions || 0}건</span>
+    </div>`;
 
   host.innerHTML = `
-    <div style="padding:16px">
-      <table class="grid-table" style="width:100%;margin-bottom:12px">
-        <thead>
-          <tr>
-            <th style="width:50px">회차</th>
-            <th style="width:90px">청구일</th>
-            <th class="is-num" style="width:110px">청구액</th>
-            <th class="is-num" style="width:110px">납부액</th>
-            <th class="is-num" style="width:110px">미납액</th>
-            <th style="width:100px">상태</th>
-            <th style="width:90px"></th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
+    ${summary}
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-invoice"></i>청구·납부 내역</div>
+      ${billsHtml}
     </div>
-    ${collectHtml}
-    <!-- 빠른 수금 다이얼로그 -->
-    <div id="payDialog" hidden style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:2000;display:flex;align-items:center;justify-content:center">
-      <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:20px;width:400px;max-width:90vw">
-        <div style="font-weight:600;margin-bottom:12px"><i class="ph ph-currency-krw"></i> 수금 입력</div>
-        <div style="font-size:var(--font-size-sm);color:var(--c-text-muted);margin-bottom:10px">미납액 <span id="payUnpaid">-</span>원</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="field"><label>납부일</label><input type="date" id="payDate" value="${today}"></div>
-          <div class="field"><label>납부액</label><input type="text" id="payAmount" inputmode="numeric" placeholder="0"></div>
-          <div class="field"><label>납부방법</label>
-            <div class="btn-group" data-name="payMethod">
-              <span class="btn-opt is-active" data-val="계좌이체">계좌이체</span>
-              <span class="btn-opt" data-val="카드">카드</span>
-              <span class="btn-opt" data-val="현금">현금</span>
-              <span class="btn-opt" data-val="자동이체">자동이체</span>
-            </div>
-            <input type="hidden" id="payMethodHidden" value="계좌이체">
-          </div>
-          <div class="field"><label>메모</label><input type="text" id="payNote" placeholder="특이사항"></div>
-        </div>
-        <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:14px">
-          <button class="btn" id="payCancel">취소</button>
-          <button class="btn btn-primary" id="payConfirm"><i class="ph ph-check"></i> 수금 저장</button>
-        </div>
-      </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-clock-counter-clockwise"></i>조치 이력</div>
+      ${historyHtml}
     </div>
   `;
-
-  // 수금 버튼
-  host.querySelectorAll('.pay-btn').forEach(btn => {
-    btn.addEventListener('click', () => openPayDialog(btn.dataset.id, Number(btn.dataset.unpaid)));
-  });
-
-  // 알림톡 버튼
-  $('#overdueSendSms')?.addEventListener('click', () => {
-    if (!phone) { showToast('연락처 없음', 'error'); return; }
-    showToast('알림톡 발송은 Solapi 연동 필요 (준비중)', 'info');
-  });
-}
-
-let _payBillingId = null;
-function openPayDialog(billingId, unpaid) {
-  _payBillingId = billingId;
-  $('#payDialog').hidden = false;
-  $('#payUnpaid').textContent = fmt(unpaid);
-  $('#payAmount').value = unpaid.toLocaleString();
-  const amt = $('#payAmount');
-  amt.addEventListener('input', () => {
-    const d = amt.value.replace(/[^\d]/g, '');
-    amt.value = d ? Number(d).toLocaleString() : '';
-  });
-  $('#payCancel').addEventListener('click', () => { $('#payDialog').hidden = true; });
-  // 납부방법 버튼 그룹
-  const methodGroup = $('#payDialog .btn-group[data-name="payMethod"]');
-  methodGroup.querySelectorAll('.btn-opt').forEach(opt => {
-    opt.addEventListener('click', () => {
-      methodGroup.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
-      opt.classList.add('is-active');
-      $('#payMethodHidden').value = opt.dataset.val;
-    });
-  });
-  $('#payConfirm').addEventListener('click', async () => {
-    const amount = Number(($('#payAmount').value || '').replace(/,/g, '')) || 0;
-    if (amount <= 0) { showToast('납부액을 입력하세요', 'error'); return; }
-    try {
-      await addPaymentToBilling(_payBillingId, {
-        date: $('#payDate').value,
-        amount,
-        method: $('#payMethodHidden').value,
-        note: $('#payNote').value.trim(),
-      });
-      $('#payDialog').hidden = true;
-      showToast('수금 저장 완료', 'success');
-    } catch (e) {
-      showToast('실패: ' + (e.message || e), 'error');
-    }
-  });
 }
 
 export async function mount() {
   gridApi = agGrid.createGrid($('#overdueGrid'), {
     columnDefs: [
-      { headerName: '#', valueGetter: 'node.rowIndex+1', width: 45, cellStyle: { color: 'var(--c-text-muted)' } },
+      { headerName: '#', valueGetter: 'node.rowIndex+1', width: 45,
+        cellStyle: { color: 'var(--c-text-muted)' } },
       { headerName: '계약자', field: 'contractor_name', width: 90 },
+      { headerName: '연락처', field: 'contractor_phone', width: 115 },
       { headerName: '차량', field: 'car_number', width: 95 },
-      { headerName: '회사', field: 'partner_code', width: 60 },
+      { headerName: '회원사', field: 'partner_code', width: 65 },
       { headerName: '회차', field: 'bill_count', width: 55, type: 'numericColumn',
         valueFormatter: p => p.value ? `${p.value}` : '' },
-      { headerName: '미납액', field: 'unpaid_total', flex: 1, minWidth: 100, type: 'numericColumn',
+      { headerName: '미납액', field: 'unpaid_total', width: 110, type: 'numericColumn',
         valueFormatter: p => fmt(p.value),
         cellStyle: { color: 'var(--c-danger)', fontWeight: 600 } },
-      { headerName: '최장', field: 'max_days', width: 70, type: 'numericColumn',
+      { headerName: '최장 연체', field: 'max_days', width: 85, type: 'numericColumn',
         valueFormatter: p => p.value ? `${p.value}일` : '',
         cellStyle: p => ({
           color: p.value >= 30 ? '#991b1b' : p.value >= 14 ? 'var(--c-danger)' : p.value >= 7 ? 'var(--c-warn)' : 'var(--c-text-sub)',
           fontWeight: 600,
         }) },
+      { headerName: '문자', field: 'sms_count', width: 55, type: 'numericColumn',
+        valueFormatter: p => p.value ? `${p.value}회` : '',
+        cellStyle: { color: 'var(--c-text-sub)' } },
+      { headerName: '전화', field: 'call_count', width: 55, type: 'numericColumn',
+        valueFormatter: p => p.value ? `${p.value}회` : '',
+        cellStyle: { color: 'var(--c-text-sub)' } },
+      { headerName: '법적조치', field: 'legal_count', width: 75, type: 'numericColumn',
+        valueFormatter: p => p.value ? `${p.value}회` : '',
+        cellStyle: p => ({ color: p.value ? '#991b1b' : 'var(--c-text-muted)', fontWeight: p.value ? 600 : 400 }) },
+      { headerName: '최근 조치', field: 'last_action', width: 120 },
+      { headerName: '결과', field: 'last_result', width: 100,
+        cellStyle: p => {
+          if (p.value === '납부약속') return { color: 'var(--c-warn)', fontWeight: 600 };
+          if (p.value === '즉시납부') return { color: 'var(--c-success)' };
+          if (p.value === '연락불가' || p.value === '거부') return { color: 'var(--c-danger)' };
+          return {};
+        } },
+      { headerName: '조치일', field: 'last_action_date', width: 85,
+        valueFormatter: p => fmtDate(p.value) },
+      { headerName: '약속일', field: 'promise_date', width: 85,
+        valueFormatter: p => fmtDate(p.value),
+        cellStyle: p => {
+          if (!p.value) return {};
+          const today = new Date().toISOString().slice(0, 10);
+          return p.value < today ? { color: 'var(--c-danger)', fontWeight: 600 } : { color: 'var(--c-warn)' };
+        } },
     ],
     rowData: [],
     defaultColDef: { resizable: true, sortable: true, filter: true, editable: false, minWidth: 50 },
@@ -273,12 +252,12 @@ export async function mount() {
     headerHeight: 28,
     animateRows: false,
     suppressContextMenu: true,
+    onGridReady: (p) => p.api.autoSizeAllColumns(),
     rowSelection: 'single',
     onRowClicked: (e) => {
       selectedKey = e.data?.key;
-      if (selectedKey) renderDetail(selectedKey);
+      if (selectedKey) renderHistory(selectedKey);
     },
-    onGridReady: (p) => p.api.autoSizeAllColumns(),
   });
   $('#overdueGrid')._agApi = gridApi;
 

@@ -1,5 +1,4 @@
 {% extends 'workspace.html' %}
-{% from '_macros/ui.html' import btn %}
 {% block topbar_extra %}<span class="topbar-status">미납관리</span>{% endblock %}
 {% block workspace_layout %}layout-37{% endblock %}
 {% block workspace %}
@@ -7,7 +6,7 @@
   <div class="panel-head">
     <div>
       <i class="ph ph-warning-circle" style="color:var(--c-danger)"></i>
-      <span class="panel-title">미납 현황</span>
+      <span class="panel-title">미납 목록</span>
       <span class="panel-subtitle" id="overdueCount">집계 중...</span>
     </div>
     <div class="panel-actions">
@@ -26,12 +25,11 @@
 <section class="panel">
   <div class="panel-head">
     <div>
-      <i class="ph ph-file-text" style="color:var(--c-text-muted)"></i>
-      <span class="panel-title" id="overdueDetailTitle">상세</span>
-      <span class="panel-subtitle" id="overdueDetailSub">좌측에서 계약자를 선택하세요</span>
+      <i class="ph ph-clock-counter-clockwise" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title" id="overdueHistoryTitle">이력관리</span>
+      <span class="panel-subtitle" id="overdueHistorySub">좌측에서 계약자를 선택하세요</span>
     </div>
-    <div class="panel-actions" id="overdueDetailActions"></div>
   </div>
-  <div id="overdueDetail" style="flex:1;min-height:0;overflow:auto"></div>
+  <div id="overdueHistory" style="flex:1;min-height:0;overflow:auto"></div>
 </section>
 {% endblock %}
