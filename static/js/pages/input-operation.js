@@ -1000,7 +1000,7 @@ function renderForm() {
               repairTbody.innerHTML = '';
               for (const r of itemRows) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td><input type="text" name="repairTable_item" value="${r.item}" style="width:100%;border:none;outline:none"></td><td><input type="text" name="repairTable_cost" value="${r.cost.toLocaleString()}" style="width:100%;border:none;outline:none;text-align:right"></td><td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove()">✕</button></td>`;
+                tr.innerHTML = `<td><input type="text" name="repairTable_item" value="${r.item}" style="width:100%;border:none;outline:none"></td><td><input type="text" name="repairTable_cost" value="${r.cost.toLocaleString()}" style="width:100%;border:none;outline:none;text-align:right"></td><td><button type="button" class="btn-icon btn-icon-del" onclick="this.closest('tr').remove()"><i class="ph ph-trash"></i></button></td>`;
                 repairTbody.appendChild(tr);
               }
               filled.push(`수리항목 ${itemRows.length}개`);
@@ -1234,7 +1234,7 @@ function renderForm() {
       tr.innerHTML = `
         <td><input type="text" name="${tableId}_item" placeholder="항목" style="width:100%;border:none;outline:none" ${opts ? `list="${tableId}Opts"` : ''}>${optHtml}</td>
         <td><input type="text" name="${tableId}_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
-        <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('maint-calc'))">✕</button></td>
+        <td><button type="button" class="btn-icon btn-icon-del" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('maint-calc'))"><i class="ph ph-trash"></i></button></td>
       `;
       tbody.appendChild(tr);
       tr.querySelector('input').focus();
@@ -1272,7 +1272,7 @@ function renderForm() {
       tr.innerHTML = `
         <td><input type="text" name="washTable_item" placeholder="항목" style="width:100%;border:none;outline:none" list="washOpts"><datalist id="washOpts">${washOpts.map(o => `<option value="${o}">`).join('')}</datalist></td>
         <td><input type="text" name="washTable_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
-        <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('wash-calc'))">✕</button></td>`;
+        <td><button type="button" class="btn-icon btn-icon-del" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('wash-calc'))"><i class="ph ph-trash"></i></button></td>`;
       tbody.appendChild(tr);
       tr.querySelector('input').focus();
       tr.querySelectorAll('[name$="_cost"]').forEach(inp => {
@@ -1304,7 +1304,7 @@ function renderForm() {
       tr.innerHTML = `
         <td><input type="text" name="repairTable_item" placeholder="수리항목" style="width:100%;border:none;outline:none" list="repairOpts"><datalist id="repairOpts">${repairOpts.map(o => `<option value="${o}">`).join('')}</datalist></td>
         <td><input type="text" name="repairTable_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
-        <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('repair-calc'))">✕</button></td>`;
+        <td><button type="button" class="btn-icon btn-icon-del" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('repair-calc'))"><i class="ph ph-trash"></i></button></td>`;
       tbody.appendChild(tr);
       tr.querySelector('input').focus();
       tr.querySelectorAll('[name$="_cost"]').forEach(inp => {
@@ -1344,7 +1344,7 @@ function renderForm() {
         <td><input type="text" name="${tableId}_item" placeholder="항목" style="width:100%;border:none;outline:none" list="${tableId}Opts"><datalist id="${tableId}Opts">${opts.map(o => `<option value="${o}">`).join('')}</datalist></td>
         <td><input type="text" name="${tableId}_vendor" placeholder="업체" style="width:100%;border:none;outline:none" list="opVendorList"></td>
         <td><input type="text" name="${tableId}_cost" inputmode="numeric" placeholder="0" style="width:100%;border:none;outline:none;text-align:right"></td>
-        <td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('product-calc'))">✕</button></td>`;
+        <td><button type="button" class="btn-icon btn-icon-del" onclick="this.closest('tr').remove();document.dispatchEvent(new Event('product-calc'))"><i class="ph ph-trash"></i></button></td>`;
       tbody.appendChild(tr);
       tr.querySelector('input').focus();
       tr.querySelectorAll('[name$="_cost"]').forEach(inp => {
@@ -1467,7 +1467,7 @@ function renderForm() {
         reader.onload = (e) => {
           const slot = document.createElement('div');
           slot.className = 'photo-slot has-photo';
-          slot.innerHTML = `<img src="${e.target.result}"><button type="button" class="photo-slot__del">✕</button>`;
+          slot.innerHTML = `<img src="${e.target.result}"><button type="button" class="photo-slot__del"><i class="ph ph-trash"></i></button>`;
           slot.querySelector('.photo-slot__del').addEventListener('click', () => slot.remove());
           photoGrid.appendChild(slot);
         };

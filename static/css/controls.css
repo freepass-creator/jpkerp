@@ -54,7 +54,11 @@ i.ph {
 .btn-outline:hover { background: var(--c-bg-hover); border-color: var(--c-border-strong); }
 
 /* Icon-only 버튼 */
-.btn-icon { width: 28px; height: 28px; padding: 0; }
+.btn-icon { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.btn-icon i { font-size: var(--icon-sm); }
+.btn-icon:hover { background: var(--c-bg-hover); }
+.btn-icon-del { color: var(--c-text-muted); border: none; }
+.btn-icon-del:hover { background: var(--c-danger-bg); color: var(--c-danger); }
 
 /* Danger */
 .btn-danger { color: var(--c-danger); }
@@ -106,6 +110,18 @@ i.ph {
   background: var(--c-bg-sub);
   color: var(--c-text-muted);
   cursor: default;
+}
+
+/* placeholder 옅게 통일 */
+.ctrl::placeholder,
+.field input::placeholder,
+.field textarea::placeholder,
+.panel-actions input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #c0beb8;
+  opacity: 1;
+  font-weight: 400;
 }
 
 /* ── 그리드 테이블 (AG Grid 아닌 일반 테이블) ── */
