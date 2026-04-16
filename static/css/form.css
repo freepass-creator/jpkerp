@@ -11,9 +11,21 @@
   color: var(--c-text-muted);
   margin-bottom: var(--sp-3);
   letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.form-section-title::before,
+.form-section-title::before { display: none; }
 .form-section-title svg { display: none; }
+.form-section-title i,
+.form-section-title .ph,
+.form-section-title [class^="ph-"],
+.form-section-title [class*=" ph-"] {
+  font-size: var(--icon-sm, 14px);
+  color: var(--c-text-muted);
+  line-height: 1;
+  opacity: 0.85;
+}
 
 .form-grid {
   display: grid;
