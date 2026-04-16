@@ -35,15 +35,42 @@ const TYPES = [
 
 const OP_TYPES = ['contact', 'delivery', 'return', 'force', 'transfer', 'key', 'maint', 'product', 'accident', 'repair', 'penalty', 'collect', 'insurance', 'wash', 'fuel'];
 
+// URL 별 프리셋 — 좌측 유형 리스트 & 기본 선택
+const URL_PRESETS = {
+  '/operation/delivery': { types: ['delivery', 'return', 'force', 'transfer', 'product'], active: 'all' },
+  '/operation/maint':    { types: ['maint', 'repair'], active: 'all' },
+  '/operation/accident': { types: ['accident', 'repair', 'penalty'], active: 'all' },
+  '/operation/contact':  { types: ['contact', 'collect'], active: 'all' },
+  '/operation/wash':     { types: ['wash'], active: 'wash' },
+  '/operation/fuel':     { types: ['fuel'], active: 'fuel' },
+};
+
+function currentPreset() {
+  const p = (typeof location !== 'undefined') ? location.pathname : '';
+  return URL_PRESETS[p] || null;
+}
+
+function visibleTypes() {
+  const p = currentPreset();
+  return p ? TYPES.filter((t) => t.key === 'all' || p.types.includes(t.key)) : TYPES;
+}
+
+function scopeFilter() {
+  const p = currentPreset();
+  return p ? p.types : OP_TYPES;
+}
+
 let allEvents = [];
 let activeType = 'all';
 let gridApi = null;
 
 function renderList() {
   const host = $('#opViewList');
-  host.innerHTML = TYPES.map(t => {
+  const scope = scopeFilter();
+  const list = visibleTypes();
+  host.innerHTML = list.map(t => {
     const count = t.key === 'all'
-      ? allEvents.filter(e => OP_TYPES.includes(e.type)).length
+      ? allEvents.filter(e => scope.includes(e.type)).length
       : allEvents.filter(e => e.type === t.key).length;
     return `<div class="op-type${activeType === t.key ? ' is-active' : ''}" data-type="${t.key}">
       <span class="op-type__icon">${t.icon}</span>
@@ -62,7 +89,8 @@ function renderList() {
 }
 
 function getFilteredEvents() {
-  if (activeType === 'all') return allEvents.filter(e => OP_TYPES.includes(e.type));
+  const scope = scopeFilter();
+  if (activeType === 'all') return allEvents.filter(e => scope.includes(e.type));
   return allEvents.filter(e => e.type === activeType);
 }
 
@@ -246,6 +274,9 @@ function showDetail(ev) {
 }
 
 export async function mount() {
+  // URL 프리셋 적용 — 기본 선택 세팅
+  const p = currentPreset();
+  activeType = p?.active || 'all';
   watchEvents((items) => {
     allEvents = items;
     renderList();

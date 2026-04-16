@@ -244,11 +244,21 @@ async function loadPage(pathname) {
   renderBreadcrumb(document.getElementById('topbarBreadcrumb'), pathname);
   refreshCountsDom();
 
-  // 페이지 모듈 로드
-  try {
-    const mod = await import(`/static/js/pages/${slug}.js?v=${Date.now()}`);
-    if (mod?.mount) await mod.mount();
-  } catch (e) { console.warn(`[page ${slug}]`, e); }
+  // 페이지 모듈 로드 — 못 찾으면 부모 슬러그로 폴백
+  const slugs = [];
+  let s = slug;
+  slugs.push(s);
+  while (s.includes('-')) { s = s.substring(0, s.lastIndexOf('-')); slugs.push(s); }
+  let loaded = false;
+  for (const candidate of slugs) {
+    try {
+      const mod = await import(`/static/js/pages/${candidate}.js?v=${Date.now()}`);
+      if (mod?.mount) await mod.mount();
+      loaded = true;
+      break;
+    } catch (e) { /* try next */ }
+  }
+  if (!loaded) console.warn(`[page not found] ${slug}`);
 
 }
 
