@@ -15,6 +15,37 @@
   align-items: center;
   gap: 6px;
 }
+
+/* 차량 자동조회 결과 패널 */
+.ioc-car-info {
+  margin-top: var(--sp-3);
+  padding: 10px 12px;
+  background: var(--c-bg-sub);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ioc-car-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-size-sm);
+}
+.ioc-car-row .k {
+  width: 60px;
+  flex-shrink: 0;
+  color: var(--c-text-muted);
+  font-weight: var(--fw-medium);
+}
+.ioc-car-row .v {
+  color: var(--c-text);
+  font-weight: var(--fw-bold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .form-section-title::before { display: none; }
 .form-section-title svg { display: none; }
 .form-section-title i,

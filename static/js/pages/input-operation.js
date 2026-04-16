@@ -183,7 +183,37 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+      </div>
+      <!-- 차량 자동조회 결과 -->
+      <div id="iocCarInfo" class="ioc-car-info" hidden>
+        <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
+        <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
+        <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-tag"></i>업무구분</div>
+      <div class="form-grid">
         ${sel('ioc_kind', '구분', ['정상출고','정상반납','강제회수','차량이동','상품화'])}
+      </div>
+    </div>
+
+    <div class="form-section" id="iocMoveSection">
+      <div class="form-section-title"><i class="ph ph-arrows-left-right"></i>이동 · 인수정보</div>
+      <div class="form-grid">
+        <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="예: 강남지점"></div>
+        <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="예: 고객자택"></div>
+        ${sel('handover_by', '인수구분', ['고객직접','탁송기사'])}
+        <div class="field" data-role="carrier"><label>탁송기사명</label><input type="text" name="carrier_name" placeholder="이름"></div>
+        <div class="field" data-role="carrier"><label>기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..."></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-note"></i>메모</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="3" placeholder="특이사항 · 참고"></textarea></div>
       </div>
     </div>
 
@@ -193,22 +223,6 @@ function renderForm() {
         <div class="field" style="grid-column:1/-1">
           <div id="iocPhotoUploader"></div>
         </div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-note"></i>내용</div>
-      <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><label>제목 (선택)</label><input type="text" name="title" placeholder="비워두면 구분+사진수로 자동생성"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="3" placeholder="특이사항"></textarea></div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-users"></i>담당</div>
-      <div class="form-grid">
-        <div class="field"><label>담당자</label><input type="text" name="handler" placeholder="담당 직원명"></div>
-        <div class="field"><label>참여자</label><input type="text" name="participants" placeholder="관련 직원 (쉼표 구분)"></div>
       </div>
     </div>`;
   } else if (currentType === 'maintenance') {
@@ -819,11 +833,61 @@ function renderForm() {
 
   host.innerHTML = sections;
 
-  // 입출고센터 — 사진 업로더 초기화
+  // 입출고센터 — 사진 업로더 + 인터랙션 초기화
   if (currentType === 'ioc') {
     if (iocUploader) iocUploader.clear();
     const mount = host.querySelector('#iocPhotoUploader');
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
+
+    // 차량번호 입력 → 자동 조회
+    const carInput = host.querySelector('input[name="car_number"]');
+    const infoEl = host.querySelector('#iocCarInfo');
+    const refreshCarInfo = () => {
+      const cn = (carInput?.value || '').trim();
+      if (!cn) { infoEl.hidden = true; return; }
+      const a = assets.find(x => x.car_number === cn);
+      if (!a) {
+        infoEl.hidden = false;
+        infoEl.querySelector('[data-f="company"]').textContent = '등록되지 않은 차량';
+        infoEl.querySelector('[data-f="car"]').textContent = cn;
+        infoEl.querySelector('[data-f="model"]').textContent = '—';
+        return;
+      }
+      // member lookup — assets 로 partner_code 는 알지만 회사명은 members 필요
+      // 간단히 car_model + partner_code 로 표시
+      infoEl.hidden = false;
+      infoEl.querySelector('[data-f="company"]').textContent = a.partner_code || '—';
+      infoEl.querySelector('[data-f="car"]').textContent = a.car_number;
+      infoEl.querySelector('[data-f="model"]').textContent = a.detail_model || a.car_model || '—';
+    };
+    carInput?.addEventListener('input', refreshCarInfo);
+    carInput?.addEventListener('change', refreshCarInfo);
+    refreshCarInfo();
+
+    // 구분 선택시 이동섹션 활성/비활성 (상품화면 비활성)
+    const kindGroup = host.querySelector('.btn-group[data-name="ioc_kind"]');
+    const moveSection = host.querySelector('#iocMoveSection');
+    const syncMoveSection = () => {
+      const v = host.querySelector('input[name="ioc_kind"]')?.value || '정상출고';
+      moveSection.style.opacity = v === '상품화' ? '0.4' : '';
+      moveSection.querySelectorAll('input,select,textarea,.btn-opt').forEach(el => {
+        if (v === '상품화') { el.setAttribute('disabled', ''); el.style.pointerEvents = 'none'; }
+        else { el.removeAttribute('disabled'); el.style.pointerEvents = ''; }
+      });
+    };
+    kindGroup?.addEventListener('click', () => setTimeout(syncMoveSection, 10));
+    syncMoveSection();
+
+    // 인수구분 → 탁송기사 필드 show/hide
+    const handoverGroup = host.querySelector('.btn-group[data-name="handover_by"]');
+    const syncCarrier = () => {
+      const v = host.querySelector('input[name="handover_by"]')?.value || '고객직접';
+      host.querySelectorAll('[data-role="carrier"]').forEach(el => {
+        el.style.display = v === '탁송기사' ? '' : 'none';
+      });
+    };
+    handoverGroup?.addEventListener('click', () => setTimeout(syncCarrier, 10));
+    syncCarrier();
   } else {
     iocUploader = null;
   }
@@ -1453,6 +1517,7 @@ async function submitForm() {
       'equip_navi', 'equip_blackbox', 'equip_hipass', 'equip_charger', 'equip_triangle', 'equip_fire',
       'extra_mileage', 'extra_fuel', 'extra_damage',
       'from_location', 'to_location', 'transfer_reason',
+      'handover_by', 'carrier_name', 'carrier_phone',
       'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
       'acc_single', 'acc_both', 'acc_offender', 'acc_victim',
