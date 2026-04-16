@@ -12,7 +12,7 @@ import { openDetail } from '../core/detail-panel.js';
 import { watchVendors } from '../firebase/vendors.js';
 import { showToast } from '../core/toast.js';
 import { createPhotoUploader, uploadFilesToStorage } from '../core/photo-ui.js';
-import { ocrFile, extractAmount, extractDate } from '../core/ocr.js';
+import { ocrFile, extractAmount, extractDate, extractCarNumber } from '../core/ocr.js';
 
 let iocUploader = null;
 
@@ -162,7 +162,9 @@ let vendors = [];
 let currentType = null;
 let lastCarNumber = '';
 let _pcActive = false;
-let _pcSubType = '';  // 차량케어센터 선택 하위타입 (maint/repair/product/wash)
+let _pcSubType = '';
+let iocInsCertUploader = null;
+let _iocInsCertVerified = false;
 
 function renderList() {
   const host = $('#opList');
@@ -268,6 +270,16 @@ function renderForm() {
           </div>
         </div>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="3" placeholder="탁송기사 연락처 · 특이사항 · 참고" class="ctrl" style="height:auto;padding:6px 8px"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section" id="iocInsCertSection" style="display:none">
+      <div class="form-section-title"><i class="ph ph-certificate"></i>보험증권 업로드 <span style="color:var(--c-danger);margin-left:4px">*</span></div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1">
+          <div id="iocInsCertUploader"></div>
+          <div id="iocInsCertStatus" style="margin-top:8px;font-size:var(--font-size-sm);color:var(--c-text-muted)">오늘 발급 증권을 업로드하세요 · 차량번호·날짜 자동 검증</div>
+        </div>
       </div>
     </div>
 
@@ -1281,16 +1293,16 @@ function renderForm() {
     const mount = host.querySelector('#iocPhotoUploader');
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
 
-    // 업무구분 → 차키 회수 / 운전자 연령 토글
+    // 업무구분 → 차키 회수 / 운전자 연령 / 보험증권 섹션 토글
     const kindGroup = host.querySelector('.btn-group[data-name="ioc_kind"]');
     const keyField = host.querySelector('[data-role="key-return"]');
     const driverField = host.querySelector('[data-role="driver-age"]');
+    const insCertSection = host.querySelector('#iocInsCertSection');
     const syncKindDeps = () => {
       const v = host.querySelector('input[name="ioc_kind"]')?.value || '';
       if (keyField) keyField.style.display = v === '강제회수' ? '' : 'none';
       if (driverField) {
         driverField.style.display = v === '정상출고' ? '' : 'none';
-        // 현재 차량 보험연령 참조 채우기
         if (v === '정상출고') {
           const cn = host.querySelector('input[name="car_number"]')?.value.trim();
           const insEvs = allEvents.filter(e => e.car_number === cn && e.type === 'insurance' && e.age_after)
@@ -1299,11 +1311,55 @@ function renderForm() {
           if (ref) ref.textContent = insEvs[0]?.age_after || '—';
         }
       }
+      if (insCertSection) insCertSection.style.display = v === '정상출고' ? '' : 'none';
     };
     kindGroup?.addEventListener('click', () => setTimeout(syncKindDeps, 10));
     const carInp = host.querySelector('input[name="car_number"]');
     carInp?.addEventListener('change', syncKindDeps);
     syncKindDeps();
+
+    // 보험증권 업로더 + OCR 검증
+    _iocInsCertVerified = false;
+    const insCertMount = host.querySelector('#iocInsCertUploader');
+    const statusEl = host.querySelector('#iocInsCertStatus');
+    if (insCertMount) {
+      iocInsCertUploader = createPhotoUploader(insCertMount, {
+        accept: 'image/*,.pdf',
+        multiple: false,
+        onChange: async (files) => {
+          const f = files[0];
+          if (!f) { _iocInsCertVerified = false; return; }
+          if (!statusEl) return;
+          const carNumber = (host.querySelector('input[name="car_number"]')?.value || '').trim();
+          const formDate = host.querySelector('input[name="date"]')?.value || '';
+          statusEl.innerHTML = '<i class="ph ph-spinner"></i> 증권 OCR 분석 중...';
+          statusEl.style.color = 'var(--c-text-muted)';
+          try {
+            const text = await ocrFile(f);
+            const extCar = extractCarNumber(text);
+            const extDate = extractDate(text);
+            const carOk = !carNumber || !extCar || extCar === carNumber;
+            const dateOk = !formDate || !extDate || extDate === formDate;
+            if (carOk && dateOk) {
+              _iocInsCertVerified = true;
+              statusEl.innerHTML = `✓ 검증 완료 — 차량 ${extCar || '(미인식)'}, 날짜 ${extDate || '(미인식)'}`;
+              statusEl.style.color = 'var(--c-success)';
+            } else {
+              _iocInsCertVerified = false;
+              const reasons = [];
+              if (!carOk) reasons.push(`차량번호 불일치 (증권: ${extCar}, 입력: ${carNumber})`);
+              if (!dateOk) reasons.push(`날짜 불일치 (증권: ${extDate}, 입력: ${formDate})`);
+              statusEl.innerHTML = `⚠ ${reasons.join(' · ')}`;
+              statusEl.style.color = 'var(--c-danger)';
+            }
+          } catch (e) {
+            _iocInsCertVerified = false;
+            statusEl.textContent = '⚠ OCR 실패 — 수동 확인 필요';
+            statusEl.style.color = 'var(--c-warn)';
+          }
+        }
+      });
+    }
   } else {
     iocUploader = null;
   }
@@ -1959,6 +2015,28 @@ async function submitForm() {
       '차량이동': { type: 'transfer', direction: 'out' },
     };
     const m = KIND_MAP[kind] || KIND_MAP['정상출고'];
+
+    // 정상출고 — 보험증권 필수 + 검증 통과 필요
+    if (kind === '정상출고') {
+      const certFiles = iocInsCertUploader ? iocInsCertUploader.getFiles() : [];
+      if (!certFiles.length) {
+        showToast('정상출고는 보험증권 업로드가 필수입니다', 'error');
+        return;
+      }
+      if (!_iocInsCertVerified) {
+        showToast('보험증권 검증 실패 — 차량번호·날짜 확인 필요', 'error');
+        return;
+      }
+      // 증권 업로드
+      try {
+        const certUploaded = await uploadFilesToStorage(certFiles, { type: 'ins_cert', car: data.car_number });
+        data.insurance_cert = certUploaded;
+      } catch (e) {
+        showToast('보험증권 업로드 실패: ' + (e.message || e), 'error');
+        return;
+      }
+    }
+
     currentType = m.type;
     t.direction = m.direction;
     if (files.length) {
@@ -2053,6 +2131,7 @@ async function submitForm() {
       'extra_mileage', 'extra_fuel', 'extra_damage',
       'from_location', 'to_location', 'transfer_reason',
       'handover_by', 'carrier_name', 'carrier_phone', 'key_returned', 'driver_age',
+      'insurance_cert',
       'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
       'acc_type', 'acc_role',
