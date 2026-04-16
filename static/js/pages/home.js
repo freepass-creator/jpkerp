@@ -1,8 +1,9 @@
 /**
- * pages/home.js — 대시보드
+ * pages/home.js — 대시보드 (Phosphor 아이콘 · 색상 구분)
  *
- * 좌: 숫자 (현황 파악) — 자산/가동/수금/금일입금
- * 우: 업무 (액션) — 미납자/만기도래/휴차/최근거래
+ * 좌: 운영 지표 (차량·매출·수금·미납)
+ * 중: 업무 상황 (이번달 계약·정비·사고·고객센터)
+ * 우: 미결업무 (계약→미출고 · 통장 미매칭 · 사고 미종결 등)
  */
 import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
@@ -11,11 +12,6 @@ import { watchEvents } from '../firebase/events.js';
 
 const $ = (s) => document.querySelector(s);
 const fmt = (v) => Number(v || 0).toLocaleString('ko-KR');
-const fmtDate = (s) => {
-  if (!s) return '';
-  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return m ? `${m[1].slice(2)}.${m[2]}.${m[3]}` : s;
-};
 
 function normalizeDate(s) {
   if (!s) return '';
@@ -41,19 +37,46 @@ function computeContractEnd(c) {
 
 let assets = [], contracts = [], billings = [], events = [];
 
+// 이벤트 타입별 Phosphor 아이콘 + 색상 (운영업무입력과 동일)
+const EVENT_META = {
+  contact:     { icon: 'ph-phone',              color: '#3b82f6' },
+  delivery:    { icon: 'ph-truck',              color: '#10b981' },
+  return:      { icon: 'ph-arrow-u-down-left',  color: '#059669' },
+  force:       { icon: 'ph-warning-octagon',    color: '#dc2626' },
+  transfer:    { icon: 'ph-arrows-left-right',  color: '#14b8a6' },
+  key:         { icon: 'ph-key',                color: '#f59e0b' },
+  maint:       { icon: 'ph-wrench',             color: '#f97316' },
+  maintenance: { icon: 'ph-wrench',             color: '#f97316' },
+  accident:    { icon: 'ph-car-profile',        color: '#ef4444' },
+  repair:      { icon: 'ph-hammer',             color: '#ea580c' },
+  penalty:     { icon: 'ph-prohibit',           color: '#b91c1c' },
+  product:     { icon: 'ph-sparkle',            color: '#8b5cf6' },
+  insurance:   { icon: 'ph-shield-check',       color: '#7c3aed' },
+  collect:     { icon: 'ph-envelope',           color: '#2563eb' },
+  wash:        { icon: 'ph-drop',               color: '#a855f7' },
+  fuel:        { icon: 'ph-gas-pump',           color: '#c026d3' },
+  bank_tx:     { icon: 'ph-bank',               color: '#059669' },
+  card_tx:     { icon: 'ph-credit-card',        color: '#2563eb' },
+};
+const iconHtml = (type, size = 14) => {
+  const m = EVENT_META[type] || { icon: 'ph-circle', color: '#9b9a97' };
+  return `<i class="ph ${m.icon}" style="color:${m.color};font-size:${size}px"></i>`;
+};
+
 function render() {
   const company = $('#dashCompany');
   const team = $('#dashTeam');
   const my = $('#dashMy');
   if (!company || !team || !my) return;
+
   const today = new Date().toISOString().slice(0, 10);
   const todayDate = new Date(today);
   const thisMonth = today.slice(0, 7);
 
-  // ─── 자산 ───────────────────────────────────
+  // ─── 활성 계약 / 가동 차량 ─────────────────
   const activeContracts = contracts.filter(c => {
     if (c.status === 'deleted') return false;
-    if (!c.contractor_name || !String(c.contractor_name).trim()) return false;  // 계약자 빈 건 무효
+    if (!c.contractor_name || !String(c.contractor_name).trim()) return false;
     const start = normalizeDate(c.start_date);
     const end = computeContractEnd(c);
     if (!start) return false;
@@ -63,309 +86,174 @@ function render() {
   const activeCars = new Set(activeContracts.map(c => c.car_number));
   const totalAssets = assets.length;
   const activating = activeCars.size;
-  const idle = totalAssets - activating;
   const utilizationRate = totalAssets ? Math.round(activating / totalAssets * 100) : 0;
 
-  // 휴차 분류
-  const idleAssets = assets.filter(a => !activeCars.has(a.car_number));
-  const idleByStatus = {};
-  idleAssets.forEach(a => {
-    const st = a.asset_status || '미지정';
-    if (!idleByStatus[st]) idleByStatus[st] = [];
-    idleByStatus[st].push(a);
-  });
-
-  // ─── 청구/납부/미납 ─────────────────────────
+  // ─── 금액 계산 ─────────────────
+  const monthBillings = billings.filter(b => (b.due_date || '').startsWith(thisMonth));
+  const monthDue = monthBillings.reduce((s, b) => s + computeTotalDue(b), 0);
+  const monthPaid = monthBillings.reduce((s, b) => s + (Number(b.paid_total) || 0), 0);
   const totalDue = billings.reduce((s, b) => s + computeTotalDue(b), 0);
   const totalPaid = billings.reduce((s, b) => s + (Number(b.paid_total) || 0), 0);
   const totalUnpaid = totalDue - totalPaid;
   const collectRate = totalDue ? Math.round(totalPaid / totalDue * 100) : 0;
 
-  // ─── 금일 입금 ──────────────────────────────
-  const todayIn = events.filter(e => e.date === today && e.direction === 'in');
-  const todayInSum = todayIn.reduce((s, e) => s + (e.amount || 0), 0);
-
-  // ─── 이번달 ─────────────────────────────────
-  const monthReturns = contracts.filter(c => {
-    const end = computeContractEnd(c);
-    return end && end.startsWith(thisMonth);
-  });
-  const monthStarts = contracts.filter(c => {
-    const start = normalizeDate(c.start_date);
-    return start && start.startsWith(thisMonth);
-  });
-  const newContracts = contracts.filter(c => {
+  // ─── 이번달 이벤트 집계 ─────────────────
+  const monthEvents = events.filter(e => String(e.date || '').startsWith(thisMonth));
+  const monthDeliveries = monthEvents.filter(e => e.type === 'delivery').length;
+  const monthReturns = monthEvents.filter(e => e.type === 'return').length;
+  const monthAccidents = monthEvents.filter(e => e.type === 'accident').length;
+  const monthContacts = monthEvents.filter(e => e.type === 'contact').length;
+  const monthRepairs = monthEvents.filter(e => ['maint', 'maintenance', 'repair', 'product'].includes(e.type)).length;
+  const monthNewContracts = contracts.filter(c => {
     const created = c.created_at ? new Date(c.created_at).toISOString().slice(0, 7) : '';
     return created === thisMonth;
-  });
-
-  // ─── 만기도래 ───────────────────────────────
-  const offsetDate = (months) => {
-    const d = new Date(todayDate);
-    d.setMonth(d.getMonth() + months);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-  const m1 = offsetDate(1), m2 = offsetDate(2), m3 = offsetDate(3);
-  const expiringIn = (from, to) => contracts.filter(c => {
+  }).length;
+  const expiring14 = contracts.filter(c => {
     const end = computeContractEnd(c);
-    return end && end >= from && end < to;
-  });
-  const exp1 = expiringIn(today, m1);
-  const exp2 = expiringIn(m1, m2);
-  const exp3 = expiringIn(m2, m3);
+    if (!end) return false;
+    const diff = Math.floor((new Date(end) - todayDate) / 86400000);
+    return diff >= 0 && diff <= 14;
+  }).length;
 
-  // ─── 미납 구간별 ───────────────────────────
-  const overdue = billings
-    .filter(b => {
-      const due = computeTotalDue(b);
-      const paid = Number(b.paid_total) || 0;
-      return paid < due && b.due_date && b.due_date < today;
-    })
-    .map(b => {
-      const c = contracts.find(x => x.contract_code === b.contract_code) || {};
-      const due = computeTotalDue(b);
-      const paid = Number(b.paid_total) || 0;
-      const days = Math.floor((todayDate - new Date(b.due_date)) / 86400000);
-      return { ...b, contractor_name: c.contractor_name || '-', car_number: c.car_number || '-', unpaid: due - paid, days };
-    })
-    .sort((a, b) => b.days - a.days);
-
-  const buckets = [
-    { label: '3일이하', min: 1, max: 3, color: 'var(--c-text-sub)' },
-    { label: '4~7일', min: 4, max: 7, color: 'var(--c-warn)' },
-    { label: '8~10일', min: 8, max: 10, color: 'var(--c-warn)' },
-    { label: '10~20일', min: 11, max: 20, color: '#dc2626' },
-    { label: '20~30일', min: 21, max: 30, color: '#dc2626' },
-    { label: '30일이상', min: 31, max: 99999, color: '#991b1b' },
-  ];
-  buckets.forEach(bk => {
-    bk.items = overdue.filter(o => o.days >= bk.min && o.days <= bk.max);
-    bk.sum = bk.items.reduce((s, o) => s + o.unpaid, 0);
-  });
-
-  // ─── 최근 거래 ──────────────────────────────
-  const recentTx = events
-    .filter(e => e.type === 'bank_tx' || e.type === 'card_tx')
-    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
-    .slice(0, 10);
-
-  // ─── 렌더 ─────────────────────────────────
-  const card = (label, value, sub, color, href) =>
-    `<div class="dash-card" ${href ? `onclick="location.href='${href}'"` : ''}>
-      <div class="dash-card__label">${label}</div>
-      <div class="dash-card__value"${color ? ` style="color:${color}"` : ''}>${value}</div>
-      ${sub ? `<div class="dash-card__sub">${sub}</div>` : ''}
-    </div>`;
-
-  const maxBucket = Math.max(...buckets.map(b => b.items.length), 1);
-  const bucketBar = (bk) => {
-    const pct = Math.round(bk.items.length / maxBucket * 100);
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <div style="width:60px;font-size:var(--font-size-sm);color:var(--c-text-muted);flex-shrink:0">${bk.label}</div>
-      <div style="flex:1;height:16px;background:var(--c-bg-hover);border-radius:2px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${bk.color};border-radius:2px;opacity:0.7"></div>
-      </div>
-      <div style="width:40px;text-align:right;font-size:var(--font-size-sm);font-weight:600;color:${bk.color}">${bk.items.length}건</div>
-      <div style="width:80px;text-align:right;font-size:var(--font-size-xs);color:${bk.color}">${bk.sum ? fmt(bk.sum) : '-'}</div>
-    </div>`;
-  };
-
-  const allEvents = events;
-  const EVENT_ICONS = {
-    maintenance: '<i class="ph ph-wrench" style="color:#f97316"></i>',
-    maint:       '<i class="ph ph-wrench" style="color:#f97316"></i>',
-    accident:    '<i class="ph ph-car-profile" style="color:#ef4444"></i>',
-    penalty:     '<i class="ph ph-prohibit" style="color:#b91c1c"></i>',
-    delivery:    '<i class="ph ph-truck" style="color:#10b981"></i>',
-    return:      '<i class="ph ph-arrow-u-down-left" style="color:#059669"></i>',
-    force:       '<i class="ph ph-warning-octagon" style="color:#dc2626"></i>',
-    transfer:    '<i class="ph ph-arrows-left-right" style="color:#14b8a6"></i>',
-    key:         '<i class="ph ph-key" style="color:#f59e0b"></i>',
-    contact:     '<i class="ph ph-phone" style="color:#3b82f6"></i>',
-    wash:        '<i class="ph ph-drop" style="color:#a855f7"></i>',
-    fuel:        '<i class="ph ph-gas-pump" style="color:#c026d3"></i>',
-    insurance:   '<i class="ph ph-shield-check" style="color:#7c3aed"></i>',
-    repair:      '<i class="ph ph-hammer" style="color:#ea580c"></i>',
-    product:     '<i class="ph ph-sparkle" style="color:#8b5cf6"></i>',
-    collect:     '<i class="ph ph-envelope" style="color:#2563eb"></i>',
-  };
-
-  const recentOps = allEvents
-    .filter(e => e.type && e.created_at)
-    .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
-    .slice(0, 10);
-  const miniCard = (label, value, color) => `<div style="text-align:center"><div style="font-size:20px;font-weight:700;${color ? `color:${color}` : ''}">${value}</div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">${label}</div></div>`;
-
-  const progressBar = (label, value, max, color) => {
-    const pct = max ? Math.min(100, Math.round(value / max * 100)) : 0;
-    return `<div style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;font-size:var(--font-size-sm);margin-bottom:3px">
-        <span>${label}</span><span style="font-weight:600;color:${color}">${pct}%</span>
-      </div>
-      <div style="height:6px;background:var(--c-bg-hover);border-radius:3px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div>
-      </div>
-    </div>`;
-  };
-
-  // ─── 회사현황 ─────────────────────────
-  company.innerHTML = `
-    <div class="dash-card__label" style="margin-bottom:6px">자산현황</div>
-    <div style="display:flex;justify-content:space-around;padding:4px 0">
-      ${miniCard('총자산', `${totalAssets}대`)}
-      ${miniCard('가동', `${activating}대`, 'var(--c-success)')}
-      ${miniCard('휴차', `${idle}대`, idle > 0 ? 'var(--c-warn)' : 'var(--c-success)')}
-    </div>
-    <div class="dash-card" style="padding:10px 14px">
-      ${progressBar('가동률', activating, totalAssets, utilizationRate >= 80 ? 'var(--c-success)' : 'var(--c-warn)')}
-    </div>
-    ${Object.keys(idleByStatus).length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:var(--font-size-xs);color:var(--c-text-muted);padding:0 4px">
-      ${Object.entries(idleByStatus).map(([st, items]) => `<span>${st} <strong>${items.length}</strong></span>`).join(' · ')}
-    </div>` : ''}
-
-    <div class="dash-card__label" style="margin-top:12px;margin-bottom:6px">청구/수납</div>
-    <div class="dash-card" onclick="location.href='/billing'">
-      <div style="display:flex;justify-content:space-around;text-align:center">
-        <div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">총 청구</div><div style="font-weight:700">${fmt(totalDue)}</div></div>
-        <div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">납부</div><div style="font-weight:700;color:var(--c-success)">${fmt(totalPaid)}</div></div>
-        <div><div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">미납</div><div style="font-weight:700;color:${totalUnpaid > 0 ? 'var(--c-danger)' : 'var(--c-success)'}">${fmt(totalUnpaid)}</div></div>
-      </div>
-    </div>
-    <div class="dash-card" style="padding:10px 14px">
-      ${progressBar('수금률', totalPaid, totalDue, collectRate >= 90 ? 'var(--c-success)' : collectRate >= 70 ? 'var(--c-warn)' : 'var(--c-danger)')}
-    </div>
-    <div style="display:flex;justify-content:space-around;padding:4px 0">
-      ${miniCard('금일입금', fmt(todayInSum), 'var(--c-primary)')}
-      ${miniCard('이번달출고', `${monthStarts.length}건`)}
-      ${miniCard('이번달반납', `${monthReturns.length}건`)}
-    </div>
-    <div style="display:flex;justify-content:space-around;padding:4px 0">
-      ${miniCard('활성계약', `${activeContracts.length}건`, 'var(--c-primary)')}
-      ${miniCard('미납건수', `${overdue.length}건`, overdue.length ? 'var(--c-danger)' : '')}
-    </div>
-  `;
-
-  // ─── 업무상황 ─────────────────────────
-  // 출고예정 (7일 이내 시작 계약)
-  const week = offsetDate(0.25); // ~7일
-  const upcomingDelivery = contracts.filter(c => {
+  // ─── 미결업무 계산 ─────────────────
+  // 1) 계약됐는데 출고 안됨 (start_date 지났는데 delivery 이벤트 없음)
+  const deliveryByContract = new Set(
+    events.filter(e => e.type === 'delivery' && e.contract_code).map(e => e.contract_code)
+  );
+  const deliveryByCar = new Set(events.filter(e => e.type === 'delivery').map(e => e.car_number));
+  const notDelivered = contracts.filter(c => {
+    if (c.status === 'deleted') return false;
+    if (!c.contractor_name) return false;
     const start = normalizeDate(c.start_date);
-    return start && start >= today && start <= week;
-  });
-  // 반납예정 (7일 이내 종료 계약)
-  const upcomingReturn = contracts.filter(c => {
-    const end = computeContractEnd(c);
-    return end && end >= today && end <= week;
+    if (!start || start > today) return false;
+    if (c.contract_status !== '계약진행') return false;
+    return !deliveryByContract.has(c.contract_code) && !deliveryByCar.has(c.car_number);
   });
 
-  const overdue3 = overdue.filter(o => o.days >= 1 && o.days <= 3);
-  const overdue7 = overdue.filter(o => o.days >= 4 && o.days <= 7);
-  const overdue10 = overdue.filter(o => o.days >= 8 && o.days <= 10);
-  const overdue10p = overdue.filter(o => o.days > 10);
+  // 2) 통장 거래 미매칭
+  const unmatchedBank = events.filter(e =>
+    (e.type === 'bank_tx' || e.type === 'card_tx') &&
+    (!e.match_status || e.match_status === 'unmatched' || e.match_status === 'candidate')
+  );
 
-  team.innerHTML = `
-    <!-- 출고예정 -->
-    <div class="dash-card" onclick="location.href='/contract'" style="border-left:3px solid var(--c-success)">
-      <div style="font-weight:600;color:var(--c-success);margin-bottom:4px">🚗 출고예정 ${upcomingDelivery.length}건</div>
-      ${upcomingDelivery.length ? upcomingDelivery.slice(0, 5).map(c => `
-        <div style="display:flex;justify-content:space-between;font-size:var(--font-size-xs);padding:2px 0;border-bottom:1px solid var(--c-border)">
-          <span>${c.contractor_name || '-'} <span style="color:var(--c-text-muted)">${c.car_number || ''}</span></span>
-          <span>${fmtDate(normalizeDate(c.start_date))}</span>
-        </div>
-      `).join('') : '<div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">예정 없음</div>'}
-    </div>
+  // 3) 사고 미종결
+  const openAccidents = events.filter(e =>
+    e.type === 'accident' && e.accident_status && !['종결', '완료', '처리완료'].includes(e.accident_status)
+  );
 
-    <!-- 반납예정 -->
-    <div class="dash-card" onclick="location.href='/contract'" style="border-left:3px solid var(--c-warn)">
-      <div style="font-weight:600;color:var(--c-warn);margin-bottom:4px">🔙 반납예정 ${upcomingReturn.length}건</div>
-      ${upcomingReturn.length ? upcomingReturn.slice(0, 5).map(c => `
-        <div style="display:flex;justify-content:space-between;font-size:var(--font-size-xs);padding:2px 0;border-bottom:1px solid var(--c-border)">
-          <span>${c.contractor_name || '-'} <span style="color:var(--c-text-muted)">${c.car_number || ''}</span></span>
-          <span>${fmtDate(computeContractEnd(c))}</span>
-        </div>
-      `).join('') : '<div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">예정 없음</div>'}
-    </div>
+  // 4) 차량케어 진행중/작업중 (정비·수리·상품화·세차 — work_status != '완료')
+  const openWorks = events.filter(e =>
+    ['maint', 'maintenance', 'repair', 'product', 'wash'].includes(e.type) &&
+    e.work_status && !['완료'].includes(e.work_status)
+  );
 
-    <!-- 만기도래 -->
-    <div class="dash-card" onclick="location.href='/contract'" style="border-left:3px solid var(--c-warn)">
-      <div style="font-weight:600;color:var(--c-warn);margin-bottom:4px">📅 만기 도래</div>
-      <div style="display:flex;gap:12px;font-size:var(--font-size-sm)">
-        <span>1개월 <strong style="color:var(--c-danger)">${exp1.length}</strong></span>
-        <span>2개월 <strong>${exp2.length}</strong></span>
-        <span>3개월 <strong>${exp3.length}</strong></span>
+  // 5) 고객센터 진행중/보류
+  const openContacts = events.filter(e =>
+    e.type === 'contact' && e.contact_result && ['진행중', '보류', '처리불가'].includes(e.contact_result)
+  );
+
+  // 6) 미수 조치 진행 (collect_result=납부약속 등 미완료)
+  const openCollects = events.filter(e =>
+    e.type === 'collect' && e.collect_result && !['즉시납부'].includes(e.collect_result)
+  );
+
+  // 5) 미납 (만기 경과)
+  const overdueBills = billings.filter(b => {
+    const due = computeTotalDue(b);
+    const paid = Number(b.paid_total) || 0;
+    return paid < due && b.due_date && b.due_date < today;
+  });
+  const overdueTotal = overdueBills.reduce((s, b) => s + computeTotalDue(b) - (Number(b.paid_total) || 0), 0);
+
+  // ═════════════════════════════════════════════
+  // 렌더
+  // ═════════════════════════════════════════════
+  const kpiRow = (iconName, iconColor, label, value, sub, href) => `
+    <div class="dash-kpi" ${href ? `onclick="location.href='${href}'"` : ''}>
+      <div class="dash-kpi-icon" style="background:${iconColor}22;color:${iconColor}"><i class="ph ${iconName}"></i></div>
+      <div class="dash-kpi-body">
+        <div class="dash-kpi-label">${label}</div>
+        <div class="dash-kpi-value">${value}</div>
+        ${sub ? `<div class="dash-kpi-sub">${sub}</div>` : ''}
       </div>
-    </div>
+    </div>`;
 
-    <!-- 미수현황 (일자별) -->
-    <div class="dash-card" onclick="location.href='/billing'" style="border-left:3px solid var(--c-danger)">
-      <div style="font-weight:600;color:var(--c-danger);margin-bottom:6px">💰 미수현황 ${overdue.length}건 · ${fmt(totalUnpaid)}원</div>
-      <div style="display:flex;flex-direction:column;gap:2px;font-size:var(--font-size-sm)">
-        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--c-border)">
-          <span>3일 이하</span>
-          <span><strong>${overdue3.length}</strong>건 · ${fmt(overdue3.reduce((s,o) => s + o.unpaid, 0))}원</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--c-border)">
-          <span style="color:var(--c-warn)">4~7일</span>
-          <span style="color:var(--c-warn)"><strong>${overdue7.length}</strong>건 · ${fmt(overdue7.reduce((s,o) => s + o.unpaid, 0))}원</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--c-border)">
-          <span style="color:var(--c-danger)">8~10일</span>
-          <span style="color:var(--c-danger)"><strong>${overdue10.length}</strong>건 · ${fmt(overdue10.reduce((s,o) => s + o.unpaid, 0))}원</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0">
-          <span style="color:#991b1b;font-weight:600">10일 초과</span>
-          <span style="color:#991b1b;font-weight:600"><strong>${overdue10p.length}</strong>건 · ${fmt(overdue10p.reduce((s,o) => s + o.unpaid, 0))}원</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 휴차 -->
-    <div class="dash-card" onclick="location.href='/asset'" style="border-left:3px solid var(--c-info)">
-      <div style="font-weight:600;color:var(--c-info);margin-bottom:4px">🅿 휴차 ${idle}대</div>
-      <div style="display:flex;gap:8px;font-size:var(--font-size-sm);flex-wrap:wrap">
-        ${Object.entries(idleByStatus).map(([st, items]) => `<span>${st} <strong>${items.length}</strong></span>`).join('') || '<span style="color:var(--c-success)">전차 가동</span>'}
-      </div>
-    </div>
+  // ─── 좌: 운영 지표 ───
+  company.innerHTML = `
+    ${kpiRow('ph-car', '#10b981', '차량 가동', `${activating} / ${totalAssets}`, `가동률 ${utilizationRate}%`, '/asset')}
+    ${kpiRow('ph-wallet', '#2383e2', '이번달 청구', `${fmt(monthDue)}원`, `수금 ${fmt(monthPaid)}원 · ${monthDue ? Math.round(monthPaid/monthDue*100) : 0}%`, '/billing')}
+    ${kpiRow('ph-trend-up', '#059669', '누적 수금', `${fmt(totalPaid)}원`, `수금률 ${collectRate}%`, '/billing')}
+    ${kpiRow('ph-warning-circle', '#dc2626', '미납 총액', `${fmt(overdueTotal)}원`, `${overdueBills.length}건 연체`, '/billing/overdue')}
   `;
 
-  // ─── 미결업무 ─────────
-  const allRecentOps = allEvents
-    .filter(e => e.created_at)
-    .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
-    .slice(0, 30);
+  // ─── 중: 업무 상황 (이번달) ───
+  team.innerHTML = `
+    <div style="font-size:var(--font-size-sm);color:var(--c-text-muted);padding:4px 12px 0">이번달 · ${thisMonth.replace('-', '.')}</div>
+    ${kpiRow('ph-file-plus', '#2383e2', '신규 계약', `${monthNewContracts}건`, '', '/contract')}
+    ${kpiRow('ph-hourglass', '#f59e0b', '만기 도래 (D-14)', `${expiring14}건`, '', '/status/expiring')}
+    ${kpiRow('ph-arrows-in-line-horizontal', '#10b981', '출고·반납', `${monthDeliveries} / ${monthReturns}`, '출고 · 반납', '/operation/delivery')}
+    ${kpiRow('ph-sparkle', '#8b5cf6', '정비·상품화', `${monthRepairs}건`, '', '/operation/maint')}
+    ${kpiRow('ph-car-profile', '#ef4444', '사고 접수', `${monthAccidents}건`, '', '/operation/accident')}
+    ${kpiRow('ph-phone', '#3b82f6', '고객센터', `${monthContacts}건`, '', '/operation/contact')}
+  `;
 
-  const timeAgo = (ts) => {
-    if (!ts) return '';
-    const diff = Math.floor((Date.now() - ts) / 1000);
-    if (diff < 60) return '방금';
-    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-    const d = new Date(ts);
-    return `${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  };
+  // ─── 우: 미결업무 ───
+  const todoRow = (iconName, iconColor, label, count, href) => `
+    <div class="dash-todo" ${href ? `onclick="location.href='${href}'"` : ''}>
+      <i class="ph ${iconName}" style="color:${iconColor};font-size:18px"></i>
+      <div class="dash-todo-body">
+        <div class="dash-todo-label">${label}</div>
+      </div>
+      <div class="dash-todo-count" style="color:${count > 0 ? iconColor : 'var(--c-text-muted)'}">${count}</div>
+    </div>`;
 
-  // 미결업무: 담당자 배정됐는데 아직 처리 안 된 것 + 미납독촉 + 결재대기
-  const pendingOps = allEvents.filter(e => e.assignee && !['완료','종결','처리완료'].includes(e.contact_result || e.accident_status || e.repair_status || e.product_status || ''))
-    .sort((a,b) => (b.created_at||0) - (a.created_at||0)).slice(0, 15);
+  const todoItem = (iconName, iconColor, title, sub, href) => `
+    <div class="dash-todo-item" ${href ? `onclick="location.href='${href}'"` : ''}>
+      <i class="ph ${iconName}" style="color:${iconColor};font-size:14px"></i>
+      <div style="flex:1;min-width:0">
+        <div class="dash-todo-item-title">${title}</div>
+        ${sub ? `<div class="dash-todo-item-sub">${sub}</div>` : ''}
+      </div>
+    </div>`;
 
   my.innerHTML = `
-    <div class="dash-card" style="text-align:center;padding:12px" onclick="location.href='/operation'">
-      <div style="font-size:22px;font-weight:800;color:${pendingOps.length ? 'var(--c-danger)' : 'var(--c-success)'}">${pendingOps.length}</div>
-      <div class="dash-card__label">미결 업무</div>
-    </div>
-    <div class="dash-card" style="text-align:center;padding:12px" onclick="location.href='/billing'">
-      <div style="font-size:22px;font-weight:800;color:${overdue.length ? 'var(--c-danger)' : 'var(--c-success)'}">${overdue.length}</div>
-      <div class="dash-card__label">미납 독촉</div>
-    </div>
-    ${pendingOps.length ? pendingOps.map(e => `
-      <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--c-border);font-size:var(--font-size-sm);cursor:pointer" onclick="location.href='/operation'">
-        <span style="flex-shrink:0">${EVENT_ICONS[e.type] || '📝'}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.title || '-'}</div>
-          <div style="color:var(--c-text-muted);font-size:var(--font-size-xs)">${e.car_number || ''} · ${e.assignee || ''} · ${timeAgo(e.created_at)}</div>
-        </div>
-      </div>
-    `).join('') : '<div style="padding:12px;text-align:center;color:var(--c-text-muted);font-size:var(--font-size-sm)">미결 업무 없음</div>'}
+    ${todoRow('ph-truck', '#10b981', '계약 후 미출고', notDelivered.length, '/contract')}
+    ${notDelivered.slice(0, 3).map(c =>
+      todoItem('ph-circle', '#10b981', `${c.contractor_name || '-'} (${c.car_number || '-'})`, `시작일 ${c.start_date || '-'}`, '/contract')
+    ).join('')}
+
+    ${todoRow('ph-bank', '#059669', '통장 미매칭', unmatchedBank.length, '/fund')}
+    ${unmatchedBank.slice(0, 3).map(e =>
+      todoItem('ph-circle', '#059669', `${e.counterparty || e.memo || '-'}`, `${e.date || ''} · ${fmt(e.amount)}원`, '/fund')
+    ).join('')}
+
+    ${todoRow('ph-car-profile', '#ef4444', '사고 미종결', openAccidents.length, '/operation/accident')}
+    ${openAccidents.slice(0, 3).map(e =>
+      todoItem('ph-circle', '#ef4444', `${e.title || '사고'} (${e.car_number || '-'})`, e.accident_status || '', '/operation/accident')
+    ).join('')}
+
+    ${todoRow('ph-wrench', '#f97316', '차량케어 진행중', openWorks.length, '/operation/maint')}
+    ${openWorks.slice(0, 3).map(e =>
+      todoItem('ph-circle', '#f97316', `${e.title || e.type} (${e.car_number || '-'})`, e.work_status || '', '/operation/maint')
+    ).join('')}
+
+    ${todoRow('ph-phone', '#3b82f6', '고객센터 진행중', openContacts.length, '/operation/contact')}
+    ${openContacts.slice(0, 3).map(e =>
+      todoItem('ph-circle', '#3b82f6', `${e.title || e.type} (${e.car_number || '-'})`, e.contact_result || '', '/operation/contact')
+    ).join('')}
+
+    ${todoRow('ph-envelope', '#2563eb', '미수 조치 진행', openCollects.length, '/billing/overdue')}
+    ${openCollects.slice(0, 3).map(e =>
+      todoItem('ph-circle', '#2563eb', `${e.title || e.type} (${e.car_number || '-'})`, e.collect_result || '', '/billing/overdue')
+    ).join('')}
+
+    ${todoRow('ph-warning-circle', '#dc2626', '미납 독촉', overdueBills.length, '/billing/overdue')}
+    ${overdueBills.slice(0, 3).map(b => {
+      const c = contracts.find(x => x.contract_code === b.contract_code) || {};
+      const unpaid = computeTotalDue(b) - (Number(b.paid_total) || 0);
+      const days = Math.max(0, Math.floor((todayDate - new Date(b.due_date)) / 86400000));
+      return todoItem('ph-circle', '#dc2626', `${c.contractor_name || '-'} · ${fmt(unpaid)}원`, `${days}일 연체`, '/billing/overdue');
+    }).join('')}
   `;
 }
 
