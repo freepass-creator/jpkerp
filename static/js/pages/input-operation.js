@@ -179,7 +179,7 @@ function renderForm() {
   const carList = `<datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">`).join('')}</datalist>`;
   const chk = (name, label) => `<span class="btn-opt btn-toggle" data-name="${name}" data-val="">${label}</span>`;
   const chkGroup = (items) => `<div class="btn-group" style="flex-wrap:wrap">${items}</div>`;
-  const sel = (name, label, opts) => `<div class="field"></label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}">${o}</span>`).join('')}</div></div>`;
+  const sel = (name, label, opts) => `<div class="field"><label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}">${o}</span>`).join('')}</div></div>`;
 
   // 유형별 폼 생성
   let sections = '';
@@ -192,10 +192,10 @@ function renderForm() {
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         <div class="field" style="grid-column:1/-1">
-          <div style="display:flex;gap:24px;flex-wrap:wrap">
-            <div>${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}</div>
-            <div>${sel('handover_by', '이동방식', ['탁송','직접'])}</div>
-            <div class="field" data-role="carrier-inline" style="min-width:160px"><label>탁송기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..."></div>
+          <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
+            ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}
+            ${sel('handover_by', '이동방식', ['탁송','직접'])}
+            <div class="field" data-role="carrier-inline" style="min-width:180px;flex:1"><label>탁송기사 연락처</label><input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..." class="ctrl" style="height:var(--ctrl-h)"></div>
           </div>
         </div>
       </div>
