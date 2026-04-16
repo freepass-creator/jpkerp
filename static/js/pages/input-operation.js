@@ -203,50 +203,13 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}
         <div class="field" style="grid-column:1/-1">
-          <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+          <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
+            ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}
             ${sel('handover_by', '이동방식', ['탁송','직접'])}
-            <div data-role="carrier-inline" style="flex:1;min-width:160px">
-              <label style="font-size:var(--font-size-sm);color:var(--c-text-muted);font-weight:var(--fw-medium);display:block;margin-bottom:var(--sp-1)">탁송기사 연락처</label>
-              <input type="text" name="carrier_phone" inputmode="tel" placeholder="010-..." class="ctrl" style="width:100%">
-            </div>
           </div>
         </div>
-      </div>
-      <!-- 차량 자동조회 결과 (2컬럼: 스펙 / 상태) -->
-      <div id="iocCarInfo" class="ioc-car-info" hidden>
-        <div class="ioc-car-col">
-          <div class="ioc-car-col-title"><i class="ph ph-car"></i>차량 스펙</div>
-          <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
-          <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
-          <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
-        </div>
-        <div class="ioc-car-col">
-          <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약 / 상태</div>
-          <div class="ioc-car-row"><span class="k">계약자</span><span class="v" data-f="contractor">—</span></div>
-          <div class="ioc-car-row"><span class="k">계약종료</span><span class="v" data-f="endDate">—</span></div>
-          <div class="ioc-car-row"><span class="k">차량상태</span><span class="v" data-f="carStatus">—</span></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-section" id="iocMoveSection">
-      <div class="form-section-title"><i class="ph ph-arrows-left-right"></i>이동정보</div>
-      <div class="form-grid">
-        <div class="field"><label>출발지</label><div class="loc-favs" data-target="from_location"></div><input type="text" name="from_location" placeholder="직접 입력 또는 위 버튼 선택"></div>
-        <div class="field"><label>도착지</label><div class="loc-favs" data-target="to_location"></div><input type="text" name="to_location" placeholder="직접 입력 또는 위 버튼 선택"></div>
-      </div>
-      <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
-        <input type="text" id="iocNewLoc" class="ctrl" placeholder="새 장소 이름" style="flex:1">
-        <button type="button" class="btn" id="iocAddLoc"><i class="ph ph-plus"></i> 등록</button>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-note"></i>메모</div>
-      <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="3" placeholder="특이사항 · 참고"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="3" placeholder="탁송기사 연락처 · 특이사항 · 참고" class="ctrl" style="height:auto;padding:6px 8px"></textarea></div>
       </div>
     </div>
 
@@ -841,21 +804,6 @@ function renderForm() {
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
       </div>
-      <!-- 계약자 자동조회 -->
-      <div id="iocCarInfo" class="ioc-car-info" hidden style="margin-top:10px">
-        <div class="ioc-car-col">
-          <div class="ioc-car-col-title"><i class="ph ph-user"></i>계약자</div>
-          <div class="ioc-car-row"><span class="k">계약자명</span><span class="v" data-f="contractor">—</span></div>
-          <div class="ioc-car-row"><span class="k">등록번호</span><span class="v" data-f="regNo">—</span></div>
-          <div class="ioc-car-row"><span class="k">연락처</span><span class="v" data-f="phone">—</span></div>
-        </div>
-        <div class="ioc-car-col">
-          <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약</div>
-          <div class="ioc-car-row"><span class="k">계약상태</span><span class="v" data-f="carStatus">—</span></div>
-          <div class="ioc-car-row"><span class="k">미납여부</span><span class="v" data-f="unpaidYn">—</span></div>
-          <div class="ioc-car-row"><span class="k">계약기간</span><span class="v" data-f="period">—</span></div>
-        </div>
-      </div>
       <input type="hidden" name="customer_name">
       <input type="hidden" name="customer_phone">
     </div>
@@ -902,11 +850,30 @@ function renderForm() {
     </div>`;
   }
 
-  host.innerHTML = sections;
+  // 차량 조회 패널 (모든 업무 공통 — 맨 위)
+  const carInfoPanel = `
+    <div id="iocCarInfo" class="ioc-car-info" hidden style="margin:0 var(--sp-5) var(--sp-3)">
+      <div class="ioc-car-col">
+        <div class="ioc-car-col-title"><i class="ph ph-car"></i>차량 스펙</div>
+        <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
+        <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
+        <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
+      </div>
+      <div class="ioc-car-col">
+        <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약 / 상태</div>
+        <div class="ioc-car-row"><span class="k">계약자</span><span class="v" data-f="contractor">—</span></div>
+        <div class="ioc-car-row"><span class="k">연락처</span><span class="v" data-f="phone">—</span></div>
+        <div class="ioc-car-row"><span class="k">등록번호</span><span class="v" data-f="regNo">—</span></div>
+        <div class="ioc-car-row"><span class="k">계약상태</span><span class="v" data-f="carStatus">—</span></div>
+        <div class="ioc-car-row"><span class="k">미납여부</span><span class="v" data-f="unpaidYn">—</span></div>
+        <div class="ioc-car-row"><span class="k">계약기간</span><span class="v" data-f="period">—</span></div>
+      </div>
+    </div>`;
+  host.innerHTML = carInfoPanel + sections;
 
   // 입출고센터 — 사진 업로더 + 인터랙션 초기화
-  // 차량 자동조회 공통 (ioc / contact 등)
-  if (['ioc', 'contact'].includes(currentType)) {
+  // 차량 자동조회 공통 (모든 업무)
+  {
     const carInput = host.querySelector('input[name="car_number"]');
     const infoEl = host.querySelector('#iocCarInfo');
     if (carInput && infoEl) {
@@ -933,27 +900,24 @@ function renderForm() {
           carStatus = `계약중 (${active.contractor_name || '—'})`;
           setField('contractor', active.contractor_name || '—');
           setField('endDate', active.end_date || '—');
-          // 고객센터: 계약자 정보 + 미납 자동 채움
+          // 공통: 모든 업무에 계약자/미납/기간 노출
+          setField('phone', active.contractor_phone || '—');
+          setField('regNo', active.contractor_reg_no || '—');
+          const cBillings = _billings.filter(b => b.contract_code === active.contract_code);
+          const unpaid = cBillings.filter(b => (Number(b.paid_total) || 0) < (Number(b.amount) || 0));
+          const unpaidTotal = unpaid.reduce((s, b) => s + ((Number(b.amount) || 0) - (Number(b.paid_total) || 0)), 0);
+          setField('unpaidYn', unpaid.length ? `미납 ${unpaidTotal.toLocaleString()}원 (${unpaid.length}건)` : '정상');
+          const unpaidEl = infoEl.querySelector('[data-f="unpaidYn"]');
+          if (unpaidEl) unpaidEl.style.color = unpaid.length ? 'var(--c-danger)' : 'var(--c-success)';
+          const fmtShort = (d) => d ? d.replace(/^20/, '').replace(/-/g, '.') : '';
+          const endDate = active.end_date || computeEndDate(active) || '';
+          setField('period', `${fmtShort(active.start_date)}~${fmtShort(endDate)}`);
+          // 고객센터: 고객명/연락처 hidden 필드도 자동 채움
           if (currentType === 'contact') {
             const nameInp = host.querySelector('input[name="customer_name"]');
             const phoneInp = host.querySelector('input[name="customer_phone"]');
             if (nameInp) nameInp.value = active.contractor_name || '';
             if (phoneInp) phoneInp.value = active.contractor_phone || '';
-            // 추가 필드
-            setField('phone', active.contractor_phone || '—');
-            setField('regNo', active.contractor_reg_no || '—');
-            // 미납 계산
-            const cBillings = _billings.filter(b => b.contract_code === active.contract_code);
-            const unpaid = cBillings.filter(b => (Number(b.paid_total) || 0) < (Number(b.amount) || 0));
-            const unpaidTotal = unpaid.reduce((s, b) => s + ((Number(b.amount) || 0) - (Number(b.paid_total) || 0)), 0);
-            setField('unpaidYn', unpaid.length ? `미납 ${unpaidTotal.toLocaleString()}원 (${unpaid.length}건)` : '정상');
-            // 미납 색상
-            const unpaidEl = infoEl.querySelector('[data-f="unpaidYn"]');
-            if (unpaidEl) unpaidEl.style.color = unpaid.length ? 'var(--c-danger)' : 'var(--c-success)';
-            // 계약기간
-            const fmtShort = (d) => d ? d.replace(/^20/, '').replace(/-/g, '.') : '';
-            const endDate = active.end_date || computeEndDate(active) || '';
-            setField('period', `${fmtShort(active.start_date)}~${fmtShort(endDate)}`);
           }
         } else if (a.status === 'idle' || a.status === '휴차') { carStatus = '휴차'; setField('contractor', '—'); setField('endDate', '—');
         } else if (a.status === 'product' || a.status === '상품화') { carStatus = '상품화 중'; setField('contractor', '—'); setField('endDate', '—');
@@ -983,67 +947,6 @@ function renderForm() {
 
     // 차량 자동조회는 위 공통 블록에서 처리됨
 
-    // 즐겨찾기 장소 렌더
-    const renderLocFavs = () => {
-      const locs = loadLocations();
-      host.querySelectorAll('.loc-favs').forEach(el => {
-        const target = el.dataset.target;
-        el.innerHTML = locs.map(l =>
-          `<span class="loc-fav-btn" data-loc="${l}">${l}<button type="button" class="loc-fav-del" data-loc="${l}">✕</button></span>`
-        ).join('');
-        el.querySelectorAll('.loc-fav-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            if (e.target.classList.contains('loc-fav-del')) return;
-            const inp = host.querySelector(`input[name="${target}"]`);
-            if (inp) inp.value = btn.dataset.loc;
-          });
-        });
-        el.querySelectorAll('.loc-fav-del').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            removeLocation(btn.dataset.loc);
-            renderLocFavs();
-          });
-        });
-      });
-    };
-    renderLocFavs();
-
-    // 새 장소 등록
-    host.querySelector('#iocAddLoc')?.addEventListener('click', () => {
-      const inp = host.querySelector('#iocNewLoc');
-      const v = (inp?.value || '').trim();
-      if (!v) return;
-      saveLocation(v);
-      inp.value = '';
-      renderLocFavs();
-    });
-
-    // 구분 선택시 이동섹션 활성/비활성 (상품화면 비활성)
-    const kindGroup = host.querySelector('.btn-group[data-name="ioc_kind"]');
-    const moveSection = host.querySelector('#iocMoveSection');
-    const syncMoveSection = () => {
-      const v = host.querySelector('input[name="ioc_kind"]')?.value || '정상출고';
-      moveSection.style.opacity = v === '상품화' ? '0.4' : '';
-      moveSection.querySelectorAll('input,select,textarea,.btn-opt').forEach(el => {
-        if (v === '상품화') { el.setAttribute('disabled', ''); el.style.pointerEvents = 'none'; }
-        else { el.removeAttribute('disabled'); el.style.pointerEvents = ''; }
-      });
-    };
-    kindGroup?.addEventListener('click', () => setTimeout(syncMoveSection, 10));
-    syncMoveSection();
-
-    // 인수구분 → 탁송기사 필드 show/hide
-    const handoverGroup = host.querySelector('.btn-group[data-name="handover_by"]');
-    const syncCarrier = () => {
-      const v = host.querySelector('input[name="handover_by"]')?.value || '탁송';
-      const show = v === '탁송';
-      host.querySelectorAll('[data-role="carrier-inline"]').forEach(el => {
-        el.style.display = show ? '' : 'none';
-      });
-    };
-    handoverGroup?.addEventListener('click', () => setTimeout(syncCarrier, 10));
-    syncCarrier();
   } else {
     iocUploader = null;
   }
