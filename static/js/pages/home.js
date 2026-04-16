@@ -168,36 +168,6 @@ function render() {
   // ═════════════════════════════════════════════
   // 렌더
   // ═════════════════════════════════════════════
-  const kpiRow = (iconName, iconColor, label, value, sub, href) => `
-    <div class="dash-kpi" ${href ? `onclick="location.href='${href}'"` : ''}>
-      <div class="dash-kpi-icon" style="background:${iconColor}22;color:${iconColor}"><i class="ph ${iconName}"></i></div>
-      <div class="dash-kpi-body">
-        <div class="dash-kpi-label">${label}</div>
-        <div class="dash-kpi-value">${value}</div>
-        ${sub ? `<div class="dash-kpi-sub">${sub}</div>` : ''}
-      </div>
-    </div>`;
-
-  // ─── 좌: 운영 지표 ───
-  company.innerHTML = `
-    ${kpiRow('ph-car', '#10b981', '차량 가동', `${activating} / ${totalAssets}`, `가동률 ${utilizationRate}%`, '/asset')}
-    ${kpiRow('ph-wallet', '#2383e2', '이번달 청구', `${fmt(monthDue)}원`, `수금 ${fmt(monthPaid)}원 · ${monthDue ? Math.round(monthPaid/monthDue*100) : 0}%`, '/billing')}
-    ${kpiRow('ph-trend-up', '#059669', '누적 수금', `${fmt(totalPaid)}원`, `수금률 ${collectRate}%`, '/billing')}
-    ${kpiRow('ph-warning-circle', '#dc2626', '미납 총액', `${fmt(overdueTotal)}원`, `${overdueBills.length}건 연체`, '/billing/overdue')}
-  `;
-
-  // ─── 중: 업무 상황 (이번달) ───
-  team.innerHTML = `
-    <div style="font-size:var(--font-size-sm);color:var(--c-text-muted);padding:4px 12px 0">이번달 · ${thisMonth.replace('-', '.')}</div>
-    ${kpiRow('ph-file-plus', '#2383e2', '신규 계약', `${monthNewContracts}건`, '', '/contract')}
-    ${kpiRow('ph-hourglass', '#f59e0b', '만기 도래 (D-14)', `${expiring14}건`, '', '/status/expiring')}
-    ${kpiRow('ph-arrows-in-line-horizontal', '#10b981', '출고·반납', `${monthDeliveries} / ${monthReturns}`, '출고 · 반납', '/operation/delivery')}
-    ${kpiRow('ph-sparkle', '#8b5cf6', '정비·상품화', `${monthRepairs}건`, '', '/operation/maint')}
-    ${kpiRow('ph-car-profile', '#ef4444', '사고 접수', `${monthAccidents}건`, '', '/operation/accident')}
-    ${kpiRow('ph-phone', '#3b82f6', '고객센터', `${monthContacts}건`, '', '/operation/contact')}
-  `;
-
-  // ─── 우: 미결업무 ───
   const todoRow = (iconName, iconColor, label, count, href) => `
     <div class="dash-todo" ${href ? `onclick="location.href='${href}'"` : ''}>
       <i class="ph ${iconName}" style="color:${iconColor};font-size:18px"></i>
@@ -215,6 +185,84 @@ function render() {
         ${sub ? `<div class="dash-todo-item-sub">${sub}</div>` : ''}
       </div>
     </div>`;
+
+  // ─── 좌용 데이터 ─────────
+  // 휴차 차량 (활성 계약 없음)
+  const idleAssets = assets.filter(a => !activeCars.has(a.car_number)).slice(0, 3);
+  // 이번달 청구 큰 금액 TOP 3
+  const monthBillTop = monthBillings
+    .map(b => {
+      const c = contracts.find(x => x.contract_code === b.contract_code) || {};
+      return { ...b, contractor_name: c.contractor_name || '-', car_number: c.car_number || '-', due: computeTotalDue(b) };
+    })
+    .sort((a, b) => b.due - a.due).slice(0, 3);
+  // 이번달 수금 TOP 3 (이번달 납부 이벤트)
+  const monthPaidEvs = events
+    .filter(e => String(e.date || '').startsWith(thisMonth) && e.direction === 'in' && e.amount)
+    .sort((a, b) => (b.amount || 0) - (a.amount || 0)).slice(0, 3);
+
+  // ─── 중용 데이터 ─────────
+  const monthNewContractList = contracts.filter(c => {
+    const cr = c.created_at ? new Date(c.created_at).toISOString().slice(0, 7) : '';
+    return cr === thisMonth;
+  }).slice(0, 3);
+  const expiringList = contracts.filter(c => {
+    const end = computeContractEnd(c);
+    if (!end) return false;
+    const diff = Math.floor((new Date(end) - todayDate) / 86400000);
+    return diff >= 0 && diff <= 14;
+  }).sort((a, b) => (computeContractEnd(a) || '').localeCompare(computeContractEnd(b) || '')).slice(0, 3);
+  const recentDelivery = monthEvents.filter(e => e.type === 'delivery').sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 3);
+  const recentRepair = monthEvents.filter(e => ['maint', 'maintenance', 'repair', 'product'].includes(e.type)).sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 3);
+  const recentAccident = monthEvents.filter(e => e.type === 'accident').sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 3);
+  const recentContact = monthEvents.filter(e => e.type === 'contact').sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 3);
+
+  // ─── 좌: 운영 지표 + TOP3 ───
+  company.innerHTML = `
+    ${todoRow('ph-car', '#10b981', `차량 가동 ${activating}/${totalAssets} (${utilizationRate}%)`, idleAssets.length, '/asset')}
+    ${idleAssets.map(a => todoItem('ph-circle', '#10b981', `${a.car_number || '-'}`, `${a.car_model || ''} · 휴차`, '/asset')).join('')}
+
+    ${todoRow('ph-wallet', '#2383e2', `이번달 청구 ${fmt(monthDue)}원`, monthBillings.length, '/billing')}
+    ${monthBillTop.map(b => todoItem('ph-circle', '#2383e2', `${b.contractor_name} · ${fmt(b.due)}원`, `${b.car_number} · 만기 ${b.due_date || '-'}`, '/billing')).join('')}
+
+    ${todoRow('ph-trend-up', '#059669', `누적 수금 ${fmt(totalPaid)}원 (${collectRate}%)`, monthPaidEvs.length, '/billing')}
+    ${monthPaidEvs.map(e => todoItem('ph-circle', '#059669', `${e.counterparty || e.title || '-'} · ${fmt(e.amount)}원`, `${e.date || ''}`, '/billing')).join('')}
+
+    ${todoRow('ph-warning-circle', '#dc2626', `미납 ${fmt(overdueTotal)}원`, overdueBills.length, '/billing/overdue')}
+    ${overdueBills.slice(0, 3).map(b => {
+      const c = contracts.find(x => x.contract_code === b.contract_code) || {};
+      const unpaid = computeTotalDue(b) - (Number(b.paid_total) || 0);
+      const days = Math.max(0, Math.floor((todayDate - new Date(b.due_date)) / 86400000));
+      return todoItem('ph-circle', '#dc2626', `${c.contractor_name || '-'} · ${fmt(unpaid)}원`, `${days}일 연체`, '/billing/overdue');
+    }).join('')}
+  `;
+
+  // ─── 중: 이번달 업무 + TOP3 ───
+  team.innerHTML = `
+    <div style="font-size:var(--font-size-sm);color:var(--c-text-muted);padding:4px 12px 0">이번달 · ${thisMonth.replace('-', '.')}</div>
+
+    ${todoRow('ph-file-plus', '#2383e2', '신규 계약', monthNewContracts, '/contract')}
+    ${monthNewContractList.map(c => todoItem('ph-circle', '#2383e2', `${c.contractor_name || '-'} (${c.car_number || '-'})`, `시작일 ${c.start_date || '-'}`, '/contract')).join('')}
+
+    ${todoRow('ph-hourglass', '#f59e0b', '만기 도래 (D-14)', expiring14, '/status/expiring')}
+    ${expiringList.map(c => {
+      const end = computeContractEnd(c);
+      const diff = end ? Math.floor((new Date(end) - todayDate) / 86400000) : 0;
+      return todoItem('ph-circle', '#f59e0b', `${c.contractor_name || '-'} (${c.car_number || '-'})`, `D-${diff} · ${end}`, '/status/expiring');
+    }).join('')}
+
+    ${todoRow('ph-truck', '#10b981', `출고·반납 ${monthDeliveries} / ${monthReturns}`, monthDeliveries + monthReturns, '/operation/delivery')}
+    ${recentDelivery.map(e => todoItem('ph-circle', '#10b981', `${e.title || '출고'} (${e.car_number || '-'})`, e.date || '', '/operation/delivery')).join('')}
+
+    ${todoRow('ph-sparkle', '#8b5cf6', '차량케어 (정비·수리·상품화)', monthRepairs, '/operation/maint')}
+    ${recentRepair.map(e => todoItem('ph-circle', '#8b5cf6', `${e.title || e.type} (${e.car_number || '-'})`, e.date || '', '/operation/maint')).join('')}
+
+    ${todoRow('ph-car-profile', '#ef4444', '사고 접수', monthAccidents, '/operation/accident')}
+    ${recentAccident.map(e => todoItem('ph-circle', '#ef4444', `${e.title || '사고'} (${e.car_number || '-'})`, e.date || '', '/operation/accident')).join('')}
+
+    ${todoRow('ph-phone', '#3b82f6', '고객센터', monthContacts, '/operation/contact')}
+    ${recentContact.map(e => todoItem('ph-circle', '#3b82f6', `${e.title || e.contact_type || '상담'} (${e.car_number || '-'})`, e.date || '', '/operation/contact')).join('')}
+  `;
 
   my.innerHTML = `
     ${todoRow('ph-truck', '#10b981', '계약 후 미출고', notDelivered.length, '/contract')}
