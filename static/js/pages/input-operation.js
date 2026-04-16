@@ -298,15 +298,14 @@ function renderForm() {
         <div class="field" style="grid-column:1/-1">
           <label>내 과실</label>
           <input type="hidden" name="fault_pct">
-          <div class="btn-group" data-name="fault_pct" style="flex-wrap:wrap;gap:4px">
-            ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}" style="min-width:40px;text-align:center">${o}</span>`).join('')}
-          </div>
-        </div>
-        <div class="field">
-          <label>기타비율</label>
-          <div style="display:inline-flex;align-items:center;gap:4px;width:fit-content">
-            <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" maxlength="2" placeholder="00" style="width:56px;text-align:right">
-            <span style="color:var(--c-text-muted);font-size:var(--font-size)">%</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+            <div class="btn-group" data-name="fault_pct" style="flex-wrap:wrap;gap:4px">
+              ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}" style="min-width:40px;text-align:center">${o}</span>`).join('')}
+            </div>
+            <div style="display:inline-flex;align-items:center;gap:4px;margin-left:12px">
+              <input type="text" name="fault_ratio" inputmode="numeric" maxlength="2" placeholder="00" style="width:44px;height:26px;padding:0 6px;text-align:right;font-size:var(--font-size-sm);border:1px solid var(--c-border);border-radius:var(--r-sm);outline:none;font-family:inherit">
+              <span style="color:var(--c-text-muted);font-size:var(--font-size-sm)">%</span>
+            </div>
           </div>
         </div>
       </div>
