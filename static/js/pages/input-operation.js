@@ -290,6 +290,7 @@ function renderForm() {
       <div class="form-grid" style="margin-top:8px">
         <div class="field"><label>보험유형 (복수선택)</label>${chkGroup(
           chk('ins_car','자차') + chk('ins_property','대물') + chk('ins_person','대인') + chk('ins_self','자손') + chk('ins_uninsured','무보험'))}</div>
+        ${sel('accident_status', '종결여부', ['접수','처리중','수리중','종결'])}
       </div>
     </div>
     <div class="form-section">
@@ -311,20 +312,15 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-user-focus"></i>상대방</div>
-      <div class="form-grid">
-        <div class="field"><label>상대 차량번호</label><input type="text" name="accident_other" placeholder="예: 12가3456"></div>
-        <div class="field"><label>상대보험사</label><input type="text" name="other_insurance" placeholder="상대 보험사"></div>
-      </div>
-    </div>
-    <div class="form-section">
       <div class="form-section-title"><i class="ph ph-shield-check"></i>보험 처리</div>
       <div class="form-grid">
-        <div class="field"><label>우리보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
-        <div class="field"><label>접수번호</label><input type="text" name="insurance_no"></div>
+        <div class="field"><label>상대 차량번호</label><input type="text" name="accident_other" placeholder="예: 12가3456"></div>
+        <div class="field"><label>상대 보험사</label><input type="text" name="other_insurance" placeholder="상대 보험사"></div>
+        <div class="field"><label>상대 접수번호</label><input type="text" name="other_insurance_no" placeholder="상대측 접수번호"></div>
+        <div class="field"><label>우리 보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
+        <div class="field"><label>우리 접수번호</label><input type="text" name="insurance_no"></div>
         <div class="field"><label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
         ${sel('rental_car', '대차', ['미정','대차제공','대차없음'])}
-        ${sel('accident_status', '종결여부', ['접수','처리중','수리중','종결'])}
       </div>
     </div>
     <div class="form-section">
@@ -1957,7 +1953,7 @@ async function submitForm() {
     // 유형별 추가 필드 전부 저장
     const extras = [
       'maint_type', 'next_maint_date',
-      'accident_type', 'accident_other', 'accident_other_phone', 'fault_ratio',
+      'accident_type', 'accident_other', 'accident_other_phone', 'other_insurance_no', 'fault_ratio',
       'insurance_company', 'insurance_no', 'repair_estimate', 'repair_shop', 'repair_days', 'rental_car',
       'penalty_type', 'due_date', 'payer', 'paid_status',
       'delivery_location', 'receiver_name', 'receiver_phone',
