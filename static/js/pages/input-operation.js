@@ -1187,8 +1187,46 @@ function renderForm() {
     });
   }
 
-  // 차량번호 — 이전 입력값 복원 (보조글씨는 자동조회 패널로 대체)
+  // 차량번호 — 숫자/부분 검색 자동완성
   const carInput = host.querySelector('[name="car_number"]');
+  if (carInput) {
+    carInput.removeAttribute('list'); // 기본 datalist 제거
+    let sugBox = document.createElement('div');
+    sugBox.className = 'car-suggest';
+    sugBox.hidden = true;
+    carInput.parentNode.style.position = 'relative';
+    carInput.parentNode.appendChild(sugBox);
+
+    const showSuggestions = () => {
+      const q = carInput.value.trim();
+      if (!q) { sugBox.hidden = true; return; }
+      const ql = q.toLowerCase();
+      const matches = assets.filter(a => {
+        const cn = (a.car_number || '').toLowerCase();
+        return cn.includes(ql);
+      }).slice(0, 8);
+      if (!matches.length) { sugBox.hidden = true; return; }
+      sugBox.hidden = false;
+      sugBox.innerHTML = matches.map(a => {
+        const c = contracts.find(x => x.car_number === a.car_number);
+        const sub = [a.car_model, a.detail_model, c?.contractor_name].filter(Boolean).join(' · ');
+        const hl = (a.car_number || '').replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark>$1</mark>');
+        return `<div class="car-suggest-item" data-val="${a.car_number}"><span class="car-suggest-num">${hl}</span><span class="car-suggest-sub">${sub}</span></div>`;
+      }).join('');
+      sugBox.querySelectorAll('.car-suggest-item').forEach(el => {
+        el.addEventListener('mousedown', e => e.preventDefault());
+        el.addEventListener('click', () => {
+          carInput.value = el.dataset.val;
+          sugBox.hidden = true;
+          carInput.dispatchEvent(new Event('input'));
+          carInput.dispatchEvent(new Event('change'));
+        });
+      });
+    };
+    carInput.addEventListener('input', showSuggestions);
+    carInput.addEventListener('focus', showSuggestions);
+    carInput.addEventListener('blur', () => setTimeout(() => { sugBox.hidden = true; }, 150));
+  }
   if (lastCarNumber && carInput) { carInput.value = lastCarNumber; carInput.dispatchEvent(new Event('input')); }
 
   // 제목 자동완성 (이전 입력 기반)

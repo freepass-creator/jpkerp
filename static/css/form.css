@@ -99,6 +99,47 @@
   transition: opacity var(--t-fast);
 }
 .loc-fav-btn:hover .loc-fav-del { opacity: 1; color: var(--c-danger); }
+
+/* 차량번호 자동완성 드롭다운 */
+.car-suggest {
+  position: absolute;
+  left: 0; right: 0;
+  top: 100%;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+}
+.car-suggest-item {
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.car-suggest-item:hover { background: var(--c-bg-hover); }
+.car-suggest-num {
+  font-size: var(--font-size);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+}
+.car-suggest-num mark {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0 1px;
+  border-radius: 1px;
+}
+.car-suggest-sub {
+  font-size: var(--font-size-xs);
+  color: var(--c-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .form-section-title::before { display: none; }
 .form-section-title svg { display: none; }
 .form-section-title i,
