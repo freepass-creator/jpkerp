@@ -22,8 +22,41 @@
   padding: var(--sp-2) var(--panel-head-px);
 }
 
-.panel-title { font-size: var(--font-size-md); font-weight: var(--fw-bold); color: var(--c-text); }
-.panel-subtitle { font-size: var(--font-size-sm); color: var(--c-text-muted); margin-left: var(--sp-3); }
+.panel-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -0.01em;
+}
+.panel-title i,
+.panel-title .ph,
+.panel-title [class^="ph-"],
+.panel-title [class*=" ph-"] {
+  font-size: var(--icon-sm) !important;   /* 14px 통일 */
+  line-height: 1;
+}
+.panel-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--c-text-muted);
+  margin-left: var(--sp-3);
+  letter-spacing: -0.01em;
+  font-weight: var(--fw);
+}
+
+/* 패널헤드 좌측 브랜드(아이콘+타이틀+서브) — 일관된 정렬 */
+.panel-head > div:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.panel-head > div:first-child .panel-subtitle {
+  margin-left: var(--sp-2);
+}
+
 .panel-actions { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
 
 .panel-foot {
