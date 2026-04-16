@@ -2,6 +2,9 @@
    photo.css — 사진 업로드/갤러리 공통 규격 (웹/모바일 통일)
    ═══════════════════════════════════════════════════════════════ */
 
+/* ── 업로더 래퍼 (드롭존 + 그리드) ───────── */
+.photo-uploader { display: flex; flex-direction: column; gap: 8px; }
+
 /* ── 사진 갤러리 (조회) ──────────────────── */
 .photo-grid {
   display: grid;
@@ -15,7 +18,7 @@
   aspect-ratio: 1 / 1;
   overflow: hidden;
   background: #f1f1ef;
-  border-radius: 8px;
+  border-radius: var(--r-md, 2px);
   cursor: pointer;
   display: block;
   text-decoration: none;
@@ -86,26 +89,46 @@
 }
 .photo-thumb:hover .photo-thumb-remove { opacity: 1; }
 
-/* ── 업로드 드롭존 (추가 타일) ──────────────────── */
-.photo-upload-add {
-  aspect-ratio: 1 / 1;
-  border: 1.5px dashed #d3d1cb;
-  border-radius: 8px;
-  background: #fbfbfa;
+/* ── 업로드 드롭존 (와이드 박스) ──────────────────── */
+.photo-dropzone {
+  border: 1.5px dashed var(--c-border-strong, #d3d1cb);
+  border-radius: var(--r-md, 2px);
+  background: var(--c-bg-sub, #fbfbfa);
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
-  color: #6b6b6b;
+  color: var(--c-text-sub, #6b6b6b);
   transition: border-color 120ms, background 120ms, color 120ms;
+  min-height: 96px;
+  text-align: center;
 }
-.photo-upload-add:hover { border-color: #2383e2; color: #2383e2; background: #f0f7ff; }
-.photo-upload-add:active { background: #e3ebf7; }
-.photo-upload-add.is-drag { border-color: #2383e2; background: #f0f7ff; border-style: solid; }
-.photo-upload-add i { font-size: 24px; }
-.photo-upload-add span { font-size: 11px; font-weight: 500; letter-spacing: -0.01em; }
+.photo-dropzone:hover {
+  border-color: var(--c-primary, #2383e2);
+  color: var(--c-primary, #2383e2);
+  background: var(--c-primary-bg, #f0f7ff);
+}
+.photo-dropzone.is-drag {
+  border-color: var(--c-primary, #2383e2);
+  background: var(--c-primary-bg, #f0f7ff);
+  border-style: solid;
+}
+.photo-dropzone i { font-size: 22px; }
+.photo-dropzone-title {
+  font-size: var(--font-size, 12px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: inherit;
+}
+.photo-dropzone-sub {
+  font-size: var(--font-size-xs, 11px);
+  color: var(--c-text-muted, #9b9a97);
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
 
 /* ── 라이트박스 (원본 크게 보기) ──────────────────── */
 .photo-lightbox {

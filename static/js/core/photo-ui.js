@@ -111,22 +111,24 @@ export function createPhotoUploader(container, options = {}) {
   const onChange = options.onChange || (() => {});
   let files = []; // [{id, file, url(blob)}]
 
-  container.classList.add('photo-grid');
+  container.classList.remove('photo-grid');
+  container.classList.add('photo-uploader');
   container.innerHTML = `
-    <label class="photo-upload-add" data-role="add">
+    <label class="photo-dropzone" data-role="drop">
       <input type="file" accept="${accept}" ${multiple ? 'multiple' : ''} hidden>
-      <i class="ph ph-plus"></i>
-      <span>사진 추가</span>
+      <i class="ph ph-upload-simple"></i>
+      <div class="photo-dropzone-title">사진 · 파일 업로드</div>
+      <div class="photo-dropzone-sub">클릭하여 선택 · 드래그앤드롭 · Ctrl+V 붙여넣기</div>
     </label>
+    <div class="photo-grid" data-role="thumbs" hidden></div>
   `;
 
-  const addEl = container.querySelector('[data-role="add"]');
+  const addEl = container.querySelector('[data-role="drop"]');
+  const thumbs = container.querySelector('[data-role="thumbs"]');
   const input = addEl.querySelector('input');
 
   const render = () => {
-    // 기존 썸네일 제거 (add 타일만 남김)
-    container.querySelectorAll('.photo-thumb.is-pending').forEach((el) => el.remove());
-    // 파일 썸네일 prepend
+    thumbs.innerHTML = '';
     files.forEach((item) => {
       const div = document.createElement('div');
       div.className = 'photo-thumb is-pending';
@@ -143,8 +145,9 @@ export function createPhotoUploader(container, options = {}) {
         e.stopPropagation();
         removeItem(item.id);
       });
-      container.insertBefore(div, addEl);
+      thumbs.appendChild(div);
     });
+    thumbs.hidden = files.length === 0;
     onChange(files.map((f) => f.file));
   };
 

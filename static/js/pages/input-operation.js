@@ -188,10 +188,7 @@ function renderForm() {
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="특이사항"></textarea></div>
         <div class="field" style="grid-column:1/-1">
           <label>사진 · 파일</label>
-          <div id="iocPhotoUploader" class="photo-grid"></div>
-          <div style="font-size:var(--font-size-xs);color:var(--c-text-muted);margin-top:6px">
-            드래그앤드롭 · Ctrl+V 붙여넣기 · 클릭 업로드 모두 가능
-          </div>
+          <div id="iocPhotoUploader"></div>
         </div>
       </div>
     </div>`;
