@@ -727,7 +727,6 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        ${sel('wash_work_status', '작업상태', ['입고','진행중','완료'])}
       </div>
     </div>
     <div class="form-section">
@@ -891,6 +890,34 @@ function renderForm() {
       </div>
     </div>`;
   host.innerHTML = carInfoPanel + sections;
+
+  // 차량케어 유형 공통 하단 섹션 — 작업상태 + 첨부파일
+  if (['maint', 'repair', 'product', 'wash'].includes(currentType)) {
+    const preserveWS = host.querySelector('input[name="work_status"]')?.value || '입고';
+    const wsSection = document.createElement('div');
+    wsSection.className = 'form-section';
+    wsSection.innerHTML = `
+      <div class="form-section-title"><i class="ph ph-flag"></i>작업상태</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1">
+          <input type="hidden" name="work_status" value="${preserveWS}">
+          <div class="btn-group" data-name="work_status">
+            ${['입고','진행중','완료'].map((s)=>`<span class="btn-opt${s===preserveWS?' is-active':''}" data-val="${s}">${s}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    host.appendChild(wsSection);
+    const wsGroup = wsSection.querySelector('.btn-group');
+    const wsHidden = wsSection.querySelector('input[name="work_status"]');
+    wsGroup.querySelectorAll('.btn-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        wsGroup.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
+        opt.classList.add('is-active');
+        wsHidden.value = opt.dataset.val;
+      });
+    });
+  }
 
   // 차량케어 유형(maint/repair/product/wash)에는 첨부파일 섹션 자동 추가
   if (['maint', 'repair', 'product', 'wash'].includes(currentType)) {
@@ -1107,7 +1134,6 @@ function renderForm() {
     const vList = vendors.map(v => `<option value="${v.vendor_name}">`).join('');
     const preserveVendor = host.querySelector('input[name="vendor"]')?.value || '';
     const preserveMileage = host.querySelector('input[name="mileage"]')?.value || '';
-    const preserveStatus = host.querySelector('input[name="work_status"]')?.value || '입고';
     const preserveExpected = host.querySelector('input[name="expected_delivery"]')?.value || '';
     header.innerHTML = `
       <div class="form-section-title"><i class="ph ph-tag"></i>작업구분</div>
@@ -1116,9 +1142,8 @@ function renderForm() {
       </div>
       <div class="form-grid">
         <div class="field"><label>업체</label><input type="text" name="vendor" list="pcVendorList" placeholder="정비소/수리업체/세차장" value="${preserveVendor}"><datalist id="pcVendorList">${vList}</datalist></div>
-        <div class="field"><label>작업상태</label><input type="hidden" name="work_status" value="${preserveStatus}"><div class="btn-group" data-name="work_status">${['입고','진행중','완료'].map((s)=>`<span class="btn-opt${s===preserveStatus?' is-active':''}" data-val="${s}">${s}</span>`).join('')}</div></div>
         <div class="field"><label>현 주행거리 (km)</label><input type="text" name="mileage" inputmode="numeric" placeholder="0" value="${preserveMileage}"></div>
-        <div class="field"><label>예상 완료일자</label><input type="date" name="expected_delivery" value="${preserveExpected}"></div>
+        <div class="field" style="grid-column:1/-1"><label>예상 완료일자</label><input type="date" name="expected_delivery" value="${preserveExpected}"></div>
       </div>
     `;
     // 기본정보(첫 form-section) 뒤에 삽입
@@ -1142,16 +1167,6 @@ function renderForm() {
         const c = host2.querySelector('input[name="car_number"]');
         if (c) { c.value = preserveCar; c.dispatchEvent(new Event('input')); c.dispatchEvent(new Event('change')); }
       }
-    });
-    // 작업상태 btn-group 수동 바인딩 (이미 윗단 handler 후에 prepend 됐으므로)
-    const wsGroup = header.querySelector('.btn-group[data-name="work_status"]');
-    const wsHidden = header.querySelector('input[name="work_status"]');
-    wsGroup?.querySelectorAll('.btn-opt').forEach(opt => {
-      opt.addEventListener('click', () => {
-        wsGroup.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
-        opt.classList.add('is-active');
-        if (wsHidden) wsHidden.value = opt.dataset.val;
-      });
     });
   }
 
