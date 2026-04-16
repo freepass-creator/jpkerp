@@ -1572,8 +1572,10 @@ function renderForm() {
     }
   });
 
-  // btn-group 클릭 바인딩 (토글 지원: 활성 버튼 재클릭시 선택해제)
+  // btn-group 클릭 바인딩 (단일선택 — 활성 재클릭시 해제)
+  // btn-toggle(복수선택) 들어있는 그룹은 skip
   host.querySelectorAll('.btn-group').forEach(group => {
+    if (group.querySelector('.btn-toggle')) return;
     const hidden = group.previousElementSibling;
     if (hidden && hidden.tagName === 'INPUT') {
       hidden.value = group.querySelector('.btn-opt.is-active')?.dataset.val || '';
@@ -1582,12 +1584,9 @@ function renderForm() {
       opt.addEventListener('click', () => {
         const wasActive = opt.classList.contains('is-active');
         group.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
-        if (!wasActive) {
-          opt.classList.add('is-active');
-          if (hidden && hidden.tagName === 'INPUT') hidden.value = opt.dataset.val;
-        } else {
-          // 재클릭 → 해제
-          if (hidden && hidden.tagName === 'INPUT') hidden.value = '';
+        if (!wasActive) opt.classList.add('is-active');
+        if (hidden && hidden.tagName === 'INPUT') {
+          hidden.value = wasActive ? '' : opt.dataset.val;
         }
       });
     });
