@@ -22,42 +22,54 @@
   padding: var(--sp-2) var(--panel-head-px);
 }
 
-.panel-title {
-  font-size: var(--font-size-md);
-  font-weight: var(--fw-bold);
-  color: var(--c-text);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  letter-spacing: -0.01em;
-}
-.panel-title i,
-.panel-title .ph,
-.panel-title [class^="ph-"],
-.panel-title [class*=" ph-"] {
-  font-size: var(--icon-sm) !important;   /* 14px 통일 */
-  line-height: 1;
-}
-.panel-subtitle {
-  font-size: var(--font-size-sm);
-  color: var(--c-text-muted);
-  margin-left: var(--sp-3);
-  letter-spacing: -0.01em;
-  font-weight: var(--fw);
-}
-
-/* 패널헤드 좌측 브랜드(아이콘+타이틀+서브) — 일관된 정렬 */
+/* ─── panel-head 표준 규격 ───
+  아이콘(14px, muted) + 타이틀(12px bold) + 서브(11px muted)
+  gap: 아이콘-타이틀 6px, 타이틀-서브 8px, 액션버튼 6px
+*/
 .panel-head > div:first-child {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
+  overflow: hidden;
 }
-.panel-head > div:first-child .panel-subtitle {
-  margin-left: var(--sp-2);
+.panel-head > div:first-child > i,
+.panel-head > div:first-child > .ph,
+.panel-head > div:first-child > [class^="ph-"],
+.panel-head > div:first-child > [class*=" ph-"] {
+  font-size: var(--icon-sm);
+  color: var(--c-text-muted);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.panel-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.panel-title i,
+.panel-title .ph,
+.panel-title [class^="ph-"],
+.panel-title [class*=" ph-"] {
+  font-size: var(--icon-sm) !important;
+  line-height: 1;
+  margin-right: 6px;
+  color: var(--c-text-muted);
+}
+.panel-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--c-text-muted);
+  margin-left: 8px;
+  letter-spacing: -0.01em;
+  font-weight: var(--fw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.panel-actions { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.panel-actions { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
 
 .panel-foot {
   flex-shrink: 0;

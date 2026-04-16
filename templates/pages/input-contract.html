@@ -7,7 +7,7 @@
 {% block workspace %}
 <section class="panel">
   <div class="panel-head">
-    <div><span class="panel-title">입력</span></div>
+    <div><i class="ph ph-file-plus"></i><span class="panel-title">계약 입력</span></div>
     <div class="panel-actions">
       {{ btn('upload', '업로드', id='inputUpload') }}
       {{ btn('reset', '초기화', id='inputReset') }}
@@ -20,6 +20,7 @@
 <section class="panel">
   <div class="panel-head">
     <div>
+      <i class="ph ph-check-square"></i>
       <span class="panel-title">검증 및 반영</span>
       <span class="panel-subtitle" id="stageCount">임시 0건</span>
     </div>
