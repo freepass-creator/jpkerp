@@ -872,6 +872,37 @@ function renderForm() {
   host.innerHTML = carInfoPanel + sections;
 
   // 입출고센터 — 사진 업로더 + 인터랙션 초기화
+  // 일자 퀵버튼 (오늘/어제/◀/▶)
+  host.querySelectorAll('input[type="date"][name="date"]').forEach((dateInp) => {
+    if (dateInp.dataset._quickDone) return;
+    dateInp.dataset._quickDone = '1';
+    const quick = document.createElement('div');
+    quick.className = 'date-quick';
+    quick.innerHTML = `
+      <button type="button" class="dq-btn" data-act="prev" title="하루 전">◀</button>
+      <button type="button" class="dq-btn" data-act="today">오늘</button>
+      <button type="button" class="dq-btn" data-act="yday">어제</button>
+      <button type="button" class="dq-btn" data-act="next" title="하루 뒤">▶</button>
+    `;
+    dateInp.parentNode.appendChild(quick);
+    const fmt = (d) => d.toISOString().slice(0, 10);
+    const shift = (days) => {
+      const base = dateInp.value ? new Date(dateInp.value) : new Date();
+      base.setDate(base.getDate() + days);
+      dateInp.value = fmt(base);
+      dateInp.dispatchEvent(new Event('change'));
+    };
+    quick.addEventListener('click', (e) => {
+      const b = e.target.closest('.dq-btn'); if (!b) return;
+      const act = b.dataset.act;
+      if (act === 'today') dateInp.value = fmt(new Date());
+      else if (act === 'yday') { const d = new Date(); d.setDate(d.getDate() - 1); dateInp.value = fmt(d); }
+      else if (act === 'prev') shift(-1);
+      else if (act === 'next') shift(1);
+      dateInp.dispatchEvent(new Event('change'));
+    });
+  });
+
   // 차량 자동조회 공통 (모든 업무)
   {
     const carInput = host.querySelector('input[name="car_number"]');
