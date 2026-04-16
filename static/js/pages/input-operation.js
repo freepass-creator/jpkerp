@@ -140,6 +140,7 @@ let allEvents = [];
 let vendors = [];
 let currentType = null;
 let lastCarNumber = '';
+let _pcActive = false;  // 차량케어센터 진입 여부 (작업구분 헤더 유지용)
 
 function renderList() {
   const host = $('#opList');
@@ -155,6 +156,7 @@ function renderList() {
   host.querySelectorAll('.op-type').forEach(el => {
     el.addEventListener('click', () => {
       currentType = el.dataset.type;
+      _pcActive = (currentType === 'pc'); // pc 진입시만 true
       renderList();
       renderForm();
       // 이력관리 초기화
@@ -1100,10 +1102,42 @@ function renderForm() {
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
   }
 
-  // 상품화센터 — 작업구분 선택시 실제 폼(maint/repair/product) 전환
+  // 차량케어센터 — 작업구분 헤더 + 전환 (pc 진입 상태면 항상 상단 노출)
+  if (_pcActive && currentType !== 'pc') {
+    // 세부 폼 위에 작업구분 헤더 prepend
+    const KIND_MAP_REV = { maint: '정비', repair: '사고수리', product: '상품화', wash: '세차' };
+    const curLabel = KIND_MAP_REV[currentType] || '';
+    const header = document.createElement('div');
+    header.className = 'form-section';
+    header.id = 'pcKindHeader';
+    header.innerHTML = `
+      <div class="form-section-title"><i class="ph ph-sparkle" style="color:#8b5cf6"></i>차량케어센터 — 작업구분</div>
+      <div class="btn-group" data-name="pc_kind_inline">
+        ${['정비','사고수리','상품화','세차'].map(k => `<span class="btn-opt${k===curLabel?' is-active':''}" data-val="${k}">${k}</span>`).join('')}
+      </div>
+    `;
+    host.insertBefore(header, host.firstChild);
+    header.querySelector('.btn-group').addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-opt'); if (!btn) return;
+      const v = btn.dataset.val;
+      const map = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product', '세차': 'wash' };
+      const t = map[v]; if (!t || t === currentType) return;
+      const preserveDate = host.querySelector('input[name="date"]')?.value;
+      const preserveCar = host.querySelector('input[name="car_number"]')?.value;
+      currentType = t;
+      renderForm();
+      const host2 = $('#opFormHost');
+      if (preserveDate) { const d = host2.querySelector('input[name="date"]'); if (d) d.value = preserveDate; }
+      if (preserveCar) {
+        const c = host2.querySelector('input[name="car_number"]');
+        if (c) { c.value = preserveCar; c.dispatchEvent(new Event('input')); c.dispatchEvent(new Event('change')); }
+      }
+    });
+  }
+
+  // pc 루트 — 작업구분 버튼 클릭시 전환
   if (currentType === 'pc') {
     const pcGroup = host.querySelector('.btn-group[data-name="pc_kind"]');
-    // 입력값 보존
     const preserveDate = host.querySelector('input[name="date"]')?.value;
     const preserveCar = host.querySelector('input[name="car_number"]')?.value;
     pcGroup?.addEventListener('click', (e) => {
@@ -1112,7 +1146,7 @@ function renderForm() {
       const map = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product', '세차': 'wash' };
       const t = map[v]; if (!t) return;
       currentType = t;
-      // 재렌더 후 값 복원
+      _pcActive = true;  // pc 상태 유지
       renderForm();
       const host2 = $('#opFormHost');
       if (preserveDate) { const d = host2.querySelector('input[name="date"]'); if (d) d.value = preserveDate; }
@@ -1120,10 +1154,17 @@ function renderForm() {
         const c = host2.querySelector('input[name="car_number"]');
         if (c) { c.value = preserveCar; c.dispatchEvent(new Event('input')); c.dispatchEvent(new Event('change')); }
       }
-      // 타이틀 앞에 '상품화센터 ›' 표시
-      const ft = $('#opFormTitle');
-      if (ft) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>차량케어센터</span><span style="color:var(--c-text-muted);font-weight:var(--fw)">›</span><span>${v}</span></span>`;
     });
+  }
+
+  // opFormTitle 갱신 — pc 상태면 브레드크럼
+  if (_pcActive && currentType !== 'pc') {
+    const KIND_MAP_REV = { maint: '정비', repair: '사고수리', product: '상품화', wash: '세차' };
+    const v = KIND_MAP_REV[currentType] || '';
+    const ft = $('#opFormTitle');
+    if (ft) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>차량케어센터</span><span style="color:var(--c-text-muted);font-weight:var(--fw)">›</span><span>${v}</span></span>`;
+    const sub = $('#opFormSubtitle');
+    if (sub) sub.textContent = '';
   }
 
   if (currentType === 'ioc') {
