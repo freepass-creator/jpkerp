@@ -157,10 +157,10 @@
 }
 .dq-btn:has(i.ph-caret-left):hover,
 .dq-btn:has(i.ph-caret-right):hover {
-  background: var(--c-bg-hover);
+  background: var(--c-primary-bg);
   border: none;
   color: var(--c-primary);
-  border-radius: 50%;
+  border-radius: var(--r-md, 2px);
 }
 
 /* 차량번호 자동완성 드롭다운 */
