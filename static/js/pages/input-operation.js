@@ -1221,12 +1221,16 @@ function renderForm() {
     let sugBox = document.createElement('div');
     sugBox.className = 'car-suggest';
     sugBox.hidden = true;
+    let _justSelected = false;
     carInput.parentNode.style.position = 'relative';
     carInput.parentNode.appendChild(sugBox);
 
     const showSuggestions = () => {
+      if (_justSelected) { _justSelected = false; return; }
       const q = carInput.value.trim();
       if (!q) { sugBox.hidden = true; return; }
+      // 정확히 일치하면 드롭다운 안띄움
+      if (assets.some(a => a.car_number === q)) { sugBox.hidden = true; return; }
       const ql = q.toLowerCase();
       const matches = assets.filter(a => {
         const cn = (a.car_number || '').toLowerCase();
@@ -1243,6 +1247,7 @@ function renderForm() {
       sugBox.querySelectorAll('.car-suggest-item').forEach(el => {
         el.addEventListener('mousedown', e => e.preventDefault());
         el.addEventListener('click', () => {
+          _justSelected = true;
           carInput.value = el.dataset.val;
           sugBox.hidden = true;
           carInput.dispatchEvent(new Event('input'));
