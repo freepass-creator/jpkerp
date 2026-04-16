@@ -787,9 +787,6 @@ function renderForm() {
       <div class="form-grid">
         ${sel('age_after', '연령', ['21세','26세','만30세','만35세','전연령'])}
         <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
-        <div class="field"><label>증권번호</label><input type="text" name="insurance_no"></div>
-        <div class="field"><label>적용일</label><input type="date" name="insurance_start"></div>
-        <div class="field"><label>만료일</label><input type="date" name="insurance_end"></div>
       </div>
     </div>
     <div class="form-section">
