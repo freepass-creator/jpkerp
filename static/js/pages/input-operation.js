@@ -2050,6 +2050,27 @@ async function submitForm() {
     // 입출고센터 사진
     if (Array.isArray(data.photos) && data.photos.length) event.photos = data.photos;
     await saveEvent(event);
+
+    // 강제회수 + 차키 미회수 → 자산 차키 수량 -1
+    if (event.type === 'force' && !data.key_returned && data.car_number) {
+      try {
+        const a = assets.find(x => x.car_number === data.car_number);
+        if (a?.vin) {
+          const { updateAsset } = await import('../firebase/assets.js');
+          const cur = Number(a.key_count || 0);
+          const newCount = Math.max(0, cur - 1);
+          const prevNote = a.key_note || '';
+          const stamp = data.date || new Date().toISOString().slice(0, 10);
+          const noteAdd = `${stamp} 강제회수 미회수 (-1 → ${newCount})`;
+          await updateAsset(a.vin, {
+            key_count: newCount,
+            key_note: prevNote ? `${prevNote}\n${noteAdd}` : noteAdd,
+          });
+          showToast(`차키 -1 자동 차감 (현재 ${newCount}개)`, 'info');
+        }
+      } catch (e) { console.warn('[key decrement]', e); }
+    }
+
     showToast('등록 완료', 'success');
     // 학습: 최근 차량 / 제목 / 즐겨찾기
     if (data.car_number) saveRecent(data.car_number);

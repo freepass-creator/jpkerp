@@ -79,10 +79,9 @@ export const ASSET_SCHEMA = [
   { col: 'owner_name',  label: '소유자명', section: '소유', sample: '(주)제이피케이' },
 
   // ── 차키 ──
-  { col: 'key_main',  label: '메인키', section: '차키', type: 'number', num: true, sample: '2' },
-  { col: 'key_sub',   label: '보조키', section: '차키', type: 'number', num: true, sample: '1' },
-  { col: 'key_card',  label: '카드키', section: '차키', type: 'number', num: true, sample: '0' },
-  { col: 'key_note',  label: '키비고', section: '차키' },
+  { col: 'key_count',     label: '차키 수량',   section: '차키', type: 'number', num: true, sample: '2' },
+  { col: 'key_etc_count', label: '기타키 수량', section: '차키', type: 'number', num: true, sample: '0' },
+  { col: 'key_note',      label: '키비고',      section: '차키' },
 
   // ── GPS ──
   { col: 'gps_installed', label: 'GPS 장착',   section: 'GPS', type: 'select', options: ['Y','N'], sample: 'Y' },
