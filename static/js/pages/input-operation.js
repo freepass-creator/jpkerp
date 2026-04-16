@@ -20,6 +20,14 @@ const $ = (s) => document.querySelector(s);
 // 최근 차량 / 즐겨찾기 / 자주 쓰는 제목
 const RECENT_KEY = 'jpk.op.recent_cars';
 const FAV_KEY = 'jpk.op.favorites';
+const LOC_KEY = 'jpk.op.locations';
+function loadLocations() { try { return JSON.parse(localStorage.getItem(LOC_KEY)) || []; } catch { return []; } }
+function saveLocation(place) {
+  if (!place) return;
+  let list = loadLocations().filter(p => p !== place);
+  list.unshift(place);
+  localStorage.setItem(LOC_KEY, JSON.stringify(list.slice(0, 5)));
+}
 const TITLE_KEY = 'jpk.op.titles';
 
 function loadRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; } }
@@ -211,8 +219,8 @@ function renderForm() {
     <div class="form-section" id="iocMoveSection">
       <div class="form-section-title"><i class="ph ph-arrows-left-right"></i>이동정보</div>
       <div class="form-grid">
-        <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="예: 강남지점"></div>
-        <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="예: 고객자택"></div>
+        <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="예: 강남지점"><div class="loc-favs" data-target="from_location"></div></div>
+        <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="예: 고객자택"><div class="loc-favs" data-target="to_location"></div></div>
       </div>
     </div>
 
@@ -908,6 +916,24 @@ function renderForm() {
     carInput?.addEventListener('change', refreshCarInfo);
     refreshCarInfo();
 
+    // 즐겨찾기 장소 렌더
+    const renderLocFavs = () => {
+      const locs = loadLocations();
+      host.querySelectorAll('.loc-favs').forEach(el => {
+        const target = el.dataset.target;
+        el.innerHTML = locs.map(l =>
+          `<span class="loc-fav-btn" data-loc="${l}">${l}</span>`
+        ).join('');
+        el.querySelectorAll('.loc-fav-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const inp = host.querySelector(`input[name="${target}"]`);
+            if (inp) inp.value = btn.dataset.loc;
+          });
+        });
+      });
+    };
+    renderLocFavs();
+
     // 구분 선택시 이동섹션 활성/비활성 (상품화면 비활성)
     const kindGroup = host.querySelector('.btn-group[data-name="ioc_kind"]');
     const moveSection = host.querySelector('#iocMoveSection');
@@ -1591,6 +1617,8 @@ async function submitForm() {
     if (data.vendor) saveFavorite(data.vendor);
     if (data.delivery_location) saveFavorite(data.delivery_location);
     if (data.return_location) saveFavorite(data.return_location);
+    if (data.from_location) saveLocation(data.from_location);
+    if (data.to_location) saveLocation(data.to_location);
     // 연속 입력: 차량번호 유지
     lastCarNumber = data.car_number || '';
     renderForm();
