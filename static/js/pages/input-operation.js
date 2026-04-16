@@ -47,6 +47,8 @@ function saveTitle(type, title) {
 // 🔵 고객 소통 (파랑)  | 🟢 차량 흐름 (녹색) | 🔴 문제·긴급 (빨강)
 // 🟠 관리·수리 (주황)  | 🟣 서비스·부가 (보라)
 const OP_ICONS = {
+  // ⚫ 입출고센터 (모바일→웹 통합)
+  ioc:       { name: 'ph-arrows-in-line-horizontal', color: '#37352f' },
   // 🔵 고객 소통
   contact:   { name: 'ph-phone',              color: '#3b82f6' },  // blue-500
   collect:   { name: 'ph-envelope',           color: '#2563eb' },  // blue-600
@@ -80,14 +82,10 @@ function opIcon(key) {
 }
 
 const DEFAULT_TYPES = [
+  { key: 'ioc',         label: '입출고센터',     sub: '출고·반납·강제회수·차량이동·상품화 통합', direction: 'out' },
   { key: 'contact',     label: '고객응대',       sub: '통화/상담/컴플레인',       direction: 'out' },
-  { key: 'delivery',    label: '출고(인도)',     sub: '차량 인도',                 direction: 'out' },
-  { key: 'return',      label: '정상반납',       sub: '계약만료/정상회수',          direction: 'in' },
-  { key: 'force',       label: '강제회수',       sub: '미납/연락두절/강제회수',     direction: 'in' },
-  { key: 'transfer',    label: '차량이동',       sub: '이동/배차/탁송',            direction: 'out' },
   { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',          direction: 'out' },
   { key: 'maint',       label: '정비',           sub: '소모품교체 + 기능수리',      direction: 'out' },
-  { key: 'product',     label: '상품화',         sub: '반납 후 재상품화',           direction: 'out' },
   { key: 'accident',    label: '사고접수',       sub: '사고 발생/보험접수',        direction: 'out' },
   { key: 'repair',      label: '사고수리',       sub: '판금/도색/수리',             direction: 'out' },
   { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out' },
@@ -175,7 +173,24 @@ function renderForm() {
   // 유형별 폼 생성
   let sections = '';
 
-  if (currentType === 'maintenance') {
+  if (currentType === 'ioc') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title">입출고센터 — 사진 등록</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        ${sel('ioc_kind', '구분', ['정상출고','정상반납','강제회수','차량이동','상품화'])}
+        <div class="field" style="grid-column:1/-1"><label>제목 (선택)</label><input type="text" name="title" placeholder="비워두면 구분+사진수로 자동생성"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="특이사항"></textarea></div>
+        <div class="field" style="grid-column:1/-1">
+          <label>사진</label>
+          <input type="file" name="ioc_photos" multiple accept="image/*,.pdf">
+          <div style="font-size:var(--font-size-xs);color:var(--c-text-muted);margin-top:4px">여러장 동시 선택 가능. 업로드한 사진은 입출고센터 목록 상세에서 볼 수 있어요.</div>
+        </div>
+      </div>
+    </div>`;
+  } else if (currentType === 'maintenance') {
     sections = `
     <div class="form-section">
       <div class="form-section-title">정비 정보</div>
@@ -1345,6 +1360,52 @@ async function submitForm() {
     showToast('일자, 차량번호는 필수입니다', 'error');
     return;
   }
+  // 입출고센터: 제목 자동생성 + 사진 업로드 → event photos
+  if (currentType === 'ioc') {
+    const kind = data.ioc_kind || '입출고';
+    const input = host.querySelector('input[name="ioc_photos"]');
+    const files = input?.files ? Array.from(input.files) : [];
+    if (!data.title) data.title = `${kind}${files.length ? ` (${files.length}장)` : ''}`;
+    // 구분→type/direction 매핑
+    const KIND_MAP = {
+      '정상출고': { type: 'delivery', direction: 'out' },
+      '정상반납': { type: 'return',   direction: 'in'  },
+      '강제회수': { type: 'force',    direction: 'in'  },
+      '차량이동': { type: 'transfer', direction: 'out' },
+      '상품화':   { type: 'product',  direction: 'out' },
+    };
+    const m = KIND_MAP[kind] || KIND_MAP['정상출고'];
+    currentType = m.type;
+    t.direction = m.direction;
+
+    // 사진 업로드
+    if (files.length) {
+      try {
+        const { ref: sRef, uploadBytesResumable, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js');
+        const { storage } = await import('../firebase/config.js');
+        const pad = (n) => String(n).padStart(2, '0');
+        const safeCar = String(data.car_number || '').replace(/[.#$\[\]\/]/g, '_');
+        const photos = [];
+        for (const f of files) {
+          const d = new Date();
+          const stamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+          const rand = Math.random().toString(36).slice(2, 6);
+          const ext = (f.name.split('.').pop() || 'bin').toLowerCase();
+          const path = `photos/${m.type}/${safeCar}/${stamp}_${rand}.${ext}`;
+          const task = uploadBytesResumable(sRef(storage, path), f, { contentType: f.type });
+          await new Promise((resolve, reject) => task.on('state_changed', null, reject, resolve));
+          const url = await getDownloadURL(task.snapshot.ref);
+          photos.push({ url, path, name: f.name, content_type: f.type, size: f.size, taken_at: Date.now() });
+        }
+        data.photos = photos;
+      } catch (e) {
+        console.error('[ioc upload]', e);
+        showToast('사진 업로드 실패: ' + (e.message || e), 'error');
+        return;
+      }
+    }
+  }
+
   if (!data.title) {
     if (currentType === 'maint') {
       showToast('교체 항목을 선택하거나 수리내용을 입력하세요', 'error');
@@ -1400,6 +1461,8 @@ async function submitForm() {
       'customer_name', 'customer_phone', 'contact_type', 'contact_result', 'handler',
     ];
     extras.forEach(k => { if (data[k]) event[k] = data[k]; });
+    // 입출고센터 사진
+    if (Array.isArray(data.photos) && data.photos.length) event.photos = data.photos;
     await saveEvent(event);
     showToast('등록 완료', 'success');
     // 학습: 최근 차량 / 제목 / 즐겨찾기
