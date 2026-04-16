@@ -1272,7 +1272,7 @@ function renderForm() {
     const keyField = host.querySelector('[data-role="key-return"]');
     const syncKeyField = () => {
       const v = host.querySelector('input[name="ioc_kind"]')?.value || '';
-      if (keyField) keyField.style.display = (v === '정상반납' || v === '강제회수') ? '' : 'none';
+      if (keyField) keyField.style.display = v === '강제회수' ? '' : 'none';
     };
     kindGroup?.addEventListener('click', () => setTimeout(syncKeyField, 10));
     syncKeyField();
