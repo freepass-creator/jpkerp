@@ -334,6 +334,7 @@ function renderForm() {
           <div class="form-grid" style="grid-template-columns:1fr">
             <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
             <div class="field"><label>접수번호</label><input type="text" name="insurance_no"></div>
+            <div class="field"><label>담당자 연락처</label><input type="text" name="insurance_contact" inputmode="tel" placeholder="010-0000-0000"></div>
           </div>
         </div>
         <div>
@@ -342,8 +343,15 @@ function renderForm() {
             <div class="field"><label>상대 차량번호</label><input type="text" name="accident_other" placeholder="예: 12가3456"></div>
             <div class="field"><label>보험사</label><input type="text" name="other_insurance" placeholder="상대 보험사"></div>
             <div class="field"><label>접수번호</label><input type="text" name="other_insurance_no" placeholder="상대측 접수번호"></div>
+            <div class="field"><label>담당자 연락처</label><input type="text" name="other_insurance_contact" inputmode="tel" placeholder="010-0000-0000"></div>
           </div>
         </div>
+      </div>
+      <div style="margin-top:var(--sp-4);display:flex;gap:6px;align-items:center;padding-top:var(--sp-3);border-top:1px solid var(--c-border)">
+        <i class="ph ph-plus" style="color:var(--c-text-muted);font-size:var(--icon-sm)"></i>
+        <span style="font-size:var(--font-size-sm);color:var(--c-text-muted);font-weight:var(--fw-medium)">보험사 즐겨찾기:</span>
+        <input type="text" id="iocNewInsCo" class="ctrl" placeholder="새 보험사 이름" style="flex:1;max-width:240px">
+        <button type="button" class="btn" id="iocAddInsCo"><i class="ph ph-plus"></i> 등록</button>
       </div>
     </div>
     <div class="form-section">
@@ -1529,13 +1537,14 @@ function renderForm() {
   });
 
   // 보험사 즐겨찾기 pill — insurance_company / other_insurance 아래
-  const insFavs = loadInsCo();
-  if (insFavs.length) {
+  const renderInsFavs = () => {
+    const insFavs = loadInsCo();
+    host.querySelectorAll('.ins-favs').forEach(el => el.remove());
     host.querySelectorAll('input[name="insurance_company"],input[name="other_insurance"]').forEach(inp => {
       const wrap = document.createElement('div');
-      wrap.className = 'loc-favs';
+      wrap.className = 'loc-favs ins-favs';
       wrap.style.marginTop = '4px';
-      wrap.innerHTML = insFavs.slice(0, 8).map(x =>
+      wrap.innerHTML = insFavs.map(x =>
         `<span class="loc-fav-btn" data-v="${x}">${x}<button type="button" class="loc-fav-del" data-v="${x}">✕</button></span>`
       ).join('');
       inp.parentNode.appendChild(wrap);
@@ -1551,11 +1560,25 @@ function renderForm() {
           const name = btn.dataset.v;
           const list = loadInsCo().filter(x => x !== name);
           localStorage.setItem(INS_KEY, JSON.stringify(list));
-          btn.closest('.loc-fav-btn').remove();
+          renderInsFavs();
         });
       });
     });
-  }
+  };
+  renderInsFavs();
+
+  // 새 보험사 등록 버튼
+  host.querySelector('#iocAddInsCo')?.addEventListener('click', () => {
+    const inp = host.querySelector('#iocNewInsCo');
+    const v = (inp?.value || '').trim();
+    if (!v) return;
+    saveInsCo(v);
+    inp.value = '';
+    renderInsFavs();
+  });
+  host.querySelector('#iocNewInsCo')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); host.querySelector('#iocAddInsCo').click(); }
+  });
 
   // 거래처 datalist — 모든 vendor/업체 input에
   const vendorDl = document.createElement('datalist');
@@ -1976,7 +1999,7 @@ async function submitForm() {
     // 유형별 추가 필드 전부 저장
     const extras = [
       'maint_type', 'next_maint_date',
-      'accident_type', 'accident_other', 'accident_other_phone', 'other_insurance_no', 'fault_ratio',
+      'accident_type', 'accident_other', 'accident_other_phone', 'other_insurance_no', 'other_insurance_contact', 'insurance_contact', 'fault_ratio',
       'insurance_company', 'insurance_no', 'repair_estimate', 'repair_shop', 'repair_days', 'rental_car',
       'penalty_type', 'due_date', 'payer', 'paid_status',
       'delivery_location', 'receiver_name', 'receiver_phone',
