@@ -871,10 +871,15 @@ function renderForm() {
   host.innerHTML = carInfoPanel + sections;
 
   // 입출고센터 — 사진 업로더 + 인터랙션 초기화
-  // 일자 퀵버튼 (오늘/어제/◀/▶)
+  // 일자 퀵버튼 (달력 옆에 한줄로)
   host.querySelectorAll('input[type="date"][name="date"]').forEach((dateInp) => {
     if (dateInp.dataset._quickDone) return;
     dateInp.dataset._quickDone = '1';
+    // 입력 + 퀵버튼 가로 flex 래핑
+    const wrap = document.createElement('div');
+    wrap.className = 'date-row';
+    dateInp.parentNode.insertBefore(wrap, dateInp);
+    wrap.appendChild(dateInp);
     const quick = document.createElement('div');
     quick.className = 'date-quick';
     quick.innerHTML = `
@@ -884,7 +889,7 @@ function renderForm() {
       <button type="button" class="dq-btn" data-act="tmrw" title="예약용">내일</button>
       <button type="button" class="dq-btn" data-act="next" title="하루 뒤"><i class="ph ph-caret-right"></i></button>
     `;
-    dateInp.parentNode.appendChild(quick);
+    wrap.appendChild(quick);
     const fmt = (d) => d.toISOString().slice(0, 10);
     const shift = (days) => {
       const base = dateInp.value ? new Date(dateInp.value) : new Date();
