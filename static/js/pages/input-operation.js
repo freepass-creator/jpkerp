@@ -183,7 +183,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        ${sel('ioc_kind', '업무구분', ['정상출고','정상반납','강제회수','차량이동','상품화'])}
+        ${sel('ioc_kind', '업무구분', ['차량이동','정상출고','정상반납','강제회수','상품화'])}
       </div>
       <!-- 차량 자동조회 결과 (2컬럼: 스펙 / 상태) -->
       <div id="iocCarInfo" class="ioc-car-info" hidden>
