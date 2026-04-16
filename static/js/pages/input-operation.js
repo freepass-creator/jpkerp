@@ -298,11 +298,14 @@ function renderForm() {
         <div class="field" style="grid-column:1/-1">
           <label>내 과실</label>
           <input type="hidden" name="fault_pct">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
-            <div class="btn-group" data-name="fault_pct" style="flex:1">
-              ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}">${o}</span>`).join('')}
+          <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+            <div class="btn-group" data-name="fault_pct" style="flex-wrap:wrap;gap:4px">
+              ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}" style="min-width:40px;text-align:center">${o}</span>`).join('')}
             </div>
-            <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" placeholder="예: 15" style="width:120px;flex:0 0 auto"><span style="color:var(--c-text-muted);font-size:var(--font-size-sm)">%</span>
+            <div style="position:relative;display:inline-flex;align-items:center">
+              <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" placeholder="예: 00" style="width:80px;padding-right:20px;text-align:right">
+              <span style="position:absolute;right:6px;color:var(--c-text-muted);font-size:var(--font-size-sm);pointer-events:none">%</span>
+            </div>
           </div>
         </div>
       </div>
