@@ -258,6 +258,13 @@ function renderForm() {
                 <span class="btn-opt btn-toggle" data-name="key_returned" data-val="">회수완료</span>
               </div>
             </div>
+            <div class="field" data-role="driver-age" style="display:none">
+              <label>운전자 연령 확인 <span style="color:var(--c-text-muted);font-size:var(--font-size-xs)">(보험연령: <b data-role="ins-age-ref">—</b>)</span></label>
+              <input type="hidden" name="driver_age">
+              <div class="btn-group" data-name="driver_age">
+                ${['21세','26세','만30세','만35세','전연령'].map((o)=>`<span class="btn-opt" data-val="${o}">${o}</span>`).join('')}
+              </div>
+            </div>
           </div>
         </div>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="3" placeholder="탁송기사 연락처 · 특이사항 · 참고" class="ctrl" style="height:auto;padding:6px 8px"></textarea></div>
@@ -1260,15 +1267,29 @@ function renderForm() {
     const mount = host.querySelector('#iocPhotoUploader');
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
 
-    // 업무구분 → 차키 회수 토글 (정상반납/강제회수 시에만 표시)
+    // 업무구분 → 차키 회수 / 운전자 연령 토글
     const kindGroup = host.querySelector('.btn-group[data-name="ioc_kind"]');
     const keyField = host.querySelector('[data-role="key-return"]');
-    const syncKeyField = () => {
+    const driverField = host.querySelector('[data-role="driver-age"]');
+    const syncKindDeps = () => {
       const v = host.querySelector('input[name="ioc_kind"]')?.value || '';
       if (keyField) keyField.style.display = v === '강제회수' ? '' : 'none';
+      if (driverField) {
+        driverField.style.display = v === '정상출고' ? '' : 'none';
+        // 현재 차량 보험연령 참조 채우기
+        if (v === '정상출고') {
+          const cn = host.querySelector('input[name="car_number"]')?.value.trim();
+          const insEvs = allEvents.filter(e => e.car_number === cn && e.type === 'insurance' && e.age_after)
+            .sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')));
+          const ref = driverField.querySelector('[data-role="ins-age-ref"]');
+          if (ref) ref.textContent = insEvs[0]?.age_after || '—';
+        }
+      }
     };
-    kindGroup?.addEventListener('click', () => setTimeout(syncKeyField, 10));
-    syncKeyField();
+    kindGroup?.addEventListener('click', () => setTimeout(syncKindDeps, 10));
+    const carInp = host.querySelector('input[name="car_number"]');
+    carInp?.addEventListener('change', syncKindDeps);
+    syncKindDeps();
   } else {
     iocUploader = null;
   }
@@ -2017,7 +2038,7 @@ async function submitForm() {
       'equip_navi', 'equip_blackbox', 'equip_hipass', 'equip_charger', 'equip_triangle', 'equip_fire',
       'extra_mileage', 'extra_fuel', 'extra_damage',
       'from_location', 'to_location', 'transfer_reason',
-      'handover_by', 'carrier_name', 'carrier_phone', 'key_returned',
+      'handover_by', 'carrier_name', 'carrier_phone', 'key_returned', 'driver_age',
       'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
       'acc_type', 'acc_role',
