@@ -313,8 +313,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-user-focus"></i>상대방</div>
       <div class="form-grid">
-        <div class="field"><label>상대방</label><input type="text" name="accident_other" placeholder="이름/차량번호"></div>
-        <div class="field"><label>상대방연락처</label><input type="text" name="accident_other_phone" placeholder="010-0000-0000"></div>
+        <div class="field"><label>상대 차량번호</label><input type="text" name="accident_other" placeholder="예: 12가3456"></div>
         <div class="field"><label>상대보험사</label><input type="text" name="other_insurance" placeholder="상대 보험사"></div>
       </div>
     </div>
