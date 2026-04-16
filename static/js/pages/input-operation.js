@@ -1596,6 +1596,14 @@ function renderForm() {
     });
   });
 
+  // 숫자만 (inputmode=numeric 인 input 전체에 한글/문자 방지)
+  host.querySelectorAll('input[inputmode="numeric"]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const v = inp.value.replace(/[^\d.]/g, '');
+      if (v !== inp.value) inp.value = v;
+    });
+  });
+
   // 차량번호 입력 → 우측 컨텍스트 패널 갱신
   const carCtx = host.querySelector('[name="car_number"]');
   if (carCtx) {
