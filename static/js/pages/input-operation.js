@@ -358,7 +358,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"></label>출고일</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 홍길동 출고"></div>
+        <input type="hidden" name="title">
         <div class="field"></label>인도장소</label><input type="text" name="delivery_location" placeholder="사무실/고객방문/탁송"></div>
         <div class="field"></label>인수자명</label><input type="text" name="receiver_name"></div>
         <div class="field"></label>인수자연락처</label><input type="text" name="receiver_phone" placeholder="010-0000-0000"></div>
@@ -426,7 +426,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"></label>반납일</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 홍길동 반납"></div>
+        <input type="hidden" name="title">
         <div class="field"></label>반납장소</label><input type="text" name="return_location" placeholder="사무실/고객방문/탁송"></div>
       </div>
     </div>
@@ -472,7 +472,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>회수일</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 미납 3개월 강제회수"></div>
+        <input type="hidden" name="title">
         ${sel('force_reason', '회수사유', ['미납','연락두절','계약위반','사고방치','기타'])}
         <div class="field"><label>회수장소</label><input type="text" name="return_location" placeholder="회수 위치"></div>
         <div class="field"><label>회수담당</label><input type="text" name="handler"></div>
@@ -513,7 +513,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"></label>이동일</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>제목</label><input type="text" name="title" placeholder="예: 김포→인천 배차"></div>
+        <input type="hidden" name="title">
         <div class="field"></label>출발지</label><input type="text" name="from_location" placeholder="출발 위치"></div>
         <div class="field"></label>도착지</label><input type="text" name="to_location" placeholder="도착 위치"></div>
         ${sel('transfer_reason', '이동사유', ['배차','정비입고','탁송','기타'])}
@@ -535,7 +535,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-key"></i>차키 업무</div>
       <div class="form-grid">
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 메인키 전달"></div>
+        <input type="hidden" name="title">
         ${sel('key_action', '구분', ['전달','회수','분실','복제'])}
       </div>
     </div>
@@ -682,11 +682,11 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-note"></i>제목 · 메모</div>
+      <div class="form-section-title"><i class="ph ph-note"></i>메모</div>
       <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><label>제목</label><input type="text" name="title" placeholder="예: 전면범퍼 접촉사고 판금도색"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="사고경위·특이사항"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="3" placeholder="사고경위·특이사항"></textarea></div>
       </div>
+      <input type="hidden" name="title">
     </div>`;
 
   } else if (currentType === 'collect') {
@@ -701,7 +701,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-envelope"></i>미수 정보</div>
       <div class="form-grid">
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 3회차 미납 독촉"></div>
+        <input type="hidden" name="title">
         <div class="field"><label>고객명</label><input type="text" name="customer_name"></div>
         <div class="field"><label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
         <div class="field"><label>미수금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
@@ -729,7 +729,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 보험연령 21세→26세 변경"></div>
+        <input type="hidden" name="title">
         ${sel('insurance_action', '업무구분', ['배서(연령변경)','신규가입','갱신','해지','보험청구','기타'])}
       </div>
     </div>
@@ -787,7 +787,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 출고전 점검"></div>
+        <input type="hidden" name="title">
         ${sel('inspect_type', '점검유형', ['출고전점검','반납후점검','정기점검','임시점검'])}
         <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         ${sel('fuel_level', '연료잔량', ['F','3/4','1/2','1/4','E'])}
@@ -891,7 +891,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>제목</label><input type="text" name="title"></div>
+        <input type="hidden" name="title">
         <div class="field"></label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"></label>업체/장소</label><input type="text" name="vendor"></div>
         <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
@@ -1867,13 +1867,18 @@ async function submitForm() {
     }
   }
 
+  // 제목이 없으면 자동 생성 — 유형별 기본 라벨
   if (!data.title) {
-    if (currentType === 'maint') {
-      showToast('교체 항목을 선택하거나 수리내용을 입력하세요', 'error');
-    } else {
-      showToast('제목을 입력하세요', 'error');
-    }
-    return;
+    const labelMap = {
+      contact: data.contact_type || '고객응대',
+      delivery: '출고', return: '반납', force: '강제회수', transfer: '차량이동',
+      maint: '정비', repair: '사고수리', product: '상품화', wash: '세차',
+      key: (data.key_action || '차키') + ' 업무',
+      penalty: data.penalty_type || '과태료',
+      collect: '미수 조치', insurance: data.insurance_action || '보험업무',
+      fuel: data.fuel_type || '연료보충',
+    };
+    data.title = labelMap[currentType] || currentType;
   }
 
   const a = assets.find(x => x.car_number === data.car_number);
