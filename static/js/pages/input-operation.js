@@ -304,9 +304,9 @@ function renderForm() {
         </div>
         <div class="field">
           <label>기타비율</label>
-          <div style="position:relative;display:inline-flex;align-items:center">
-            <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" maxlength="2" placeholder="00" style="width:60px;padding:0 18px 0 8px;text-align:right">
-            <span style="position:absolute;right:6px;color:var(--c-text-muted);font-size:var(--font-size-sm);pointer-events:none">%</span>
+          <div style="display:inline-flex;align-items:center;gap:4px;width:fit-content">
+            <input type="text" name="fault_ratio" class="ctrl" inputmode="numeric" maxlength="2" placeholder="00" style="width:56px;text-align:right">
+            <span style="color:var(--c-text-muted);font-size:var(--font-size)">%</span>
           </div>
         </div>
       </div>
