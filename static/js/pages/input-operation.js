@@ -152,6 +152,13 @@ function renderList() {
       currentType = el.dataset.type;
       renderList();
       renderForm();
+      // 이력관리 초기화
+      const ctx = $('#opContextHost');
+      if (ctx) ctx.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">차량번호 입력 시<br>계약/수납/운영이력이 여기 표시됩니다.</div>';
+      const ctxTitle = $('#opContextTitle');
+      const ctxSub = $('#opContextSubtitle');
+      if (ctxTitle) ctxTitle.textContent = '이력관리';
+      if (ctxSub) ctxSub.textContent = '차량번호를 입력하세요';
     });
   });
 
