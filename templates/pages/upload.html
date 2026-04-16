@@ -61,12 +61,12 @@
     <div class="form-section">
       <div class="form-section-title">업로드</div>
 
-      <!-- 파일 드롭존 -->
-      <label id="uploadDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:20px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-text-muted);transition:background var(--t-fast);margin-bottom:10px">
+      <!-- 파일 드롭존 (공통 규격) -->
+      <label id="uploadDrop" class="photo-dropzone" style="margin-bottom:10px">
         <input type="file" id="uploadFile" multiple accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.heic,.webp" hidden>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>
-        <div style="font-size:12px;font-weight:600;color:var(--c-text)">파일 업로드</div>
-        <div style="font-size:10px">CSV · 엑셀 · PDF · 이미지</div>
+        <i class="ph ph-upload-simple"></i>
+        <div class="photo-dropzone-title">파일 업로드</div>
+        <div class="photo-dropzone-sub">CSV · 엑셀 · PDF · 이미지 &nbsp;·&nbsp; 클릭 / 드래그 / Ctrl+V</div>
       </label>
 
       <!-- 또는 구분선 -->

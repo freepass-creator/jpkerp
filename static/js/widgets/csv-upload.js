@@ -124,10 +124,11 @@ function ensureHost() {
             <button class="btn btn-primary" id="csvSheetLoad" style="width:100%">시트 불러오기</button>
           </div>
           <div id="csvTabFile" hidden>
-            <label id="csvDrop" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;border:2px dashed var(--c-border-strong);border-radius:var(--r-md);background:var(--c-bg-sub);color:var(--c-text-muted);cursor:pointer">
+            <label id="csvDrop" class="photo-dropzone">
               <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <div id="csvDropText">CSV 파일 선택 또는 드래그</div>
+              <i class="ph ph-upload-simple"></i>
+              <div class="photo-dropzone-title" id="csvDropText">CSV 파일 업로드</div>
+              <div class="photo-dropzone-sub">클릭하여 선택 · 드래그앤드롭</div>
             </label>
           </div>
         </div>
@@ -174,11 +175,11 @@ function ensureHost() {
     _host.querySelector('#csvDropText').textContent = file.name;
     handleText(await file.text());
   });
-  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.style.background = 'var(--c-bg-hover)'; });
-  drop.addEventListener('dragleave', () => { drop.style.background = 'var(--c-bg-sub)'; });
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('is-drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('is-drag'));
   drop.addEventListener('drop', async (e) => {
     e.preventDefault();
-    drop.style.background = 'var(--c-bg-sub)';
+    drop.classList.remove('is-drag');
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
     _host.querySelector('#csvDropText').textContent = file.name;

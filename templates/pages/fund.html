@@ -25,10 +25,11 @@
       </select>
       <input type="text" id="fundAccountNo" class="ctrl" placeholder="계좌번호 (예: 110-123-456789)" style="flex:1">
     </div>
-    <label id="fundDrop" style="border:2px dashed var(--c-border-strong);border-radius:var(--r-md);padding:32px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--c-text-muted)">
+    <label id="fundDrop" class="photo-dropzone">
       <input type="file" id="fundFile" accept=".csv,text/csv" hidden>
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <div>CSV 파일을 끌어다 놓거나 클릭</div>
+      <i class="ph ph-upload-simple"></i>
+      <div class="photo-dropzone-title">CSV 파일 업로드</div>
+      <div class="photo-dropzone-sub">클릭하여 선택 · 드래그앤드롭</div>
     </label>
   </div>
 </section>

@@ -104,11 +104,11 @@ function bindUpload() {
   const drop = $('#noticeDrop');
 
   file?.addEventListener('change', e => handleFiles(Array.from(e.target.files)));
-  drop?.addEventListener('dragover', e => { e.preventDefault(); drop.style.background = 'var(--c-bg-hover)'; });
-  drop?.addEventListener('dragleave', () => { drop.style.background = ''; });
+  drop?.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('is-drag'); });
+  drop?.addEventListener('dragleave', () => drop.classList.remove('is-drag'));
   drop?.addEventListener('drop', e => {
     e.preventDefault();
-    drop.style.background = '';
+    drop.classList.remove('is-drag');
     handleFiles(Array.from(e.dataTransfer.files));
   });
 }

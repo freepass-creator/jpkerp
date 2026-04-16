@@ -156,11 +156,11 @@ export async function mount() {
   const file = $('#fundFile');
   drop?.addEventListener('click', () => file.click());
   file?.addEventListener('change', (e) => loadFile(e.target.files[0]));
-  drop?.addEventListener('dragover', (e) => { e.preventDefault(); drop.style.background = 'var(--c-bg-hover)'; });
-  drop?.addEventListener('dragleave', () => { drop.style.background = ''; });
+  drop?.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('is-drag'); });
+  drop?.addEventListener('dragleave', () => drop.classList.remove('is-drag'));
   drop?.addEventListener('drop', (e) => {
     e.preventDefault();
-    drop.style.background = '';
+    drop.classList.remove('is-drag');
     if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
   });
 
