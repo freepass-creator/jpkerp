@@ -12,6 +12,7 @@ import { openDetail } from '../core/detail-panel.js';
 import { watchVendors } from '../firebase/vendors.js';
 import { showToast } from '../core/toast.js';
 import { createPhotoUploader, uploadFilesToStorage } from '../core/photo-ui.js';
+import { ocrFile, extractAmount, extractDate } from '../core/ocr.js';
 
 let iocUploader = null;
 
@@ -915,7 +916,73 @@ function renderForm() {
     host.appendChild(attachSection);
     // 업로더 생성
     const mount = attachSection.querySelector('#pcPhotoUploader');
-    if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf,.xlsx,.xls', multiple: true });
+    if (mount) {
+      let _ocrDoneFor = new Set();
+      iocUploader = createPhotoUploader(mount, {
+        accept: 'image/*,.pdf,.xlsx,.xls',
+        multiple: true,
+        onChange: async (files) => {
+          if (currentType !== 'repair') return;
+          const first = files[0];
+          if (!first) return;
+          const sig = first.name + first.size;
+          if (_ocrDoneFor.has(sig)) return;
+          _ocrDoneFor.add(sig);
+          // 이미지/PDF만 OCR
+          if (!/\.(pdf|png|jpe?g|heic|webp)$/i.test(first.name)) return;
+          try {
+            showToast('견적서 OCR 분석 중...', 'info');
+            const text = await ocrFile(first);
+            if (!text) return;
+            // 총액 추출
+            const amt = extractAmount(text);
+            const date = extractDate(text);
+            const amountInp = host.querySelector('input[name="amount"]');
+            const dateInp = host.querySelector('input[name="date"]');
+            const titleInp = host.querySelector('input[name="title"]');
+            const filled = [];
+            if (amt && amountInp && !amountInp.value) {
+              amountInp.value = amt.toLocaleString();
+              filled.push(`금액 ${amt.toLocaleString()}원`);
+            }
+            if (date && dateInp) {
+              dateInp.value = date;
+              filled.push(`일자 ${date}`);
+            }
+            // 제목 자동: "견적서 XXX원" 또는 상단 한 줄
+            if (titleInp && !titleInp.value) {
+              const firstLine = text.split('\n').map(s => s.trim()).find(s => s.length >= 3 && s.length < 40) || '';
+              if (firstLine) { titleInp.value = firstLine; filled.push('제목'); }
+            }
+            // 수리항목 파싱 — "부품명 ... 숫자원" 패턴
+            const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+            const itemRows = [];
+            for (const ln of lines) {
+              const m = ln.match(/^(.{2,30}?)\s+([\d,]{3,})\s*원?$/);
+              if (m) {
+                const cost = Number(m[2].replace(/,/g, ''));
+                if (cost > 0 && cost < 50000000) itemRows.push({ item: m[1].trim(), cost });
+              }
+              if (itemRows.length >= 10) break;
+            }
+            const repairTbody = host.querySelector('#repairTable tbody');
+            if (repairTbody && itemRows.length) {
+              repairTbody.innerHTML = '';
+              for (const r of itemRows) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><input type="text" name="repairTable_item" value="${r.item}" style="width:100%;border:none;outline:none"></td><td><input type="text" name="repairTable_cost" value="${r.cost.toLocaleString()}" style="width:100%;border:none;outline:none;text-align:right"></td><td><button type="button" class="btn-icon" style="color:var(--c-danger)" onclick="this.closest('tr').remove()">✕</button></td>`;
+                repairTbody.appendChild(tr);
+              }
+              filled.push(`수리항목 ${itemRows.length}개`);
+            }
+            showToast(`견적서 자동 인식: ${filled.join(', ') || '데이터 없음'}`, 'success');
+          } catch (e) {
+            console.error('[ocr]', e);
+            showToast('OCR 분석 실패', 'error');
+          }
+        }
+      });
+    }
   }
 
   // 입출고센터 — 사진 업로더 + 인터랙션 초기화
