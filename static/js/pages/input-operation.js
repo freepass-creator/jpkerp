@@ -542,7 +542,6 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        ${sel('maint_status', '작업상태', ['입고','진행중','완료'])}
       </div>
     </div>
     <div class="form-section">
@@ -576,8 +575,6 @@ function renderForm() {
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
         <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 반납 후 상품화"></div>
-        ${sel('product_status', '작업상태', ['입고','진행중','완료'])}
-        <div class="field"><label>예상출고일</label><input type="date" name="expected_delivery"></div>
       </div>
     </div>
     <div class="form-section">
@@ -660,7 +657,6 @@ function renderForm() {
       <div class="form-grid">
         <div class="field"><label>입고일</label><input type="date" name="repair_in_date"></div>
         <div class="field"><label>출고예정일</label><input type="date" name="repair_out_date"></div>
-        ${sel('repair_status', '작업상태', ['입고','진행중','완료'])}
         ${sel('rental_car', '대차', ['미제공','대차중','대차반납'])}
       </div>
     </div>
@@ -1111,14 +1107,18 @@ function renderForm() {
     const vList = vendors.map(v => `<option value="${v.vendor_name}">`).join('');
     const preserveVendor = host.querySelector('input[name="vendor"]')?.value || '';
     const preserveMileage = host.querySelector('input[name="mileage"]')?.value || '';
+    const preserveStatus = host.querySelector('input[name="work_status"]')?.value || '입고';
+    const preserveExpected = host.querySelector('input[name="expected_delivery"]')?.value || '';
     header.innerHTML = `
       <div class="form-section-title"><i class="ph ph-tag"></i>작업구분</div>
-      <div class="btn-group" data-name="pc_kind_inline" style="margin-bottom:var(--sp-3)">
+      <div class="btn-group" data-name="pc_kind_inline" style="margin-bottom:var(--sp-4)">
         ${['정비','사고수리','상품화','세차'].map(k => `<span class="btn-opt${k===curLabel?' is-active':''}" data-val="${k}">${k}</span>`).join('')}
       </div>
       <div class="form-grid">
         <div class="field"><label>업체</label><input type="text" name="vendor" list="pcVendorList" placeholder="정비소/수리업체/세차장" value="${preserveVendor}"><datalist id="pcVendorList">${vList}</datalist></div>
+        <div class="field"><label>작업상태</label><input type="hidden" name="work_status" value="${preserveStatus}"><div class="btn-group" data-name="work_status">${['입고','진행중','완료'].map((s)=>`<span class="btn-opt${s===preserveStatus?' is-active':''}" data-val="${s}">${s}</span>`).join('')}</div></div>
         <div class="field"><label>현 주행거리 (km)</label><input type="text" name="mileage" inputmode="numeric" placeholder="0" value="${preserveMileage}"></div>
+        <div class="field"><label>예상 완료일자</label><input type="date" name="expected_delivery" value="${preserveExpected}"></div>
       </div>
     `;
     // 기본정보(첫 form-section) 뒤에 삽입
@@ -1126,7 +1126,8 @@ function renderForm() {
     if (firstSec && firstSec.nextSibling) host.insertBefore(header, firstSec.nextSibling);
     else if (firstSec) host.appendChild(header);
     else host.insertBefore(header, host.firstChild);
-    header.querySelector('.btn-group').addEventListener('click', (e) => {
+    // 작업구분 전환
+    header.querySelector('.btn-group[data-name="pc_kind_inline"]').addEventListener('click', (e) => {
       const btn = e.target.closest('.btn-opt'); if (!btn) return;
       const v = btn.dataset.val;
       const map = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product', '세차': 'wash' };
@@ -1141,6 +1142,16 @@ function renderForm() {
         const c = host2.querySelector('input[name="car_number"]');
         if (c) { c.value = preserveCar; c.dispatchEvent(new Event('input')); c.dispatchEvent(new Event('change')); }
       }
+    });
+    // 작업상태 btn-group 수동 바인딩 (이미 윗단 handler 후에 prepend 됐으므로)
+    const wsGroup = header.querySelector('.btn-group[data-name="work_status"]');
+    const wsHidden = header.querySelector('input[name="work_status"]');
+    wsGroup?.querySelectorAll('.btn-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        wsGroup.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
+        opt.classList.add('is-active');
+        if (wsHidden) wsHidden.value = opt.dataset.val;
+      });
     });
   }
 
@@ -1875,7 +1886,7 @@ async function submitForm() {
       'product_status', 'product_maint', 'maint_detail', 'maint_cost', 'maint_vendor', 'expected_delivery',
       'repair_type', 'repair_in_date', 'repair_out_date', 'repair_estimate', 'insurance_amount', 'self_pay', 'repair_status',
       'damage_area', 'damage_frame',
-      'maint_status', 'wash_work_status',
+      'maint_status', 'wash_work_status', 'work_status',
       'collect_action', 'collect_result', 'promise_date',
       'force_reason', 'unpaid_amount', 'damage_claim', 'legal_action',
       'assignee', 'participants',
