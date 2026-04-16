@@ -171,7 +171,24 @@ function render() {
   };
 
   const allEvents = events;
-  const EVENT_ICONS = { maintenance:'🔧', maint:'🔧', accident:'💥', penalty:'🚫', delivery:'🚗', return:'🔙', force:'🚨', transfer:'🔄', key:'🔑', contact:'📞', wash:'🧼', fuel:'⛽', insurance:'🛡', repair:'🔨', product:'✨', collect:'📨', parts:'🔧', fix:'🛠' };
+  const EVENT_ICONS = {
+    maintenance: '<i class="ph ph-wrench" style="color:#f97316"></i>',
+    maint:       '<i class="ph ph-wrench" style="color:#f97316"></i>',
+    accident:    '<i class="ph ph-car-profile" style="color:#ef4444"></i>',
+    penalty:     '<i class="ph ph-prohibit" style="color:#b91c1c"></i>',
+    delivery:    '<i class="ph ph-truck" style="color:#10b981"></i>',
+    return:      '<i class="ph ph-arrow-u-down-left" style="color:#059669"></i>',
+    force:       '<i class="ph ph-warning-octagon" style="color:#dc2626"></i>',
+    transfer:    '<i class="ph ph-arrows-left-right" style="color:#14b8a6"></i>',
+    key:         '<i class="ph ph-key" style="color:#f59e0b"></i>',
+    contact:     '<i class="ph ph-phone" style="color:#3b82f6"></i>',
+    wash:        '<i class="ph ph-drop" style="color:#a855f7"></i>',
+    fuel:        '<i class="ph ph-gas-pump" style="color:#c026d3"></i>',
+    insurance:   '<i class="ph ph-shield-check" style="color:#7c3aed"></i>',
+    repair:      '<i class="ph ph-hammer" style="color:#ea580c"></i>',
+    product:     '<i class="ph ph-sparkle" style="color:#8b5cf6"></i>',
+    collect:     '<i class="ph ph-envelope" style="color:#2563eb"></i>',
+  };
 
   const recentOps = allEvents
     .filter(e => e.type && e.created_at)

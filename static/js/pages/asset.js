@@ -108,6 +108,7 @@ function initGrid() {
       }},
       'sep',
       { label: '상세보기', icon: '📄', action: () => {
+        const d = node.data;
         openDetail({
           title: `${d.car_number || ''} ${d.manufacturer || ''} ${d.car_model || ''}`.trim(),
           subtitle: d.vin || '',
