@@ -320,19 +320,34 @@ function renderForm() {
   } else if (currentType === 'penalty') {
     sections = `
     <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>위반일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+      </div>
+    </div>
+    <div class="form-section">
       <div class="form-section-title"><i class="ph ph-prohibit"></i>과태료 정보</div>
       <div class="form-grid">
-        <div class="field is-required"></label>위반일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>위반내용</label><input type="text" name="title" placeholder="예: 주정차위반, 속도위반"></div>
+        <div class="field is-required"><label>위반내용</label><input type="text" name="title" placeholder="예: 주정차위반, 속도위반"></div>
         ${sel('penalty_type', '위반유형', ['주정차위반','속도위반','신호위반','버스전용','기타'])}
-        <div class="field"></label>과태료금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
-        <div class="field"></label>위반장소</label><input type="text" name="vendor" placeholder="위반 위치"></div>
-        <div class="field"></label>납부기한</label><input type="date" name="due_date"></div>
+        <div class="field"><label>위반장소</label><input type="text" name="vendor" placeholder="위반 위치"></div>
+        <div class="field"><label>납부기한</label><input type="date" name="due_date"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-wallet"></i>금액 · 부담</div>
+      <div class="form-grid">
+        <div class="field"><label>과태료금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         ${sel('payer', '부담자', ['고객부담','회사부담'])}
-        <div class="field"></label>고객명</label><input type="text" name="customer_name" placeholder="해당 고객"></div>
+        <div class="field"><label>고객명</label><input type="text" name="customer_name" placeholder="해당 고객"></div>
         ${sel('paid_status', '납부여부', ['미납','납부완료'])}
-        <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-note"></i>메모</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -511,16 +526,21 @@ function renderForm() {
   } else if (currentType === 'key') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-key"></i>차키 전달/분출</div>
+      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-key"></i>차키 업무</div>
+      <div class="form-grid">
         <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 메인키 전달"></div>
         ${sel('key_action', '구분', ['전달','회수','분실','복제'])}
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-list-checks"></i>키 종류 (해당 체크, 메인키 기본)</div>
+      <div class="form-section-title"><i class="ph ph-list-checks"></i>키 종류</div>
       <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
         ${chk('key_main', '메인키')}
         ${chk('key_sub', '보조키')}
@@ -529,9 +549,10 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-note"></i>메모</div>
       <div class="form-grid">
         <div class="field"><label>키번호/위치</label><input type="text" name="key_info" placeholder="키번호 또는 보관위치"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
@@ -671,10 +692,15 @@ function renderForm() {
   } else if (currentType === 'collect') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-envelope"></i>미수관리</div>
+      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-envelope"></i>미수 정보</div>
+      <div class="form-grid">
         <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 3회차 미납 독촉"></div>
         <div class="field"><label>고객명</label><input type="text" name="customer_name"></div>
         <div class="field"><label>연락처</label><input type="text" name="customer_phone" placeholder="010-0000-0000"></div>
@@ -687,15 +713,19 @@ function renderForm() {
         ${sel('collect_action', '조치', ['전화독촉','문자발송','내용증명발송','법적조치예고','법적조치진행','기타'])}
         ${sel('collect_result', '결과', ['납부약속','즉시납부','연락불가','거부','기타'])}
         <div class="field"><label>약속납부일</label><input type="date" name="promise_date"></div>
-        <div class="field"><label>담당자</label><input type="text" name="handler"></div>
-        <div class="field" style="grid-column:1/-1"><label>상세내용</label><textarea name="note" rows="3" placeholder="통화 내용, 조치 사항 기록"></textarea></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-note"></i>상세내용</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="3" placeholder="통화 내용, 조치 사항 기록"></textarea></div>
       </div>
     </div>`;
 
   } else if (currentType === 'insurance') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-shield-check"></i>보험관리</div>
+      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
@@ -704,19 +734,26 @@ function renderForm() {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-file-text"></i>배서 정보</div>
+      <div class="form-section-title"><i class="ph ph-file-text"></i>배서 · 보험 정보</div>
       <div class="form-grid">
         ${sel('age_before', '변경 전 연령', ['21세','26세','만30세','만35세','전연령'])}
         ${sel('age_after', '변경 후 연령', ['21세','26세','만30세','만35세','전연령'])}
         <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
         <div class="field"><label>증권번호</label><input type="text" name="insurance_no"></div>
-        <div class="field"><label>추가/환급 보험료</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>적용일</label><input type="date" name="insurance_start"></div>
+        <div class="field"><label>만료일</label><input type="date" name="insurance_end"></div>
       </div>
     </div>
     <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-wallet"></i>금액</div>
       <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="출고 고객명, 변경 사유 등"></textarea></div>
+        <div class="field"><label>추가/환급 보험료</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-note"></i>메모</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="2" placeholder="출고 고객명, 변경 사유 등"></textarea></div>
       </div>
     </div>`;
 
@@ -785,35 +822,26 @@ function renderForm() {
   } else if (currentType === 'fuel') {
     sections = `
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-gas-pump"></i>주유/충전 정보</div>
+      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 주유 50L"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-gas-pump"></i>주유/충전</div>
+      <div class="form-grid">
         ${sel('fuel_type', '유종', ['휘발유','경유','LPG','전기충전'])}
         <div class="field"><label>리터/kWh</label><input type="text" name="fuel_amount" inputmode="numeric" placeholder="리터 또는 kWh"></div>
         <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>주유소</label><input type="text" name="vendor" placeholder="주유소명"></div>
         <div class="field"><label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
       </div>
-    </div>`;
-
-  } else if (currentType === 'insurance') {
-    sections = `
+    </div>
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-shield"></i>보험 정보</div>
+      <div class="form-section-title"><i class="ph ph-note"></i>메모</div>
       <div class="form-grid">
-        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 자동차보험 갱신"></div>
-        ${sel('insurance_type', '구분', ['신규가입','갱신','보험청구','해지'])}
-        <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
-        <div class="field"><label>증권번호</label><input type="text" name="insurance_no" placeholder="증권번호"></div>
-        <div class="field"><label>보험시작일</label><input type="date" name="insurance_start"></div>
-        <div class="field"><label>보험만료일</label><input type="date" name="insurance_end"></div>
-        <div class="field"><label>보험료</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="2"></textarea></div>
       </div>
     </div>`;
 
