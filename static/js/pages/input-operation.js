@@ -1111,7 +1111,7 @@ function renderForm() {
     header.className = 'form-section';
     header.id = 'pcKindHeader';
     header.innerHTML = `
-      <div class="form-section-title">작업구분</div>
+      <div class="form-section-title"><i class="ph ph-tag"></i>작업구분</div>
       <div class="btn-group" data-name="pc_kind_inline">
         ${['정비','사고수리','상품화','세차'].map(k => `<span class="btn-opt${k===curLabel?' is-active':''}" data-val="${k}">${k}</span>`).join('')}
       </div>
