@@ -956,7 +956,7 @@ function renderForm() {
         <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
         <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
         <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
-        <div class="ioc-car-row"><span class="k">색상</span><span class="v" data-f="color">—</span></div>
+        <div class="ioc-car-row"><span class="k">보험연령</span><span class="v" data-f="insAge">—</span></div>
       </div>
       <div class="ioc-car-col">
         <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약 / 상태</div>
@@ -1122,7 +1122,10 @@ function renderForm() {
         setField('company', a.partner_code || '—');
         setField('car', a.car_number);
         setField('model', a.detail_model || a.car_model || '—');
-        setField('color', a.ext_color || '—');
+        // 보험연령 — 이 차량의 최근 '배서(연령변경)' 이벤트에서 age_after 추출
+        const insEvents = allEvents.filter(e => e.car_number === a.car_number && e.type === 'insurance' && e.age_after);
+        const latestIns = insEvents.sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')))[0];
+        setField('insAge', latestIns?.age_after || '—');
         const today = new Date().toISOString().slice(0, 10);
         const cands = contracts.filter(c => c.car_number === a.car_number);
         const active = cands.find(c => c.contract_status === '계약진행' && (!c.end_date || c.end_date >= today))
