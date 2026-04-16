@@ -249,3 +249,16 @@ textarea::placeholder {
 .grid-table tr:hover { background: var(--c-bg-hover); }
 .grid-table tr.is-active { background: var(--c-bg-active); }
 .grid-table .is-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* 그리드 테이블 내 input — 12px 통일 */
+.grid-table input,
+.grid-table select,
+.grid-table textarea {
+  font-size: var(--font-size) !important;
+  font-family: inherit;
+}
+.grid-table input::placeholder,
+.grid-table textarea::placeholder {
+  font-size: var(--font-size);
+  color: #c0beb8;
+}
