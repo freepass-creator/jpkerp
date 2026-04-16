@@ -880,8 +880,9 @@ function renderForm() {
     quick.className = 'date-quick';
     quick.innerHTML = `
       <button type="button" class="dq-btn" data-act="prev" title="하루 전">◀</button>
-      <button type="button" class="dq-btn" data-act="today">오늘</button>
       <button type="button" class="dq-btn" data-act="yday">어제</button>
+      <button type="button" class="dq-btn" data-act="today">오늘</button>
+      <button type="button" class="dq-btn" data-act="tmrw" title="예약용">내일</button>
       <button type="button" class="dq-btn" data-act="next" title="하루 뒤">▶</button>
     `;
     dateInp.parentNode.appendChild(quick);
@@ -897,6 +898,7 @@ function renderForm() {
       const act = b.dataset.act;
       if (act === 'today') dateInp.value = fmt(new Date());
       else if (act === 'yday') { const d = new Date(); d.setDate(d.getDate() - 1); dateInp.value = fmt(d); }
+      else if (act === 'tmrw') { const d = new Date(); d.setDate(d.getDate() + 1); dateInp.value = fmt(d); }
       else if (act === 'prev') shift(-1);
       else if (act === 'next') shift(1);
       dateInp.dispatchEvent(new Event('change'));
