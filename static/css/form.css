@@ -87,6 +87,18 @@
   border-color: var(--c-primary);
   color: var(--c-primary);
 }
+.loc-fav-del {
+  background: none;
+  border: none;
+  color: var(--c-text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.loc-fav-btn:hover .loc-fav-del { opacity: 1; color: var(--c-danger); }
 .form-section-title::before { display: none; }
 .form-section-title svg { display: none; }
 .form-section-title i,

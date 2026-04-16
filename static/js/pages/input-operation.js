@@ -24,9 +24,14 @@ const LOC_KEY = 'jpk.op.locations';
 function loadLocations() { try { return JSON.parse(localStorage.getItem(LOC_KEY)) || []; } catch { return []; } }
 function saveLocation(place) {
   if (!place) return;
+  let list = loadLocations();
+  if (list.includes(place)) return;
+  list.push(place);
+  localStorage.setItem(LOC_KEY, JSON.stringify(list.slice(0, 10)));
+}
+function removeLocation(place) {
   let list = loadLocations().filter(p => p !== place);
-  list.unshift(place);
-  localStorage.setItem(LOC_KEY, JSON.stringify(list.slice(0, 5)));
+  localStorage.setItem(LOC_KEY, JSON.stringify(list));
 }
 const TITLE_KEY = 'jpk.op.titles';
 
@@ -219,8 +224,12 @@ function renderForm() {
     <div class="form-section" id="iocMoveSection">
       <div class="form-section-title"><i class="ph ph-arrows-left-right"></i>이동정보</div>
       <div class="form-grid">
-        <div class="field"><label>출발지</label><input type="text" name="from_location" placeholder="예: 강남지점"><div class="loc-favs" data-target="from_location"></div></div>
-        <div class="field"><label>도착지</label><input type="text" name="to_location" placeholder="예: 고객자택"><div class="loc-favs" data-target="to_location"></div></div>
+        <div class="field"><label>출발지</label><div class="loc-favs" data-target="from_location"></div><input type="text" name="from_location" placeholder="직접 입력 또는 위 버튼 선택"></div>
+        <div class="field"><label>도착지</label><div class="loc-favs" data-target="to_location"></div><input type="text" name="to_location" placeholder="직접 입력 또는 위 버튼 선택"></div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+        <input type="text" id="iocNewLoc" class="ctrl" placeholder="새 장소 이름" style="flex:1">
+        <button type="button" class="btn" id="iocAddLoc"><i class="ph ph-plus"></i> 등록</button>
       </div>
     </div>
 
@@ -922,17 +931,35 @@ function renderForm() {
       host.querySelectorAll('.loc-favs').forEach(el => {
         const target = el.dataset.target;
         el.innerHTML = locs.map(l =>
-          `<span class="loc-fav-btn" data-loc="${l}">${l}</span>`
+          `<span class="loc-fav-btn" data-loc="${l}">${l}<button type="button" class="loc-fav-del" data-loc="${l}">✕</button></span>`
         ).join('');
         el.querySelectorAll('.loc-fav-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
+          btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('loc-fav-del')) return;
             const inp = host.querySelector(`input[name="${target}"]`);
             if (inp) inp.value = btn.dataset.loc;
+          });
+        });
+        el.querySelectorAll('.loc-fav-del').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeLocation(btn.dataset.loc);
+            renderLocFavs();
           });
         });
       });
     };
     renderLocFavs();
+
+    // 새 장소 등록
+    host.querySelector('#iocAddLoc')?.addEventListener('click', () => {
+      const inp = host.querySelector('#iocNewLoc');
+      const v = (inp?.value || '').trim();
+      if (!v) return;
+      saveLocation(v);
+      inp.value = '';
+      renderLocFavs();
+    });
 
     // 구분 선택시 이동섹션 활성/비활성 (상품화면 비활성)
     const kindGroup = host.querySelector('.btn-group[data-name="ioc_kind"]');
