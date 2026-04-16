@@ -1824,24 +1824,23 @@ function renderContextContent(asset, carContracts, carEvents) {
   // ── 운영이력 (최근 5건) ──
   const eventsHtml = carEvents.slice(0, 5).length
     ? carEvents.slice(0, 5).map((e, idx) => {
-        const typeIcon = { maint: '🔧', accident: '💥', penalty: '🚫', contact: '📞', delivery: '🚗', return: '🔙', wash: '🧼', fuel: '⛽' }[e.event_type] || '•';
         const date = (e.date || '').slice(0, 10) || (e.created_at ? new Date(e.created_at).toISOString().slice(0, 10) : '');
-        return `<div class="op-ctx-event" data-idx="${idx}" style="display:flex;gap:6px;padding:6px 4px;font-size:var(--font-size-sm);border-bottom:1px solid var(--c-border-soft,#f0f0f0);cursor:pointer;border-radius:var(--r-xs)">
-          <span>${typeIcon}</span>
-          <span style="color:var(--c-text-muted);font-size:var(--font-size-xs);width:75px">${date}</span>
-          <span style="flex:1;min-width:0">${e.title || e.event_type || '-'}</span>
+        return `<div class="op-ctx-event" data-idx="${idx}" style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:var(--font-size-sm);border-bottom:1px solid var(--c-border);cursor:pointer;transition:background var(--t-fast)">
+          <span style="width:20px;text-align:center">${opIcon(e.type || e.event_type)}</span>
+          <span style="color:var(--c-text-muted);font-size:var(--font-size-xs);width:70px;flex-shrink:0">${date}</span>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.title || e.type || e.event_type || '-'}</span>
         </div>`;
       }).join('')
-    : `<div style="color:var(--c-text-muted);font-size:var(--font-size-sm);padding:4px">이력 없음</div>`;
+    : `<div style="color:var(--c-text-muted);font-size:var(--font-size-sm);padding:12px;text-align:center">이력 없음</div>`;
 
   host.innerHTML = `
     <div class="form-section">
-      <div class="form-section-title">📋 계약 이력 (${carContracts.length})</div>
+      <div class="form-section-title"><i class="ph ph-clipboard-text"></i>계약 이력 <span style="color:var(--c-text-muted);font-weight:var(--fw)">(${carContracts.length})</span></div>
       ${contractsHtml}
     </div>
     ${contractDetail}
     <div class="form-section">
-      <div class="form-section-title">🔧 최근 운영이력 (${carEvents.length > 5 ? '최근 5건 / 총 ' + carEvents.length : carEvents.length})</div>
+      <div class="form-section-title"><i class="ph ph-clock-counter-clockwise"></i>최근 운영이력 <span style="color:var(--c-text-muted);font-weight:var(--fw)">${carEvents.length > 5 ? `(최근 5건 / 총 ${carEvents.length})` : `(${carEvents.length})`}</span></div>
       ${eventsHtml}
     </div>
   `;
@@ -1891,7 +1890,7 @@ function renderContractDetail(c) {
 
   return `
     <div class="form-section">
-      <div class="form-section-title">📄 ${c.contractor_name || ''} 계약 상세</div>
+      <div class="form-section-title"><i class="ph ph-file-text"></i>${c.contractor_name || '계약'} 계약 상세</div>
       <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:var(--font-size-sm);padding:4px 8px">
         <div style="color:var(--c-text-muted)">계약코드</div><div style="font-family:monospace">${c.contract_code || '-'}</div>
         <div style="color:var(--c-text-muted)">연락처</div><div>${c.contractor_phone || '-'}</div>
@@ -1902,11 +1901,11 @@ function renderContractDetail(c) {
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">💰 수납 내역</div>
+      <div class="form-section-title"><i class="ph ph-wallet"></i>수납 내역</div>
       <div style="padding:4px 8px;font-size:var(--font-size-sm);line-height:1.8">
         <div>완납 <b style="color:var(--c-success)">${paidTotal.toLocaleString()}원</b> / 회차 ${contractBillings.length}건</div>
-        ${unpaid.length ? `<div style="color:var(--c-danger);font-weight:600">🔴 미납 ${unpaidTotal.toLocaleString()}원 (${unpaid.length}회차)</div>` : '<div style="color:var(--c-success)">✅ 미납 없음</div>'}
-        ${unpaid.slice(0, 3).map(b => `<div style="font-size:var(--font-size-xs);color:var(--c-text-muted);padding-left:8px">· ${b.seq || '-'}회차 ${b.due_date || ''} — ${Number(b.amount || 0).toLocaleString()}원</div>`).join('')}
+        ${unpaid.length ? `<div style="color:var(--c-danger);font-weight:600"><i class="ph ph-warning-circle" style="font-size:var(--icon-sm)"></i> 미납 ${unpaidTotal.toLocaleString()}원 (${unpaid.length}회차)</div>` : `<div style="color:var(--c-success)"><i class="ph ph-check-circle" style="font-size:var(--icon-sm)"></i> 미납 없음</div>`}
+        ${unpaid.slice(0, 3).map(b => `<div style="font-size:var(--font-size-xs);color:var(--c-text-muted);padding-left:14px">· ${b.seq || '-'}회차 ${b.due_date || ''} — ${Number(b.amount || 0).toLocaleString()}원</div>`).join('')}
       </div>
     </div>
   `;
