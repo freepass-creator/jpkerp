@@ -838,67 +838,50 @@ function renderForm() {
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
       </div>
-      <div id="iocCarInfo" class="ioc-car-info" hidden>
+      <!-- 계약자 자동조회 -->
+      <div id="iocCarInfo" class="ioc-car-info" hidden style="margin-top:10px">
         <div class="ioc-car-col">
-          <div class="ioc-car-col-title"><i class="ph ph-car"></i>차량 스펙</div>
-          <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
-          <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
-          <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
+          <div class="ioc-car-col-title"><i class="ph ph-user"></i>계약자</div>
+          <div class="ioc-car-row"><span class="k">계약자명</span><span class="v" data-f="contractor">—</span></div>
+          <div class="ioc-car-row"><span class="k">등록번호</span><span class="v" data-f="regNo">—</span></div>
+          <div class="ioc-car-row"><span class="k">연락처</span><span class="v" data-f="phone">—</span></div>
         </div>
         <div class="ioc-car-col">
-          <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약 / 상태</div>
-          <div class="ioc-car-row"><span class="k">계약자</span><span class="v" data-f="contractor">—</span></div>
-          <div class="ioc-car-row"><span class="k">계약종료</span><span class="v" data-f="endDate">—</span></div>
-          <div class="ioc-car-row"><span class="k">차량상태</span><span class="v" data-f="carStatus">—</span></div>
+          <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약</div>
+          <div class="ioc-car-row"><span class="k">계약상태</span><span class="v" data-f="carStatus">—</span></div>
+          <div class="ioc-car-row"><span class="k">미납여부</span><span class="v" data-f="unpaidYn">—</span></div>
+          <div class="ioc-car-row"><span class="k">계약기간</span><span class="v" data-f="period">—</span></div>
         </div>
       </div>
+      <input type="hidden" name="customer_name">
+      <input type="hidden" name="customer_phone">
     </div>
 
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-phone"></i>응대구분</div>
       <div class="form-grid">
-        ${sel('contact_type', '유형', ['일반문의','컴플레인','계약문의','정비요청','사고접수','반납협의','연장문의','기타'])}
-        ${sel('contact_result', '처리결과', ['처리완료','진행중','보류','에스컬레이션'])}
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-user"></i>계약자 정보</div>
-      <div class="form-grid">
-        <div class="field"><label>계약자명</label><input type="text" name="customer_name"></div>
-        <div class="field"><label>연락처</label><input type="text" name="customer_phone" inputmode="tel" placeholder="010-0000-0000"></div>
-      </div>
-      <!-- 계약/수납 요약 (자동 채움) -->
-      <div id="contactContractSummary" class="ioc-car-info" hidden style="margin-top:8px">
-        <div class="ioc-car-col">
-          <div class="ioc-car-col-title"><i class="ph ph-file-text"></i>계약</div>
-          <div class="ioc-car-row"><span class="k">계약상태</span><span class="v" data-f="cStatus">—</span></div>
-          <div class="ioc-car-row"><span class="k">월대여료</span><span class="v" data-f="cRent">—</span></div>
-          <div class="ioc-car-row"><span class="k">계약종료</span><span class="v" data-f="cEnd">—</span></div>
-          <div class="ioc-car-row"><span class="k">결제일</span><span class="v" data-f="cPayday">—</span></div>
-        </div>
-        <div class="ioc-car-col">
-          <div class="ioc-car-col-title"><i class="ph ph-wallet"></i>수납</div>
-          <div class="ioc-car-row"><span class="k">납부현황</span><span class="v" data-f="cPaid">—</span></div>
-          <div class="ioc-car-row"><span class="k" style="color:var(--c-danger)">미납</span><span class="v" data-f="cUnpaid" style="color:var(--c-danger)">—</span></div>
-          <div class="ioc-car-row"><span class="k">보증금</span><span class="v" data-f="cDeposit">—</span></div>
+        <div class="field" style="grid-column:1/-1">
+          <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">
+            ${sel('contact_type', '유형', ['일반문의','컴플레인','계약문의','정비요청','사고접수','반납협의','연장문의','기타'])}
+            ${sel('contact_result', '처리결과', ['진행중','처리완료','보류','에스컬레이션'])}
+          </div>
         </div>
       </div>
     </div>
 
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-phone"></i>응대구분</div>
+      <div class="form-section-title"><i class="ph ph-note"></i>처리내용</div>
       <div class="form-grid">
-        ${sel('contact_type', '유형', ['일반문의','컴플레인','계약문의','정비요청','사고접수','반납협의','연장문의','기타'])}
-        ${sel('contact_result', '처리결과', ['처리완료','진행중','보류','에스컬레이션'])}
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="4" placeholder="상담·처리 내용 기록"></textarea></div>
       </div>
     </div>
 
     <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-note"></i>상담내용</div>
+      <div class="form-section-title"><i class="ph ph-image"></i>첨부파일</div>
       <div class="form-grid">
-        <div class="field" style="grid-column:1/-1"><label>제목</label><input type="text" name="title" placeholder="예: 대여료 문의"></div>
-        <div class="field" style="grid-column:1/-1"><label>통화·상담 내용</label><textarea name="note" rows="4" placeholder="상담 내용 기록"></textarea></div>
+        <div class="field" style="grid-column:1/-1">
+          <div id="contactPhotoUploader"></div>
+        </div>
       </div>
     </div>`;
 
@@ -947,28 +930,27 @@ function renderForm() {
           carStatus = `계약중 (${active.contractor_name || '—'})`;
           setField('contractor', active.contractor_name || '—');
           setField('endDate', active.end_date || '—');
-          // 고객센터: 고객명/연락처 + 계약/수납 요약 자동 채움
+          // 고객센터: 계약자 정보 + 미납 자동 채움
           if (currentType === 'contact') {
             const nameInp = host.querySelector('input[name="customer_name"]');
             const phoneInp = host.querySelector('input[name="customer_phone"]');
-            if (nameInp && !nameInp.value) nameInp.value = active.contractor_name || '';
-            if (phoneInp && !phoneInp.value) phoneInp.value = active.contractor_phone || '';
-            const sumPanel = host.querySelector('#contactContractSummary');
-            if (sumPanel) {
-              sumPanel.hidden = false;
-              const sf = (f, v) => { const el = sumPanel.querySelector(`[data-f="${f}"]`); if (el) el.textContent = v || '—'; };
-              const cBillings = _billings.filter(b => b.contract_code === active.contract_code);
-              const unpaid = cBillings.filter(b => (Number(b.paid_total) || 0) < (Number(b.amount) || 0));
-              const unpaidTotal = unpaid.reduce((s, b) => s + ((Number(b.amount) || 0) - (Number(b.paid_total) || 0)), 0);
-              const paidCount = cBillings.filter(b => (Number(b.paid_total) || 0) >= (Number(b.amount) || 0)).length;
-              sf('cStatus', active.contract_status || '—');
-              sf('cRent', (Number(active.rent_amount || 0).toLocaleString()) + '원');
-              sf('cEnd', active.end_date || '—');
-              sf('cPayday', active.auto_debit_day ? `매월 ${active.auto_debit_day}일` : '—');
-              sf('cPaid', `${paidCount}건 완납 / ${cBillings.length}건`);
-              sf('cUnpaid', unpaid.length ? `${unpaidTotal.toLocaleString()}원 (${unpaid.length}건)` : '없음');
-              sf('cDeposit', (Number(active.deposit_amount || 0).toLocaleString()) + '원');
-            }
+            if (nameInp) nameInp.value = active.contractor_name || '';
+            if (phoneInp) phoneInp.value = active.contractor_phone || '';
+            // 추가 필드
+            setField('phone', active.contractor_phone || '—');
+            setField('regNo', active.contractor_reg_no || '—');
+            // 미납 계산
+            const cBillings = _billings.filter(b => b.contract_code === active.contract_code);
+            const unpaid = cBillings.filter(b => (Number(b.paid_total) || 0) < (Number(b.amount) || 0));
+            const unpaidTotal = unpaid.reduce((s, b) => s + ((Number(b.amount) || 0) - (Number(b.paid_total) || 0)), 0);
+            setField('unpaidYn', unpaid.length ? `미납 ${unpaidTotal.toLocaleString()}원 (${unpaid.length}건)` : '정상');
+            // 미납 색상
+            const unpaidEl = infoEl.querySelector('[data-f="unpaidYn"]');
+            if (unpaidEl) unpaidEl.style.color = unpaid.length ? 'var(--c-danger)' : 'var(--c-success)';
+            // 계약기간
+            const fmtShort = (d) => d ? d.replace(/^20/, '').replace(/-/g, '.') : '';
+            const endDate = active.end_date || computeEndDate(active) || '';
+            setField('period', `${fmtShort(active.start_date)}~${fmtShort(endDate)}`);
           }
         } else if (a.status === 'idle' || a.status === '휴차') { carStatus = '휴차'; setField('contractor', '—'); setField('endDate', '—');
         } else if (a.status === 'product' || a.status === '상품화') { carStatus = '상품화 중'; setField('contractor', '—'); setField('endDate', '—');
@@ -984,6 +966,11 @@ function renderForm() {
       carInput.addEventListener('change', refreshCarInfo);
       refreshCarInfo();
     }
+  }
+
+  if (currentType === 'contact') {
+    const mount = host.querySelector('#contactPhotoUploader');
+    if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
   }
 
   if (currentType === 'ioc') {
@@ -1654,6 +1641,21 @@ async function submitForm() {
       } catch (e) {
         console.error('[ioc upload]', e);
         showToast('사진 업로드 실패: ' + (e.message || e), 'error');
+        return;
+      }
+    }
+  }
+
+  // 고객센터: 유형에서 제목 자동생성 + 첨부파일 업로드
+  if (currentType === 'contact') {
+    if (!data.title) data.title = data.contact_type || '고객응대';
+    const files = iocUploader ? iocUploader.getFiles() : [];
+    if (files.length) {
+      try {
+        data.photos = await uploadFilesToStorage(files, { type: 'contact', car: data.car_number });
+      } catch (e) {
+        console.error('[contact upload]', e);
+        showToast('첨부파일 업로드 실패: ' + (e.message || e), 'error');
         return;
       }
     }
