@@ -785,8 +785,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-file-text"></i>배서 · 보험 정보</div>
       <div class="form-grid">
-        ${sel('age_before', '변경 전 연령', ['21세','26세','만30세','만35세','전연령'])}
-        ${sel('age_after', '변경 후 연령', ['21세','26세','만30세','만35세','전연령'])}
+        ${sel('age_after', '연령', ['21세','26세','만30세','만35세','전연령'])}
         <div class="field"><label>보험사</label><input type="text" name="insurance_company" placeholder="삼성화재, 현대해상 등"></div>
         <div class="field"><label>증권번호</label><input type="text" name="insurance_no"></div>
         <div class="field"><label>적용일</label><input type="date" name="insurance_start"></div>
