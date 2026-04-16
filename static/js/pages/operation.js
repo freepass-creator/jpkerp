@@ -81,6 +81,12 @@ function refreshGrid() {
       { headerName: '유형', field: 'type', width: 75,
         valueFormatter: p => EVENT_TYPES[p.value] || p.value || '-' },
       { headerName: '차량번호', field: 'car_number', width: 90 },
+      { headerName: '회사', field: 'company_name', width: 110 },
+      { headerName: '모델', field: 'detail_model', width: 90 },
+      { headerName: '📷', field: 'photos', width: 50,
+        valueGetter: p => Array.isArray(p.data?.photos) ? p.data.photos.length : 0,
+        cellStyle: { textAlign: 'center' },
+        valueFormatter: p => p.value ? String(p.value) : '' },
       { headerName: '제목', field: 'title', width: 180 },
       { headerName: '금액', field: 'amount', width: 100, type: 'numericColumn',
         valueFormatter: p => p.value ? fmt(p.value) : '-' },
@@ -178,11 +184,38 @@ function showDetail(ev) {
     });
   }
 
+  // 사진 갤러리 (모바일 업로드 + 연결된 사진)
+  const photos = Array.isArray(ev.photos) ? ev.photos : [];
+  const photosHtml = photos.length ? `
+    <div style="margin-top:16px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:16px">
+      <div style="font-weight:600;font-size:var(--font-size);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <i class="ph ph-images" style="color:var(--c-text-muted)"></i>
+        사진 <span style="color:var(--c-text-muted);font-weight:400">${photos.length}장</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px">
+        ${photos.map((p, i) => {
+          const url = typeof p === 'string' ? p : p.url;
+          const isImg = typeof p === 'string' || (p.content_type || '').startsWith('image/');
+          return `<a href="${url}" target="_blank" rel="noopener" style="aspect-ratio:1/1;overflow:hidden;background:var(--c-bg-sub);border-radius:var(--r-sm);display:block">
+            ${isImg
+              ? `<img src="${url}" alt="photo ${i+1}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`
+              : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--c-text-muted)"><i class="ph ph-file" style="font-size:32px"></i></div>`}
+          </a>`;
+        }).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const sourceTag = ev.source === 'mobile'
+    ? `<span style="background:var(--c-primary-bg);color:var(--c-primary);padding:2px 8px;border-radius:4px;font-size:var(--font-size-xs);font-weight:500">📱 모바일</span>`
+    : '';
+
   detail.innerHTML = `
     <div style="max-width:800px;margin:0 auto;padding:24px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
         <button class="btn" id="opDetailBack">← 목록</button>
         <span style="font-size:var(--font-size-lg);font-weight:700">${t.icon || ''} ${ev.title || ''}</span>
+        ${sourceTag}
       </div>
       <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:20px">
         <table style="width:100%;border-collapse:collapse;font-size:var(--font-size)">
@@ -192,10 +225,13 @@ function showDetail(ev) {
               <td style="padding:6px 0;font-weight:500">${value}</td>
             </tr>
           `).join('')}
+          ${ev.memo ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);vertical-align:top">메모</td><td style="padding:6px 0;white-space:pre-wrap">${ev.memo}</td></tr>` : ''}
           ${ev.note ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted);vertical-align:top">메모</td><td style="padding:6px 0;white-space:pre-wrap">${ev.note}</td></tr>` : ''}
+          ${ev.uploader_name ? `<tr><td style="padding:6px 12px 6px 0;color:var(--c-text-muted)">업로더</td><td style="padding:6px 0">${ev.uploader_name}</td></tr>` : ''}
         </table>
         ${listHtml}
       </div>
+      ${photosHtml}
       <div style="margin-top:12px;color:var(--c-text-muted);font-size:var(--font-size-xs)">
         등록: ${new Date(ev.created_at).toLocaleString('ko-KR')} · ID: ${ev.event_id || ''}
       </div>

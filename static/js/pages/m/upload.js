@@ -11,6 +11,7 @@ import { ref as dbRef, push, onValue } from 'https://www.gstatic.com/firebasejs/
 import { db, storage } from '../../firebase/config.js';
 import { watchAssets } from '../../firebase/assets.js';
 import { watchMembers } from '../../firebase/members.js';
+import { saveEvent } from '../../firebase/events.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -159,14 +160,20 @@ function setCar(car) {
   updateCarInfo();
 }
 
-// ── 카운트 구독 ─────────────────────
+// ── 카운트 구독 (events 에서 차량+타입으로 집계) ─────────
 function watchCounts() {
-  const r = dbRef(db, `uploads/${encodeKey(currentCar)}`);
+  const r = dbRef(db, 'events');
   countsUnsub = onValue(r, (snap) => {
     const v = snap.val() || {};
+    const counts = {};
+    Object.values(v).forEach((e) => {
+      if (e?.status === 'deleted') return;
+      if (e?.car_number !== currentCar) return;
+      counts[e.type] = (counts[e.type] || 0) + 1;
+    });
     document.querySelectorAll('.m-quad-btn').forEach((b) => {
       const t = b.dataset.type;
-      const n = Object.keys(v[t] || {}).length;
+      const n = counts[t] || 0;
       let badge = b.querySelector('.m-quad-badge');
       if (!badge) {
         badge = document.createElement('span');
@@ -248,11 +255,8 @@ function uploadWithProgress(file, path, thumbId) {
   });
 }
 
-// ── 업로드 ─────────────────────────
-async function uploadOne(file, type) {
-  if (!currentCar) { toast('차량번호를 먼저 선택하세요'); return; }
-  await window.__mUserReady;
-  const uploader = getUploader();
+// ── 개별 파일 Storage 업로드 (URL 리턴) ─────────
+async function uploadOneToStorage(file, type) {
   const ts = Date.now();
   const d = new Date(ts);
   const pad = (n) => String(n).padStart(2, '0');
@@ -267,26 +271,57 @@ async function uploadOne(file, type) {
 
   try {
     const url = await uploadWithProgress(file, path, thumbId);
-    const listRef = dbRef(db, `uploads/${safeCar}/${type}`);
-    await push(listRef, {
-      url,
-      path,
-      name: file.name,
-      content_type: file.type || '',
-      size: file.size,
-      uploader_uid: uploader.uid,
-      uploader_name: uploader.name,
-      uploader_email: uploader.email,
-      taken_at: ts,
-      car: currentCar,
-      type,
-    });
     markDone(thumbId);
+    return { url, path, name: file.name, content_type: file.type || '', size: file.size, taken_at: ts };
   } catch (e) {
     console.error('[upload]', e);
     markError(thumbId, e.message || String(e));
     toast(`업로드 실패: ${e.message || e}`);
+    return null;
   }
+}
+
+// ── 세션 업로드: 파일들 → Storage → event 1건 ──────
+const TITLE_MAP = { delivery: '출고', return: '반납', product: '상품화', file: '파일' };
+async function uploadSession(files, type) {
+  if (!currentCar) { toast('차량번호를 먼저 선택하세요'); return; }
+  await window.__mUserReady;
+  const uploader = getUploader();
+  // 병렬 업로드 (최대 3동시)
+  const results = [];
+  const queue = [...files];
+  const workers = Array(Math.min(3, queue.length)).fill(null).map(async () => {
+    while (queue.length) {
+      const f = queue.shift();
+      const r = await uploadOneToStorage(f, type);
+      if (r) results.push(r);
+    }
+  });
+  await Promise.all(workers);
+  if (!results.length) return;
+
+  // event 1건 생성
+  const today = new Date().toISOString().slice(0, 10);
+  const asset = assetsByCar.get(currentCar);
+  const member = asset ? membersByCode.get(asset.partner_code) : null;
+  await saveEvent({
+    type,
+    date: today,
+    car_number: currentCar,
+    car_model: asset?.car_model || '',
+    detail_model: asset?.detail_model || '',
+    partner_code: asset?.partner_code || '',
+    company_name: member?.company_name || '',
+    title: `${TITLE_MAP[type] || type} (${results.length}장)`,
+    memo: '',
+    photos: results,
+    uploader_uid: uploader.uid,
+    uploader_name: uploader.name,
+    uploader_email: uploader.email,
+    source: 'mobile',
+    direction: type === 'return' ? 'in' : 'out',
+  });
+  toast(`${TITLE_MAP[type]} 등록 완료 (${results.length}장)`);
 }
 
 function injectPending(file, id) {
@@ -339,7 +374,7 @@ function wireCatButtons() {
   });
 }
 
-// ── 파일 입력 → 업로드 ─────────────
+// ── 파일 입력 → 세션 업로드 ─────────────
 function wireInputs() {
   const handler = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -347,9 +382,7 @@ function wireInputs() {
     if (!selectedType) { toast('유형이 선택되지 않았습니다'); return; }
     pushRecent(currentCar);
     renderRecent();
-    // 순차 업로드 (모바일 회선 고려)
-    for (const f of files) { await uploadOne(f, selectedType); }
-    toast(`업로드 완료 (${files.length}건)`);
+    await uploadSession(files, selectedType);
   };
   $('#fileCamera').addEventListener('change', handler);
   $('#fileGallery').addEventListener('change', handler);
