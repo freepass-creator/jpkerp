@@ -575,7 +575,6 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 반납 후 상품화"></div>
       </div>
     </div>
     <div class="form-section">
@@ -1803,8 +1802,12 @@ async function submitForm() {
     }
   }
 
-  // 차량케어 (정비/수리/상품화/세차): 첨부파일 업로드
+  // 차량케어 (정비/수리/상품화/세차): 제목 자동생성 + 첨부파일 업로드
   if (['maint', 'repair', 'product', 'wash'].includes(currentType)) {
+    if (!data.title) {
+      const LABEL = { maint: '정비', repair: '사고수리', product: '상품화', wash: '세차' };
+      data.title = LABEL[currentType] || '차량케어';
+    }
     const files = iocUploader ? iocUploader.getFiles() : [];
     // 사고수리: 견적서 필수
     if (currentType === 'repair' && !files.length) {
