@@ -1729,12 +1729,28 @@ function renderForm() {
     });
   });
 
-  // 금액 콤마
-  host.querySelectorAll('[name="amount"],[name="extra_mileage"],[name="extra_fuel"],[name="extra_damage"],[name="repair_estimate"]').forEach(inp => {
+  // 금액 콤마 — 모든 금액 계열 필드에 천단위 자동 포맷
+  const MONEY_NAMES = new Set([
+    'amount', 'extra_mileage', 'extra_fuel', 'extra_damage',
+    'repair_estimate', 'insurance_amount', 'self_pay',
+    'deposit_amount', 'rent_amount', 'unpaid_amount', 'damage_claim',
+    'maint_cost', 'fix_cost', 'wash_cost', 'fuel_amount',
+  ]);
+  host.querySelectorAll('input[inputmode="numeric"],input[name]').forEach(inp => {
+    const n = inp.getAttribute('name') || '';
+    if (!MONEY_NAMES.has(n) && !n.endsWith('_cost') && !n.endsWith('_amount') && !n.endsWith('Table_cost')) return;
+    // 이미 바인딩 됐으면 skip
+    if (inp.dataset._money) return;
+    inp.dataset._money = '1';
     inp.addEventListener('input', () => {
       const d = inp.value.replace(/[^\d]/g, '');
       inp.value = d ? Number(d).toLocaleString() : '';
     });
+    // 초기값도 포맷
+    if (inp.value && /\d/.test(inp.value)) {
+      const d = inp.value.replace(/[^\d]/g, '');
+      inp.value = d ? Number(d).toLocaleString() : '';
+    }
   });
 
   // 숫자만 (inputmode=numeric 인 input 전체에 한글/문자 방지)
