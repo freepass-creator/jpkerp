@@ -284,10 +284,8 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-tag"></i>사고 구분</div>
       <div class="form-grid">
-        <div class="field"><label>사고형태</label>${chkGroup(
-          chk('acc_single','단독') + chk('acc_both','쌍방'))}</div>
-        <div class="field"><label>가해/피해</label>${chkGroup(
-          chk('acc_offender','가해') + chk('acc_victim','피해'))}</div>
+        ${sel('acc_type', '사고형태', ['단독','쌍방'])}
+        ${sel('acc_role', '가해/피해', ['가해','피해'])}
       </div>
       <div class="form-grid" style="margin-top:8px">
         <div class="field"><label>보험유형 (복수선택)</label>${chkGroup(
@@ -297,8 +295,20 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-scales"></i>과실비율</div>
       <div class="form-grid">
-        ${sel('fault_pct', '내 과실', ['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%','기타'])}
-        <div class="field"><label>기타(직접입력)</label><input type="text" name="fault_ratio" placeholder="예: 15%"></div>
+        <div class="field" style="grid-column:1/-1">
+          <label>내 과실</label>
+          <input type="hidden" name="fault_pct">
+          <div class="btn-group" data-name="fault_pct">
+            ${['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'].map((o,i)=>`<span class="btn-opt${i===0?' is-active':''}" data-val="${o}">${o}</span>`).join('')}
+          </div>
+        </div>
+        <div class="field"><label>기타</label>
+          <input type="hidden" name="fault_pct_etc">
+          <div class="btn-group" data-name="fault_pct_etc">
+            <span class="btn-opt" data-val="기타">기타</span>
+          </div>
+        </div>
+        <div class="field"><label>직접 입력</label><input type="text" name="fault_ratio" placeholder="예: 15%"></div>
       </div>
     </div>
     <div class="form-section">
@@ -1957,7 +1967,9 @@ async function submitForm() {
       'handover_by', 'carrier_name', 'carrier_phone',
       'wash_type', 'wash_cost', 'wash_vendor', 'inspect_type', 'tire_status', 'light_status',
       'fuel_type', 'fuel_amount',
+      'acc_type', 'acc_role',
       'acc_single', 'acc_both', 'acc_offender', 'acc_victim',
+      'fault_pct_etc',
       'ins_car', 'ins_property', 'ins_person', 'ins_self', 'ins_uninsured',
       'fault_pct', 'other_insurance', 'accident_status',
       'insurance_action', 'age_before', 'age_after',
