@@ -187,13 +187,19 @@ function renderList() {
       _pcActive = (currentType === 'pc'); // pc 진입시만 true
       renderList();
       renderForm();
-      // 이력관리 초기화
-      const ctx = $('#opContextHost');
-      if (ctx) ctx.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">차량번호 입력 시<br>계약/수납/운영이력이 여기 표시됩니다.</div>';
+      // 우측 패널 — 과태료처리 모드는 매칭 결과 표시, 그 외는 이력관리
       const ctxTitle = $('#opContextTitle');
       const ctxSub = $('#opContextSubtitle');
-      if (ctxTitle) ctxTitle.textContent = '이력관리';
-      if (ctxSub) ctxSub.textContent = '차량번호를 입력하세요';
+      if (currentType === 'penalty_notice') {
+        if (ctxTitle) ctxTitle.textContent = '매칭 결과';
+        if (ctxSub) ctxSub.textContent = '고지서 업로드 시 여기에 누적됩니다';
+        renderPenaltyMatchList();
+      } else {
+        const ctx = $('#opContextHost');
+        if (ctx) ctx.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">차량번호 입력 시<br>계약/수납/운영이력이 여기 표시됩니다.</div>';
+        if (ctxTitle) ctxTitle.textContent = '이력관리';
+        if (ctxSub) ctxSub.textContent = '차량번호를 입력하세요';
+      }
     });
   });
 
@@ -2223,12 +2229,273 @@ async function submitForm() {
 }
 
 export async function mount() {
-  watchAssets((items) => { assets = items; });
-  watchContracts((items) => { contracts = items; });
-  watchEvents((items) => { allEvents = items; });
+  watchAssets((items) => {
+    assets = items;
+    if (currentType === 'penalty_notice') renderPenaltyMatchList();
+  });
+  watchContracts((items) => {
+    contracts = items;
+    if (currentType === 'penalty_notice') renderPenaltyMatchList();
+  });
+  watchEvents((items) => {
+    allEvents = items;
+    if (currentType === 'penalty_notice') renderPenaltyMatchList();
+  });
   watchBillings((items) => { _billings = items; });
   watchVendors((items) => { vendors = items; });
   renderList();
   $('#opReset')?.addEventListener('click', resetForm);
   $('#opSubmit')?.addEventListener('click', submitForm);
+}
+
+// ─────────────────────────────────────────────────────────
+// 과태료처리 모드 (OCR 업로드 + 매칭 + 일괄 다운로드)
+// ─────────────────────────────────────────────────────────
+
+function togglePenaltyButtons(hide) {
+  const reset = $('#opReset');
+  const submit = $('#opSubmit');
+  if (reset) reset.style.display = hide ? 'none' : '';
+  if (submit) submit.style.display = hide ? 'none' : '';
+}
+
+function renderPenaltyNoticeMode() {
+  const host = $('#opFormHost');
+  if (!host) return;
+  const today = new Date().toISOString().slice(0, 10);
+  host.innerHTML = `
+    <div class="form-section">
+      <label id="penNoticeDrop" class="photo-dropzone" style="cursor:pointer">
+        <input type="file" id="penNoticeFile" multiple accept=".pdf,.png,.jpg,.jpeg,.heic" hidden>
+        <i class="ph ph-upload-simple"></i>
+        <div class="photo-dropzone-title">과태료/통행료 고지서 업로드</div>
+        <div class="photo-dropzone-sub">PDF · 이미지 · 여러 장 가능 · 클릭 또는 드래그</div>
+      </label>
+      <div id="penNoticeStatus" style="display:flex;flex-direction:column;gap:6px;margin-top:12px"></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-funnel"></i>조회 필터</div>
+      <div class="form-grid">
+        <div class="field"><label>날짜</label><input type="date" id="penFilterDate" value="${today}"></div>
+        <div class="field"><label>상태</label>
+          <select id="penFilterStatus">
+            <option value="">전체</option>
+            <option value="미처리" selected>미처리</option>
+            <option value="처리완료">처리완료</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <button class="btn btn-primary" id="penDownloadAll" style="width:100%">
+        <i class="ph ph-download-simple"></i> 일괄 다운로드 (고지서 + 확인서)
+      </button>
+    </div>`;
+
+  // 업로드 바인딩
+  const file = $('#penNoticeFile');
+  const drop = $('#penNoticeDrop');
+  file?.addEventListener('change', e => handlePenaltyFiles(Array.from(e.target.files)));
+  drop?.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('is-drag'); });
+  drop?.addEventListener('dragleave', () => drop.classList.remove('is-drag'));
+  drop?.addEventListener('drop', e => {
+    e.preventDefault();
+    drop.classList.remove('is-drag');
+    handlePenaltyFiles(Array.from(e.dataTransfer.files));
+  });
+
+  // 필터 변경 시 리스트 갱신
+  $('#penFilterDate')?.addEventListener('change', renderPenaltyMatchList);
+  $('#penFilterStatus')?.addEventListener('change', renderPenaltyMatchList);
+
+  // 일괄 다운로드
+  $('#penDownloadAll')?.addEventListener('click', downloadPenaltyAll);
+}
+
+function getPenaltyRows() {
+  const items = allEvents.filter(e => e.event_type === 'penalty');
+  const byCar = {};
+  items.forEach(p => { (byCar[p.car_number] ||= []).push(p); });
+  Object.values(byCar).forEach(arr => arr.sort((a, b) => (a.date || '').localeCompare(b.date || '')));
+
+  return items.map(p => {
+    const asset = assets.find(a => a.car_number === p.car_number);
+    const contract = contracts.find(c => c.car_number === p.car_number && c.contract_status !== '계약해지');
+    const history = byCar[p.car_number] || [];
+    const idx = history.indexOf(p);
+    return {
+      ...p,
+      _asset: asset,
+      _contract: contract,
+      _carInfo: asset ? `${asset.manufacturer || ''} ${asset.car_model || ''}`.trim() : '',
+      _contractor: p.customer_name || contract?.contractor_name || '',
+      _historyLabel: idx === 0 ? '최초' : `${idx + 1}번째`,
+      _processed: !!p.processed_at,
+    };
+  });
+}
+
+function renderPenaltyMatchList() {
+  const ctx = $('#opContextHost');
+  if (!ctx) return;
+  const filterDate = $('#penFilterDate')?.value || '';
+  const filterStatus = $('#penFilterStatus')?.value || '';
+
+  let rows = getPenaltyRows();
+  if (filterDate) rows = rows.filter(r => (r.date || '').startsWith(filterDate) || (r.created_at && new Date(r.created_at).toISOString().slice(0, 10) === filterDate));
+  if (filterStatus === '처리완료') rows = rows.filter(r => r._processed);
+  else if (filterStatus === '미처리') rows = rows.filter(r => !r._processed);
+  rows.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+  const sub = $('#opContextSubtitle');
+  if (sub) sub.textContent = `${rows.length}건`;
+
+  if (!rows.length) {
+    ctx.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">고지서를 업로드하면<br>매칭 결과가 표시됩니다.</div>';
+    return;
+  }
+
+  ctx.innerHTML = rows.map(r => {
+    const hist = r._historyLabel !== '최초'
+      ? `<span style="color:var(--c-danger);font-weight:600">${r._historyLabel}</span>`
+      : `<span style="color:var(--c-text-muted)">${r._historyLabel}</span>`;
+    const status = r._processed
+      ? '<span style="color:var(--c-success)">처리완료</span>'
+      : '<span style="color:var(--c-danger)">미처리</span>';
+    const amount = Number(r.amount || 0).toLocaleString();
+    const matched = r._contract
+      ? `${r._contractor} · ${r._carInfo || '—'}`
+      : '<span style="color:var(--c-danger)">계약 미매칭</span>';
+    return `
+      <div class="dash-card" style="display:flex;flex-direction:column;gap:4px;padding:10px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>${r.car_number || '—'}</strong>
+          <span style="font-size:var(--font-size-sm)">${hist} · ${status}</span>
+        </div>
+        <div style="font-size:var(--font-size-sm);color:var(--c-text-sub)">${matched}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--c-text-muted)">
+          ${r.date || ''} · ${r.location || ''} · ${amount}원
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function handlePenaltyFiles(files) {
+  if (!files.length) return;
+  const status = $('#penNoticeStatus');
+  let penaltyModule;
+  try { penaltyModule = await import('../data/ocr-parsers/penalty.js'); } catch {}
+
+  for (const file of files) {
+    const id = `pen_${Date.now()}_${Math.random().toString(36).slice(2, 4)}`;
+    if (status) status.insertAdjacentHTML('beforeend', `
+      <div id="${id}" class="dash-card" style="display:flex;align-items:center;gap:8px;padding:8px">
+        <span>⏳</span><span style="font-size:var(--font-size-sm)">${file.name} — OCR 중...</span>
+      </div>`);
+
+    try {
+      const result = await ocrFile(file);
+      const texts = result.text.split('--- 페이지 구분 ---').map(t => t.trim()).filter(Boolean);
+      const allText = texts.length ? texts : [result.text];
+
+      let saved = 0;
+      for (const txt of allText) {
+        const lines = txt.split('\n').map(l => l.trim()).filter(Boolean);
+        if (!penaltyModule?.detect(txt)) continue;
+        const p = penaltyModule.parse(txt, lines);
+        if (!p.car_number) continue;
+
+        const asset = assets.find(a => a.car_number === p.car_number);
+        const contract = contracts.find(c => c.car_number === p.car_number && c.contract_status !== '계약해지');
+
+        let fileUrl = '';
+        try {
+          fileUrl = await uploadPenaltyFile(file, p.car_number, (p.date || '').split(' ')[0]);
+        } catch (e) { console.warn('[penalty file upload]', e); }
+
+        await saveEvent({
+          event_type: 'penalty',
+          doc_type: p.doc_type,
+          car_number: p.car_number,
+          vin: asset?.vin || '',
+          date: (p.date || '').split(' ')[0],
+          title: p.description || p.doc_type || '과태료',
+          penalty_amount: p.penalty_amount,
+          fine_amount: p.fine_amount,
+          demerit_points: p.demerit_points,
+          toll_amount: p.toll_amount,
+          amount: p.amount,
+          location: p.location,
+          description: p.description,
+          law_article: p.law_article,
+          due_date: p.due_date,
+          notice_no: p.notice_no,
+          issuer: p.issuer,
+          issue_date: p.issue_date,
+          payer_name: p.payer_name,
+          pay_account: p.pay_account,
+          customer_name: contract?.contractor_name || '',
+          contract_code: contract?.contract_code || '',
+          partner_code: asset?.partner_code || '',
+          paid_status: '미납',
+          direction: 'out',
+          file_url: fileUrl,
+          note: `OCR (${file.name})`,
+        });
+        saved++;
+      }
+
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = `<span>✅</span><span style="font-size:var(--font-size-sm)">${file.name} — ${saved}건 등록</span>`;
+    } catch (e) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = `<span>❌</span><span style="font-size:var(--font-size-sm);color:var(--c-danger)">${file.name} — ${e.message}</span>`;
+    }
+  }
+
+  showToast('OCR 처리 완료', 'success');
+  const fileInput = $('#penNoticeFile');
+  if (fileInput) fileInput.value = '';
+}
+
+async function downloadPenaltyAll() {
+  // TODO(step3): 건별 고지서+확인서 병합 PDF (파일명 `{차번} {계약자} {모델}.pdf`)
+  // 현재는 미처리 건의 고지서 원본만 ZIP으로 다운로드 + 다운로드 시 processed_at 마킹
+  const rows = getPenaltyRows().filter(r => !r._processed && r.file_url);
+  if (!rows.length) { showToast('다운로드할 미처리 건이 없습니다', 'info'); return; }
+
+  try {
+    if (!window.JSZip) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+  } catch { showToast('ZIP 라이브러리 로드 실패', 'error'); return; }
+
+  const zip = new window.JSZip();
+  let count = 0;
+  for (const r of rows) {
+    const name = [r.car_number, r._contractor || '미매칭', r._carInfo || ''].filter(Boolean).join(' ').trim();
+    try {
+      const res = await fetch(r.file_url);
+      const blob = await res.blob();
+      const ext = r.file_url.includes('.pdf') ? 'pdf' : 'jpg';
+      zip.file(`${name}_고지서.${ext}`, blob);
+      count++;
+    } catch (e) { console.warn('[penalty download]', e); }
+  }
+
+  if (count) {
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const dateStr = $('#penFilterDate')?.value || new Date().toISOString().slice(0, 10);
+    a.download = `과태료_${dateStr}_${count}건.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast(`${count}건 다운로드 완료`, 'success');
+  }
 }

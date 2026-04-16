@@ -1,5 +1,7 @@
 {% extends 'workspace.html' %}
-{% block topbar_extra %}<span class="topbar-status">미납현황</span>{% endblock %}
+{% from '_macros/ui.html' import btn %}
+{% block topbar_extra %}<span class="topbar-status">미납관리</span>{% endblock %}
+{% block workspace_layout %}layout-37{% endblock %}
 {% block workspace %}
 <section class="panel">
   <div class="panel-head">
@@ -8,7 +10,28 @@
       <span class="panel-title">미납 현황</span>
       <span class="panel-subtitle" id="overdueCount">집계 중...</span>
     </div>
+    <div class="panel-actions">
+      <select id="overdueFilter" class="ctrl" style="min-width:120px">
+        <option value="all">전체</option>
+        <option value="7">7일+ 연체</option>
+        <option value="14">14일+ 연체</option>
+        <option value="30">30일+ 연체</option>
+        <option value="multi">2회차+ 미납</option>
+      </select>
+    </div>
   </div>
   <div id="overdueGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <i class="ph ph-file-text" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title" id="overdueDetailTitle">상세</span>
+      <span class="panel-subtitle" id="overdueDetailSub">좌측에서 계약자를 선택하세요</span>
+    </div>
+    <div class="panel-actions" id="overdueDetailActions"></div>
+  </div>
+  <div id="overdueDetail" style="flex:1;min-height:0;overflow:auto"></div>
 </section>
 {% endblock %}
