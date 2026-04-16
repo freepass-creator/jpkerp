@@ -118,15 +118,16 @@ const DEFAULT_TYPES = [
 
 const ORDER_KEY = 'jpk.op.order';
 function loadTypes() {
+  // TYPES 는 전체 목록 유지 (renderForm 이 찾을 수 있게)
   try {
     const saved = JSON.parse(localStorage.getItem(ORDER_KEY));
     if (saved?.length) {
       const ordered = saved.map(k => DEFAULT_TYPES.find(t => t.key === k)).filter(Boolean);
       const missing = DEFAULT_TYPES.filter(t => !saved.includes(t.key));
-      return [...ordered, ...missing].filter(t => !t.hidden);
+      return [...ordered, ...missing];
     }
   } catch {}
-  return DEFAULT_TYPES.filter(t => !t.hidden);
+  return [...DEFAULT_TYPES];
 }
 function saveOrder(types) {
   localStorage.setItem(ORDER_KEY, JSON.stringify(types.map(t => t.key)));
@@ -142,7 +143,7 @@ let lastCarNumber = '';
 
 function renderList() {
   const host = $('#opList');
-  host.innerHTML = TYPES.map(t => `
+  host.innerHTML = TYPES.filter(t => !t.hidden).map(t => `
     <div class="op-type${currentType === t.key ? ' is-active' : ''}" data-type="${t.key}">
       <span class="op-type__icon">${opIcon(t.key)}</span>
       <span class="op-type__label">${t.label}</span>
