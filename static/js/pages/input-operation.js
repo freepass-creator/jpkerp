@@ -101,7 +101,7 @@ function opIcon(key) {
 
 const DEFAULT_TYPES = [
   { key: 'ioc',         label: '입출고센터',     sub: '출고·반납·강제회수·차량이동',     direction: 'out' },
-  { key: 'pc',          label: '상품화센터',     sub: '정비·사고수리·상품화 통합',        direction: 'out' },
+  { key: 'pc',          label: '차량케어센터',   sub: '정비·사고수리·상품화·세차 통합',    direction: 'out' },
   { key: 'contact',     label: '고객센터',       sub: '통화/상담/컴플레인/문의',         direction: 'out' },
   { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',               direction: 'out' },
   { key: 'maint',       label: '정비',           sub: '소모품교체 + 기능수리',           direction: 'out', hidden: true },
@@ -111,7 +111,7 @@ const DEFAULT_TYPES = [
   { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out' },
   { key: 'collect',     label: '미수관리',       sub: '독촉/내용증명/법적조치',     direction: 'out' },
   { key: 'insurance',   label: '보험관리',       sub: '보험배서/연령변경/갱신',     direction: 'out' },
-  { key: 'wash',        label: '세차',           sub: '세차/실내크리닝',           direction: 'out' },
+  { key: 'wash',        label: '세차',           sub: '세차/실내크리닝',           direction: 'out', hidden: true },
   { key: 'fuel',        label: '연료보충',       sub: '주유/전기충전',              direction: 'out' },
 ];
 
@@ -206,7 +206,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field" style="grid-column:1/-1">${sel('pc_kind', '작업구분', ['정비','사고수리','상품화'])}</div>
+        <div class="field" style="grid-column:1/-1">${sel('pc_kind', '작업구분', ['정비','사고수리','상품화','세차'])}</div>
       </div>
       <div class="form-grid" style="margin-top:8px">
         <div class="field" style="grid-column:1/-1;color:var(--c-text-muted);font-size:var(--font-size-sm);padding:10px;background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:var(--r-md)">
@@ -1005,7 +1005,7 @@ function renderForm() {
     pcGroup?.addEventListener('click', (e) => {
       const btn = e.target.closest('.btn-opt'); if (!btn) return;
       const v = btn.dataset.val;
-      const map = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product' };
+      const map = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product', '세차': 'wash' };
       const t = map[v]; if (!t) return;
       currentType = t;
       // 재렌더 후 값 복원
@@ -1018,7 +1018,7 @@ function renderForm() {
       }
       // 타이틀 앞에 '상품화센터 ›' 표시
       const ft = $('#opFormTitle');
-      if (ft) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>상품화센터</span><span style="color:var(--c-text-muted);font-weight:var(--fw)">›</span><span>${v}</span></span>`;
+      if (ft) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>차량케어센터</span><span style="color:var(--c-text-muted);font-weight:var(--fw)">›</span><span>${v}</span></span>`;
     });
   }
 
