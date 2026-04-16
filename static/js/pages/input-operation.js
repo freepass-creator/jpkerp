@@ -632,36 +632,42 @@ function renderForm() {
     const repairVendors = vendors.filter(v => ['정비소','도색/판금'].includes(v.vendor_type)).map(v => `<option value="${v.vendor_name}">`).join('');
     sections = `
     <div class="form-section">
-      <div class="form-section-title">사고수리 기본</div>
+      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
       <div class="form-grid">
         <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>제목</label><input type="text" name="title" placeholder="예: 전면범퍼 판금도색"></div>
-        <div class="field"><label>수리업체</label><input type="text" name="vendor" list="repairVendorList"><datalist id="repairVendorList">${repairVendors}</datalist></div>
-        <div class="field"><label>입고일</label><input type="date" name="repair_in_date"></div>
-        <div class="field"><label>출고예정일</label><input type="date" name="repair_out_date"></div>
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">수리 항목 <button type="button" class="btn" id="addRepairRow" style="margin-left:auto">+ 항목추가</button></div>
-      <table class="grid-table" id="repairTable">
-        <thead><tr><th>수리내용</th><th style="width:120px">금액</th><th style="width:40px"></th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="form-section-title"><i class="ph ph-car-profile"></i>사고 부위 · 정도</div>
+      <div class="form-grid">
+        ${sel('damage_area', '사고부위', ['앞범퍼','뒷범퍼','앞휀더','뒷휀더','도어','본넷','트렁크','사이드미러','유리','헤드라이트/테일램프','휠','기타'])}
+        ${sel('damage_frame', '골격 손상', ['없음','경미','있음'])}
+      </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title">비용 정산</div>
+      <div class="form-section-title"><i class="ph ph-wallet"></i>수리 비용</div>
       <div class="form-grid">
-        <div class="field"><label>수리비 합계</label><input type="text" name="amount" inputmode="numeric" placeholder="자동 계산" readonly id="repairTotal"></div>
+        <div class="field is-required"><label>총 수리비</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>보험처리금액</label><input type="text" name="insurance_amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>자기부담금</label><input type="text" name="self_pay" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>수리업체</label><input type="text" name="vendor" list="repairVendorList"><datalist id="repairVendorList">${repairVendors}</datalist></div>
       </div>
     </div>
     <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-calendar"></i>수리 일정</div>
       <div class="form-grid">
+        <div class="field"><label>입고일</label><input type="date" name="repair_in_date"></div>
+        <div class="field"><label>출고예정일</label><input type="date" name="repair_out_date"></div>
         ${sel('repair_status', '수리상태', ['견적중','수리중','수리완료','출고완료'])}
         ${sel('rental_car', '대차', ['미제공','대차중','대차반납'])}
-        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-note"></i>제목 · 메모</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>제목</label><input type="text" name="title" placeholder="예: 전면범퍼 접촉사고 판금도색"></div>
+        <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="사고경위·특이사항"></textarea></div>
       </div>
     </div>`;
 
@@ -1818,6 +1824,7 @@ async function submitForm() {
       'parts_items', 'next_maint_km', 'fix_detail', 'fix_cost', 'symptom',
       'product_status', 'product_maint', 'maint_detail', 'maint_cost', 'maint_vendor', 'expected_delivery',
       'repair_type', 'repair_in_date', 'repair_out_date', 'repair_estimate', 'insurance_amount', 'self_pay', 'repair_status',
+      'damage_area', 'damage_frame',
       'collect_action', 'collect_result', 'promise_date',
       'force_reason', 'unpaid_amount', 'damage_claim', 'legal_action',
       'assignee', 'participants',
