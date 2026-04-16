@@ -11,6 +11,9 @@ import { watchBillings } from '../firebase/billings.js';
 import { openDetail } from '../core/detail-panel.js';
 import { watchVendors } from '../firebase/vendors.js';
 import { showToast } from '../core/toast.js';
+import { createPhotoUploader, uploadFilesToStorage } from '../core/photo-ui.js';
+
+let iocUploader = null;
 
 const $ = (s) => document.querySelector(s);
 
@@ -184,9 +187,11 @@ function renderForm() {
         <div class="field" style="grid-column:1/-1"><label>제목 (선택)</label><input type="text" name="title" placeholder="비워두면 구분+사진수로 자동생성"></div>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2" placeholder="특이사항"></textarea></div>
         <div class="field" style="grid-column:1/-1">
-          <label>사진</label>
-          <input type="file" name="ioc_photos" multiple accept="image/*,.pdf">
-          <div style="font-size:var(--font-size-xs);color:var(--c-text-muted);margin-top:4px">여러장 동시 선택 가능. 업로드한 사진은 입출고센터 목록 상세에서 볼 수 있어요.</div>
+          <label>사진 · 파일</label>
+          <div id="iocPhotoUploader" class="photo-grid"></div>
+          <div style="font-size:var(--font-size-xs);color:var(--c-text-muted);margin-top:6px">
+            드래그앤드롭 · Ctrl+V 붙여넣기 · 클릭 업로드 모두 가능
+          </div>
         </div>
       </div>
     </div>`;
@@ -798,6 +803,15 @@ function renderForm() {
 
   host.innerHTML = sections;
 
+  // 입출고센터 — 사진 업로더 초기화
+  if (currentType === 'ioc') {
+    if (iocUploader) iocUploader.clear();
+    const mount = host.querySelector('#iocPhotoUploader');
+    if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
+  } else {
+    iocUploader = null;
+  }
+
   // 정비: 행 추가/삭제/합계
   if (currentType === 'maint') {
     const partsOpts = ['엔진오일','미션오일','브레이크오일','에어필터','에어컨필터','와이퍼','배터리','타이어','브레이크패드','냉각수','부동액','점화플러그','벨트류','기타'];
@@ -1363,10 +1377,8 @@ async function submitForm() {
   // 입출고센터: 제목 자동생성 + 사진 업로드 → event photos
   if (currentType === 'ioc') {
     const kind = data.ioc_kind || '입출고';
-    const input = host.querySelector('input[name="ioc_photos"]');
-    const files = input?.files ? Array.from(input.files) : [];
+    const files = iocUploader ? iocUploader.getFiles() : [];
     if (!data.title) data.title = `${kind}${files.length ? ` (${files.length}장)` : ''}`;
-    // 구분→type/direction 매핑
     const KIND_MAP = {
       '정상출고': { type: 'delivery', direction: 'out' },
       '정상반납': { type: 'return',   direction: 'in'  },
@@ -1377,27 +1389,9 @@ async function submitForm() {
     const m = KIND_MAP[kind] || KIND_MAP['정상출고'];
     currentType = m.type;
     t.direction = m.direction;
-
-    // 사진 업로드
     if (files.length) {
       try {
-        const { ref: sRef, uploadBytesResumable, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js');
-        const { storage } = await import('../firebase/config.js');
-        const pad = (n) => String(n).padStart(2, '0');
-        const safeCar = String(data.car_number || '').replace(/[.#$\[\]\/]/g, '_');
-        const photos = [];
-        for (const f of files) {
-          const d = new Date();
-          const stamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-          const rand = Math.random().toString(36).slice(2, 6);
-          const ext = (f.name.split('.').pop() || 'bin').toLowerCase();
-          const path = `photos/${m.type}/${safeCar}/${stamp}_${rand}.${ext}`;
-          const task = uploadBytesResumable(sRef(storage, path), f, { contentType: f.type });
-          await new Promise((resolve, reject) => task.on('state_changed', null, reject, resolve));
-          const url = await getDownloadURL(task.snapshot.ref);
-          photos.push({ url, path, name: f.name, content_type: f.type, size: f.size, taken_at: Date.now() });
-        }
-        data.photos = photos;
+        data.photos = await uploadFilesToStorage(files, { type: m.type, car: data.car_number });
       } catch (e) {
         console.error('[ioc upload]', e);
         showToast('사진 업로드 실패: ' + (e.message || e), 'error');

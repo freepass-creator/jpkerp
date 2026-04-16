@@ -5,6 +5,7 @@
  * 우: 선택 유형의 이벤트 목록 AG Grid (read-only)
  */
 import { watchEvents, EVENT_TYPES } from '../firebase/events.js';
+import { renderPhotoGrid } from '../core/photo-ui.js';
 
 const $ = (s) => document.querySelector(s);
 const fmt = (v) => Number(v || 0).toLocaleString('ko-KR');
@@ -231,25 +232,15 @@ function showDetail(ev) {
     });
   }
 
-  // 사진 갤러리 (모바일 업로드 + 연결된 사진)
+  // 사진 갤러리 — 공통 컴포넌트
   const photos = Array.isArray(ev.photos) ? ev.photos : [];
   const photosHtml = photos.length ? `
-    <div style="margin-top:16px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:16px">
-      <div style="font-weight:600;font-size:var(--font-size);margin-bottom:10px;display:flex;align-items:center;gap:6px">
-        <i class="ph ph-images" style="color:var(--c-text-muted)"></i>
-        사진 <span style="color:var(--c-text-muted);font-weight:400">${photos.length}장</span>
+    <div class="photo-section" style="margin-top:16px">
+      <div class="photo-section-head">
+        <i class="ph ph-images"></i>
+        사진 · 파일 <span>${photos.length}개</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px">
-        ${photos.map((p, i) => {
-          const url = typeof p === 'string' ? p : p.url;
-          const isImg = typeof p === 'string' || (p.content_type || '').startsWith('image/');
-          return `<a href="${url}" target="_blank" rel="noopener" style="aspect-ratio:1/1;overflow:hidden;background:var(--c-bg-sub);border-radius:var(--r-sm);display:block">
-            ${isImg
-              ? `<img src="${url}" alt="photo ${i+1}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`
-              : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--c-text-muted)"><i class="ph ph-file" style="font-size:32px"></i></div>`}
-          </a>`;
-        }).join('')}
-      </div>
+      <div id="opDetailPhotos"></div>
     </div>
   ` : '';
 
@@ -284,6 +275,10 @@ function showDetail(ev) {
       </div>
     </div>
   `;
+
+  // 사진 렌더 (공통 컴포넌트)
+  const photoHost = document.getElementById('opDetailPhotos');
+  if (photoHost && photos.length) renderPhotoGrid(photoHost, photos);
 
   document.getElementById('opDetailBack')?.addEventListener('click', () => {
     detail.style.display = 'none';
