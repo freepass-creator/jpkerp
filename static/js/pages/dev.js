@@ -443,13 +443,15 @@ function renderCutoverTab() {
       $('#cutoverInput').value = text;
       showToast(`불러옴 · ${text.split(/\r?\n/).filter(Boolean).length}행`, 'success');
       // 불러온 후 자동 미리보기
-      await runPreview();
+      try { await runPreview(); } catch (err) { console.error('[cutover preview]', err); showToast(`미리보기 실패: ${err.message}`, 'error'); }
     } catch (e) { showToast(`불러오기 실패: ${e.message}`, 'error'); }
   });
 
   async function runPreview() {
+    try {
     _cutoverPlan = null;
     const input = parseCutoverInput();
+    console.log('[cutover] parsed input:', input.length, 'rows');
     if (!input.length) {
       if (resultSub) resultSub.textContent = '파싱된 데이터 없음 — 차량번호/금액 컬럼 확인';
       showToast('파싱된 데이터가 없습니다', 'error');
@@ -458,12 +460,17 @@ function renderCutoverTab() {
     if (resultSub) resultSub.textContent = `${input.length}행 로딩 중...`;
     cutoverGridApi?.setGridOption('rowData', []);
     const [bSnap, cSnap] = await Promise.all([get(ref(db, 'billings')), get(ref(db, 'contracts'))]);
-    const bills = bSnap.exists() ? Object.entries(bSnap.val()).filter(([_, b]) => b && b.status !== 'deleted').map(([id, b]) => ({ id, ...b })) : [];
+    const bRaw = bSnap.exists() ? Object.entries(bSnap.val()) : [];
+    console.log('[cutover] billings raw:', bRaw.length, '건, sample status:', bRaw.slice(0, 3).map(([k, v]) => v?.status));
+    const bills = bRaw.filter(([_, b]) => b && b.status !== 'deleted').map(([id, b]) => ({ id, ...b }));
     const contracts = cSnap.exists() ? Object.values(cSnap.val()).filter(c => c && c.status !== 'deleted') : [];
     const billsByCar = {};
     bills.forEach(b => { if (b.car_number) (billsByCar[b.car_number] ||= []).push(b); });
     const inputMap = {};
     input.forEach(r => { if (r.car_number) inputMap[r.car_number] = r; });
+    console.log('[cutover] bills:', bills.length, '건, billsByCar:', Object.keys(billsByCar).length, '대, input cars:', Object.keys(inputMap).length);
+    console.log('[cutover] input sample:', input.slice(0, 3));
+    console.log('[cutover] bill car sample:', Object.keys(billsByCar).slice(0, 3));
     const updates = [];
     const lines = [];
     let totalFullPaid = 0, totalUnpaid = 0, totalFuture = 0;
@@ -513,15 +520,18 @@ function renderCutoverTab() {
     // 미수 있는 건 먼저
     rows.sort((a, b) => (b.inputAmt || 0) - (a.inputAmt || 0));
 
+    console.log('[cutover] result rows:', rows.length, 'updates:', updates.length);
+
     // AG Grid에 결과 표시
     const gridRows = rows.map(r => ({
       ...r,
       statusLabel: r.inputAmt > 0 ? `미수 ${fmtKR(r.inputAmt)}` : '정산완료',
     }));
-    cutoverGridApi.setGridOption('rowData', gridRows);
+    cutoverGridApi?.setGridOption('rowData', gridRows);
     if (resultSub) resultSub.textContent = `${rows.length}대 · 완납${totalFullPaid} · 미납${totalUnpaid} · 대기${totalFuture} · 총${updates.length}건`;
     const headApply = $('#devApply');
     if (headApply) headApply.disabled = !updates.length;
+    } catch (err) { console.error('[cutover runPreview]', err); if (resultSub) resultSub.textContent = `오류: ${err.message}`; showToast(err.message, 'error'); }
   }
 
   // 패널헤드 반영하기 버튼 → 정산 적용
