@@ -266,11 +266,13 @@ export function parse(text, lines) {
     // 1회차(선납분) 자동 보정: 비고에는 보통 2회차부터 표기됨
     // 1회차가 없고 납입한 보험료 + 보험시작일이 있으면 1회차로 prepend
     const hasFirst = data.installments.some(x => x.seq === 1);
-    if (!hasFirst && data.paid_amount && data.start_date) {
+    if (!hasFirst && data.start_date && data.total_premium) {
+      // 1회차 금액 = 총보험료 - (2회차~N회차 합계)
+      const laterSum = data.installments.reduce((s, x) => s + (x.amount || 0), 0);
       data.installments.unshift({
         seq: 1,
         date: data.start_date,
-        amount: data.paid_amount,
+        amount: data.total_premium - laterSum,
       });
     }
     data.installments.sort((a, b) => a.seq - b.seq);

@@ -328,12 +328,21 @@ async function renderOverdueTab() {
 }
 
 // ─── 3. 미수 정산 (cutover) ───
+let _cutBills = [], _cutContracts = [], _cutUnsubs = [];
 function renderCutoverTab() {
   const host = $('#devHost');
   const resultTitle = $('#devResultTitle');
   const resultSub = $('#devResultSub');
   let _cutoverPlan = null;
   let cutoverGridApi = null;
+
+  // 실시간 데이터 로드 (다른 페이지에서 검증된 방식)
+  import('../firebase/billings.js').then(m => {
+    _cutUnsubs.push(m.watchBillings(items => { _cutBills = items; console.log('[cutover] billings loaded:', items.length); }));
+  });
+  import('../firebase/contracts.js').then(m => {
+    _cutUnsubs.push(m.watchContracts(items => { _cutContracts = items; console.log('[cutover] contracts loaded:', items.length); }));
+  });
 
   if (resultTitle) resultTitle.textContent = '정산 검증';
   if (resultSub) resultSub.textContent = '';
@@ -459,13 +468,14 @@ function renderCutoverTab() {
     }
     if (resultSub) resultSub.textContent = `${input.length}행 로딩 중...`;
     cutoverGridApi?.setGridOption('rowData', []);
-    const [bSnap, cSnap] = await Promise.all([get(ref(db, 'billings')), get(ref(db, 'contracts'))]);
-    const bRaw = bSnap.exists() ? Object.entries(bSnap.val()) : [];
-    console.log('[cutover] billings raw:', bRaw.length, '건, sample status:', bRaw.slice(0, 3).map(([k, v]) => v?.status));
-    const bills = bRaw.filter(([_, b]) => b && b.status !== 'deleted').map(([id, b]) => ({ id, ...b }));
-    const contracts = cSnap.exists() ? Object.values(cSnap.val()).filter(c => c && c.status !== 'deleted') : [];
+    // 데이터 로드 대기 (최대 5초)
+    let waited = 0;
+    while (!_cutBills.length && waited < 5000) { await new Promise(r => setTimeout(r, 300)); waited += 300; }
+    const bills = _cutBills;
+    const contracts = _cutContracts;
+    console.log('[cutover] bills:', bills.length, 'contracts:', contracts.length);
     const billsByCar = {};
-    bills.forEach(b => { if (b.car_number) (billsByCar[b.car_number] ||= []).push(b); });
+    bills.forEach(b => { if (b.car_number) { b.id = b.id || b._key || b.billing_id; (billsByCar[b.car_number] ||= []).push(b); } });
     const inputMap = {};
     input.forEach(r => { if (r.car_number) inputMap[r.car_number] = r; });
     console.log('[cutover] bills:', bills.length, '건, billsByCar:', Object.keys(billsByCar).length, '대, input cars:', Object.keys(inputMap).length);
