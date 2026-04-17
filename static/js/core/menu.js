@@ -6,7 +6,7 @@ export const MENU = [
   { href: '/status/operation', label: '통합 리포트', icon: 'chart' },
 
   { group: '입력', icon: 'plus', children: [
-    { href: '/input/operation', label: '운영업무 입력', icon: 'play' },
+    { href: '/input/operation', label: '운영업무', icon: 'play' },
     { href: '/upload',          label: '일괄 업로드',   icon: 'fileup' },
     { href: '/input',           label: '개별 입력',     icon: 'circleplus' },
     { href: '/input/history',   label: '입력 이력',     icon: 'listcheck' },

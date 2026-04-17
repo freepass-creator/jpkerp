@@ -135,7 +135,7 @@ const DEFAULT_TYPES = [
   { key: 'product',     label: '상품화',         sub: '반납 후 재상품화',           direction: 'out', hidden: true },
   { key: 'insurance',   label: '보험배서관리',   sub: '연령변경·갱신·신규·해지',     direction: 'out' },
   { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out', hidden: true },
-  { key: 'penalty_notice', label: '과태료처리',  sub: '고지서 OCR · 확인서 병합 다운로드', direction: 'out' },
+  { key: 'penalty_notice', label: '과태료작업',  sub: '고지서 OCR · 확인서 병합 다운로드', direction: 'out' },
   { key: 'collect',     label: '미수관리',       sub: '독촉/내용증명/법적조치',     direction: 'out', hidden: true },
   { key: 'wash',        label: '세차',           sub: '세차/실내크리닝',           direction: 'out', hidden: true },
   { key: 'fuel',        label: '연료보충',       sub: '주유/전기충전',              direction: 'out', hidden: true },
@@ -190,13 +190,19 @@ function renderList() {
       // 우측 패널 — 과태료처리 모드는 매칭 결과 표시, 그 외는 이력관리
       const ctxTitle = $('#opContextTitle');
       const ctxSub = $('#opContextSubtitle');
+      const ctxHost = $('#opContextHost');
       if (currentType === 'penalty_notice') {
         if (ctxTitle) ctxTitle.textContent = '매칭 결과';
         if (ctxSub) ctxSub.textContent = '고지서 업로드 시 여기에 누적됩니다';
         renderPenaltyMatchList();
       } else {
-        const ctx = $('#opContextHost');
-        if (ctx) ctx.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">차량번호 입력 시<br>계약/수납/운영이력이 여기 표시됩니다.</div>';
+        // 과태료 모드 이탈 시 grid 참조 해제, padding 복원
+        _penaltyGridApi = null;
+        if (ctxHost) {
+          ctxHost.classList.add('is-pad');
+          ctxHost.style.padding = '';
+          ctxHost.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">차량번호 입력 시<br>계약/수납/운영이력이 여기 표시됩니다.</div>';
+        }
         if (ctxTitle) ctxTitle.textContent = '이력관리';
         if (ctxSub) ctxSub.textContent = '차량번호를 입력하세요';
       }
@@ -2229,18 +2235,9 @@ async function submitForm() {
 }
 
 export async function mount() {
-  watchAssets((items) => {
-    assets = items;
-    if (currentType === 'penalty_notice') renderPenaltyMatchList();
-  });
-  watchContracts((items) => {
-    contracts = items;
-    if (currentType === 'penalty_notice') renderPenaltyMatchList();
-  });
-  watchEvents((items) => {
-    allEvents = items;
-    if (currentType === 'penalty_notice') renderPenaltyMatchList();
-  });
+  watchAssets((items) => { assets = items; });
+  watchContracts((items) => { contracts = items; });
+  watchEvents((items) => { allEvents = items; });
   watchBillings((items) => { _billings = items; });
   watchVendors((items) => { vendors = items; });
   renderList();
@@ -2262,7 +2259,6 @@ function togglePenaltyButtons(hide) {
 function renderPenaltyNoticeMode() {
   const host = $('#opFormHost');
   if (!host) return;
-  const today = new Date().toISOString().slice(0, 10);
   host.innerHTML = `
     <div class="form-section">
       <label id="penNoticeDrop" class="photo-dropzone" style="cursor:pointer">
@@ -2273,23 +2269,24 @@ function renderPenaltyNoticeMode() {
       </label>
       <div id="penNoticeStatus" style="display:flex;flex-direction:column;gap:6px;margin-top:12px"></div>
     </div>
-    <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-funnel"></i>조회 필터</div>
-      <div class="form-grid">
-        <div class="field"><label>날짜</label><input type="date" id="penFilterDate" value=""></div>
-        <div class="field"><label>상태</label>
-          <select id="penFilterStatus">
-            <option value="" selected>전체</option>
-            <option value="미처리">미처리</option>
-            <option value="처리완료">처리완료</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div class="form-section">
+    <div class="form-section" style="display:flex;flex-direction:column;gap:8px">
       <button class="btn btn-primary" id="penDownloadAll" style="width:100%">
-        <i class="ph ph-download-simple"></i> 일괄 다운로드 (고지서 + 확인서)
+        <i class="ph ph-download-simple"></i> 일괄 ZIP 다운로드
       </button>
+      <div style="display:flex;gap:6px">
+        <button class="btn" id="penDriveUpload" style="flex:1;background:var(--c-bg-sub)">
+          <i class="ph ph-google-drive-logo"></i> 드라이브 저장
+        </button>
+        <a class="btn" href="https://drive.google.com/drive/folders/1DZFCXfD6vvrW2ufaYavw5Eojy8kJ1XB9" target="_blank" style="background:var(--c-bg-sub);text-decoration:none">
+          <i class="ph ph-arrow-square-out"></i> 열기
+        </a>
+      </div>
+      <button class="btn" id="penCompleteAll" style="width:100%">
+        <i class="ph ph-check-circle"></i> 일괄 처리완료 (DB 저장)
+      </button>
+    </div>
+    <div class="form-section" id="penSummary" style="font-size:var(--font-size-sm);color:var(--c-text-muted);text-align:center">
+      작업 대기: <b id="penWorkCount">0</b>건
     </div>`;
 
   // 업로드 바인딩
@@ -2304,101 +2301,80 @@ function renderPenaltyNoticeMode() {
     handlePenaltyFiles(Array.from(e.dataTransfer.files));
   });
 
-  // 필터 변경 시 리스트 갱신
-  $('#penFilterDate')?.addEventListener('change', renderPenaltyMatchList);
-  $('#penFilterStatus')?.addEventListener('change', renderPenaltyMatchList);
-
-  // 일괄 다운로드
+  // 일괄 다운로드 / 드라이브 저장 / 일괄 처리완료
   $('#penDownloadAll')?.addEventListener('click', downloadPenaltyAll);
+  $('#penDriveUpload')?.addEventListener('click', uploadPenaltyToDrive);
+  $('#penCompleteAll')?.addEventListener('click', completePenaltyAll);
 }
 
-function getPenaltyRows() {
-  const items = allEvents.filter(e => e.event_type === 'penalty');
-  const byCar = {};
-  items.forEach(p => { (byCar[p.car_number] ||= []).push(p); });
-  Object.values(byCar).forEach(arr => arr.sort((a, b) => (a.date || '').localeCompare(b.date || '')));
+// getPenaltyRows 제거 — 세션 기반(_penaltyWorkItems) 사용
 
-  return items.map(p => {
-    const asset = assets.find(a => a.car_number === p.car_number);
-    const contract = contracts.find(c => c.car_number === p.car_number && c.contract_status !== '계약해지');
-    const history = byCar[p.car_number] || [];
-    const idx = history.indexOf(p);
-    return {
-      ...p,
-      _asset: asset,
-      _contract: contract,
-      _carInfo: asset ? `${asset.manufacturer || ''} ${asset.car_model || ''}`.trim() : '',
-      _contractor: p.customer_name || contract?.contractor_name || '',
-      _historyLabel: idx === 0 ? '최초' : `${idx + 1}번째`,
-      _processed: !!p.processed_at,
-    };
-  });
-}
-
-let _penaltyRows = [];
+let _penaltyWorkItems = []; // 세션 작업 아이템 (DB 미저장)
+let _penaltyGridApi = null;
 
 function renderPenaltyMatchList() {
   const ctx = $('#opContextHost');
   if (!ctx) return;
-  const filterDate = $('#penFilterDate')?.value || '';
-  const filterStatus = $('#penFilterStatus')?.value || '';
 
-  let rows = getPenaltyRows();
-  if (filterDate) rows = rows.filter(r => (r.date || '').startsWith(filterDate) || (r.created_at && new Date(r.created_at).toISOString().slice(0, 10) === filterDate));
-  if (filterStatus === '처리완료') rows = rows.filter(r => r._processed);
-  else if (filterStatus === '미처리') rows = rows.filter(r => !r._processed);
-  rows.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-  _penaltyRows = rows;
-
+  const rows = _penaltyWorkItems;
   const sub = $('#opContextSubtitle');
   if (sub) sub.textContent = `${rows.length}건`;
+  const countEl = document.getElementById('penWorkCount');
+  if (countEl) countEl.textContent = rows.length;
 
-  if (!rows.length) {
-    ctx.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">고지서를 업로드하면<br>매칭 결과가 표시됩니다.</div>';
-    return;
+  let gridDiv = document.getElementById('penMatchGrid');
+  if (!gridDiv || !_penaltyGridApi) {
+    ctx.classList.remove('is-pad');
+    ctx.style.padding = '0';
+    ctx.innerHTML = '<div id="penMatchGrid" class="ag-theme-alpine" style="width:100%;height:100%;min-height:300px"></div>';
+    gridDiv = document.getElementById('penMatchGrid');
+    const fmt = v => Number(v || 0).toLocaleString();
+    _penaltyGridApi = agGrid.createGrid(gridDiv, {
+      columnDefs: [
+        { headerName: '매칭', width: 65, pinned: 'left',
+          valueGetter: p => p.data._contract ? '✓' : '✗',
+          cellStyle: p => ({
+            textAlign: 'center', fontWeight: 600,
+            color: p.data._contract ? 'var(--c-success)' : 'var(--c-danger)',
+          }) },
+        { headerName: '차량번호', field: 'car_number', width: 100,
+          cellStyle: { fontWeight: 600 } },
+        { headerName: '부과기관', field: 'issuer', width: 110 },
+        { headerName: '위반일시', field: 'date', width: 140 },
+        { headerName: '위반장소', field: 'location', flex: 1, minWidth: 120 },
+        { headerName: '금액', field: 'amount', width: 90, type: 'numericColumn',
+          valueFormatter: p => fmt(p.value) },
+        { headerName: '계약자', width: 80,
+          valueGetter: p => p.data._contractor || '',
+          cellStyle: p => p.data._contract ? null : { color: 'var(--c-danger)' } },
+        { headerName: '계약시작', width: 100, valueGetter: p => p.data._contract?.start_date || '' },
+        { headerName: '계약종료', width: 100, valueGetter: p => p.data._contract?.end_date || '' },
+        { headerName: '', width: 90, sortable: false, filter: false,
+          cellRenderer: (p) => {
+            const btn = document.createElement('button');
+            btn.textContent = '처리완료';
+            btn.className = 'btn';
+            btn.style.cssText = 'padding:2px 8px;font-size:11px;line-height:1.6';
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              completePenaltyItem(p.data._workId);
+            });
+            return btn;
+          },
+        },
+      ],
+      rowData: rows,
+      defaultColDef: { resizable: true, sortable: true, filter: true, minWidth: 50 },
+      rowHeight: 32,
+      headerHeight: 28,
+      animateRows: false,
+      rowSelection: { mode: 'singleRow', checkboxes: false, headerCheckbox: false },
+      suppressContextMenu: true,
+      onRowClicked: (e) => { if (e.data) openPenaltyPreview(e.data); },
+    });
+  } else {
+    _penaltyGridApi.setGridOption('rowData', rows);
   }
-
-  const th = (w, label, align = 'left') => `<th style="padding:6px 8px;border-bottom:1px solid var(--c-border);background:var(--c-bg-sub);text-align:${align};font-weight:600;font-size:var(--font-size-xs);color:var(--c-text-sub);white-space:nowrap;width:${w}">${label}</th>`;
-  const td = (v, align = 'left', extra = '') => `<td style="padding:6px 8px;border-bottom:1px solid var(--c-border);text-align:${align};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${extra}">${v}</td>`;
-
-  ctx.innerHTML = `
-    <table style="width:100%;border-collapse:collapse;font-size:var(--font-size-sm);table-layout:fixed">
-      <thead>
-        <tr>
-          ${th('90px', '차량번호')}
-          ${th('', '위반일시')}
-          ${th('90px', '계약자')}
-          ${th('100px', '계약시작일')}
-          ${th('100px', '계약종료일')}
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.map((r, i) => {
-          const contractor = r._contract
-            ? (r._contractor || '—')
-            : '<span style="color:var(--c-danger)">미매칭</span>';
-          const startDate = r._contract?.start_date || '<span style="color:var(--c-text-muted)">—</span>';
-          const endDate = r._contract?.end_date || '<span style="color:var(--c-text-muted)">—</span>';
-          const violationDt = r.date || '—';
-          return `
-            <tr data-pen-idx="${i}" style="cursor:pointer" onmouseover="this.style.background='var(--c-bg-sub)'" onmouseout="this.style.background=''">
-              ${td(`<strong>${r.car_number || '—'}</strong>`)}
-              ${td(violationDt)}
-              ${td(contractor)}
-              ${td(startDate)}
-              ${td(endDate)}
-            </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
-
-  // 이벤트 위임 (매번 재바인딩 — innerHTML 갱신 후 리스너 유지용)
-  ctx.onclick = (e) => {
-    const card = e.target.closest('[data-pen-idx]');
-    if (!card) return;
-    const idx = parseInt(card.dataset.penIdx, 10);
-    if (_penaltyRows[idx]) openPenaltyPreview(_penaltyRows[idx]);
-  };
 }
 
 function openPenaltyPreview(row) {
@@ -2406,10 +2382,12 @@ function openPenaltyPreview(row) {
   const contract = row._contract;
   const carModel = asset ? `${asset.manufacturer || ''} ${asset.car_model || ''}`.trim() : '';
   const contractor = contract?.contractor_name || row._contractor || '';
-  const fileName = [row.car_number, contractor || '미매칭', carModel].filter(Boolean).join(' ');
-  const fileUrl = row.file_url || '';
-  const isPdf = /\.pdf(\?|$)/i.test(fileUrl);
-  const isImage = /\.(png|jpe?g|gif|heic|webp)(\?|$)/i.test(fileUrl);
+  const dt = (row.date || '').replace(/[^0-9]/g, '');
+  const dtShort = dt.length >= 12 ? dt.slice(2, 8) + '_' + dt.slice(8, 12) : dt.length >= 8 ? dt.slice(2, 8) : dt;
+  const fileName = [row.issuer || '', row.car_number, dtShort, contractor || '미매칭', carModel].filter(Boolean).join(' ');
+
+  // 세션 데이터 (페이지별 이미지) 우선
+  const fileUrl = row._fileDataUrl || row.file_url || '';
 
   const { style, body } = buildConfirmationContent({
     company_name: row.payer_name || '',
@@ -2426,11 +2404,7 @@ function openPenaltyPreview(row) {
 
   const noticeSection = !fileUrl
     ? `<div style="padding:60px;text-align:center;color:#999">고지서 파일이 없습니다</div>`
-    : isImage
-      ? `<img src="${fileUrl}" alt="고지서">`
-      : isPdf
-        ? `<iframe src="${fileUrl}" title="고지서"></iframe>`
-        : `<a href="${fileUrl}" target="_blank">고지서 열기</a>`;
+    : `<img src="${fileUrl}" alt="고지서" style="max-width:100%;max-height:100%;object-fit:contain">`;
 
   const html = `<!DOCTYPE html>
 <html lang="ko">
@@ -2520,8 +2494,39 @@ async function handlePenaltyFiles(files) {
       const texts = result.text.split('--- 페이지 구분 ---').map(t => t.trim()).filter(Boolean);
       const allText = texts.length ? texts : [result.text];
 
+      // 페이지별 이미지 생성 (PDF → 페이지별, 이미지 → 1장)
+      let pageImages = [];
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      if (fileExt === 'pdf') {
+        try {
+          const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+          const buf = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+          for (let pg = 1; pg <= pdf.numPages; pg++) {
+            const page = await pdf.getPage(pg);
+            const vp = page.getViewport({ scale: 2.0 });
+            const c = document.createElement('canvas');
+            c.width = vp.width; c.height = vp.height;
+            await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+            pageImages.push(c.toDataURL('image/jpeg', 0.92));
+          }
+        } catch (e) { console.warn('[pdf→img]', e); }
+      } else {
+        try {
+          const dataUrl = await new Promise((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result);
+            reader.onerror = rej;
+            reader.readAsDataURL(file);
+          });
+          pageImages = [dataUrl];
+        } catch {}
+      }
+
       let saved = 0, dup = 0;
-      for (const txt of allText) {
+      for (let _pi = 0; _pi < allText.length; _pi++) {
+        const txt = allText[_pi];
         const lines = txt.split('\n').map(l => l.trim()).filter(Boolean);
         if (!penaltyModule?.detect(txt)) continue;
         const p = penaltyModule.parse(txt, lines);
@@ -2530,48 +2535,27 @@ async function handlePenaltyFiles(files) {
         const asset = assets.find(a => a.car_number === p.car_number);
         const contract = contracts.find(c => c.car_number === p.car_number && c.contract_status !== '계약해지');
 
-        // 중복 체크 — 고지서번호 또는 (차번 + 위반일)
-        const dateOnly = (p.date || '').split(' ')[0];
-        const prevPenalties = allEvents.filter(e => e.event_type === 'penalty' && e.car_number === p.car_number);
-        const isDup = prevPenalties.some(e =>
-          (p.notice_no && e.notice_no === p.notice_no) ||
-          (dateOnly && (e.date || '').startsWith(dateOnly))
-        );
-        if (isDup) { dup++; continue; }
+        // 세션 내 동일 건 중복만 체크 (고지서번호 기준)
+        if (p.notice_no && _penaltyWorkItems.some(w => w.notice_no === p.notice_no)) { dup++; continue; }
 
-        let fileUrl = '';
-        try {
-          fileUrl = await uploadPenaltyFile(file, p.car_number, dateOnly);
-        } catch (e) { console.warn('[penalty file upload]', e); }
-
-        await saveEvent({
-          event_type: 'penalty',
-          doc_type: p.doc_type,
-          car_number: p.car_number,
-          vin: asset?.vin || '',
+        // 세션 작업 아이템에 추가 (DB 저장 안 함)
+        const workId = `pen_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        _penaltyWorkItems.push({
+          _workId: workId,
+          _fileDataUrl: pageImages[_pi] || pageImages[0] || '',
+          _fileName: file.name,
+          _asset: asset,
+          _contract: contract,
+          _contractor: contract?.contractor_name || '',
+          _carInfo: asset ? `${asset.manufacturer || ''} ${asset.car_model || ''}`.trim() : '',
+          // OCR 데이터
+          ...p,
           date: p.date || '',
-          title: p.description || p.doc_type || '과태료',
-          penalty_amount: p.penalty_amount,
-          fine_amount: p.fine_amount,
-          demerit_points: p.demerit_points,
-          toll_amount: p.toll_amount,
-          amount: p.amount,
-          location: p.location,
-          description: p.description,
-          law_article: p.law_article,
-          due_date: p.due_date,
-          notice_no: p.notice_no,
-          issuer: p.issuer,
-          issue_date: p.issue_date,
-          payer_name: p.payer_name,
-          pay_account: p.pay_account,
+          amount: p.amount || p.penalty_amount || p.toll_amount || 0,
           customer_name: contract?.contractor_name || '',
           contract_code: contract?.contract_code || '',
           partner_code: asset?.partner_code || '',
-          paid_status: '미납',
-          direction: 'out',
-          file_url: fileUrl,
-          note: `OCR (${file.name})`,
+          vin: asset?.vin || '',
         });
         saved++;
       }
@@ -2579,8 +2563,9 @@ async function handlePenaltyFiles(files) {
       if (row) row.innerHTML = `
         <div style="display:flex;align-items:center;gap:8px;padding:8px">
           <span>✅</span>
-          <span style="font-size:var(--font-size-sm)">${file.name} — ${saved}건 등록${dup ? ` · ${dup}건 중복` : ''}</span>
+          <span style="font-size:var(--font-size-sm)">${file.name} — ${saved}건 추가${dup ? ` · ${dup}건 중복` : ''}</span>
         </div>`;
+      renderPenaltyMatchList();
     } catch (e) {
       if (row) row.innerHTML = `
         <div style="display:flex;align-items:center;gap:8px;padding:8px">
@@ -2595,44 +2580,194 @@ async function handlePenaltyFiles(files) {
   if (fileInput) fileInput.value = '';
 }
 
-async function downloadPenaltyAll() {
-  // TODO(step3): 건별 고지서+확인서 병합 PDF (파일명 `{차번} {계약자} {모델}.pdf`)
-  // 현재는 미처리 건의 고지서 원본만 ZIP으로 다운로드 + 다운로드 시 processed_at 마킹
-  const rows = getPenaltyRows().filter(r => !r._processed && r.file_url);
-  if (!rows.length) { showToast('다운로드할 미처리 건이 없습니다', 'info'); return; }
+const DRIVE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxM5IzzD_vtaxSfnMsT1x5i9D6DqU6QViC60KLOhl5T3FLjM7GOo0bnvLdlnS5U3ki4tw/exec';
 
+async function ensurePdfLibs() {
+  await loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js');
+  await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
+}
+
+async function generatePenaltyPdf(item) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const asset = item._asset;
+  const contract = item._contract;
+  const carModel = asset ? `${asset.manufacturer || ''} ${asset.car_model || ''}`.trim() : '';
+  const contractor = contract?.contractor_name || item._contractor || '';
+
+  // 1페이지: 고지서 이미지
+  if (item._fileDataUrl) {
+    try { pdf.addImage(item._fileDataUrl, 'JPEG', 0, 0, 210, 297); }
+    catch (e) { console.warn('[addImage]', e); }
+  } else {
+    pdf.setFontSize(16);
+    pdf.text('고지서 파일 없음', 105, 148, { align: 'center' });
+  }
+
+  // 2페이지: 확인서
+  pdf.addPage();
+  const { style, body } = buildConfirmationContent({
+    company_name: item.payer_name || '',
+    car_number: item.car_number || '',
+    car_model: carModel,
+    vin: asset?.vin || item.vin || '',
+    contractor_name: contractor,
+    contractor_phone: contract?.contractor_phone || '',
+    contractor_reg_no: contract?.contractor_reg_no || '',
+    start_date: contract?.start_date || '',
+    end_date: contract?.end_date || '',
+    violation_date: item.date || '',
+  });
   try {
-    if (!window.JSZip) {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-  } catch { showToast('ZIP 라이브러리 로드 실패', 'error'); return; }
+    const tmp = document.createElement('div');
+    tmp.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;';
+    tmp.innerHTML = `<style>${style}</style><div style="padding:40px">${body}</div>`;
+    document.body.appendChild(tmp);
+    const canvas = await window.html2canvas(tmp, { scale: 2, useCORS: true });
+    document.body.removeChild(tmp);
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297);
+  } catch (e) {
+    console.warn('[html2canvas]', e);
+    pdf.setFontSize(14);
+    pdf.text('확인서 생성 실패', 105, 148, { align: 'center' });
+  }
+
+  // 위반일시 → YYMMDD_HHMM
+  const dt = (item.date || '').replace(/[^0-9]/g, ''); // '20260415 1430' → '202604151430'
+  const dtShort = dt.length >= 12 ? dt.slice(2, 8) + '_' + dt.slice(8, 12) : dt.length >= 8 ? dt.slice(2, 8) : dt;
+  const fileName = [item.issuer || '', item.car_number, dtShort, contractor || '미매칭', carModel].filter(Boolean).join(' ').trim();
+  return { pdf, fileName };
+}
+
+async function loadScript(src) {
+  if (document.querySelector(`script[src="${src}"]`)) return;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function downloadPenaltyAll() {
+  if (!_penaltyWorkItems.length) { showToast('다운로드할 건이 없습니다', 'info'); return; }
+  showToast(`${_penaltyWorkItems.length}건 PDF 생성 중...`, 'info');
+
+  await ensurePdfLibs();
+  await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
 
   const zip = new window.JSZip();
-  let count = 0;
-  for (const r of rows) {
-    const name = [r.car_number, r._contractor || '미매칭', r._carInfo || ''].filter(Boolean).join(' ').trim();
-    try {
-      const res = await fetch(r.file_url);
-      const blob = await res.blob();
-      const ext = r.file_url.includes('.pdf') ? 'pdf' : 'jpg';
-      zip.file(`${name}_고지서.${ext}`, blob);
-      count++;
-    } catch (e) { console.warn('[penalty download]', e); }
+  for (const item of _penaltyWorkItems) {
+    const { pdf, fileName } = await generatePenaltyPdf(item);
+    zip.file(`${fileName}.pdf`, pdf.output('blob'));
   }
 
-  if (count) {
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    const dateStr = $('#penFilterDate')?.value || new Date().toISOString().slice(0, 10);
-    a.download = `과태료_${dateStr}_${count}건.zip`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    showToast(`${count}건 다운로드 완료`, 'success');
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `과태료_${new Date().toISOString().slice(0, 10)}_${_penaltyWorkItems.length}건.zip`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast(`${_penaltyWorkItems.length}건 ZIP 다운로드 완료`, 'success');
+}
+
+async function uploadPenaltyToDrive() {
+  if (!_penaltyWorkItems.length) { showToast('업로드할 건이 없습니다', 'info'); return; }
+
+  try {
+    showToast('PDF 라이브러리 로드 중...', 'info');
+    await ensurePdfLibs();
+  } catch (e) {
+    showToast(`라이브러리 로드 실패: ${e.message}`, 'error'); return;
   }
+
+  let uploaded = 0;
+  for (let i = 0; i < _penaltyWorkItems.length; i++) {
+    const item = _penaltyWorkItems[i];
+    showToast(`${i + 1}/${_penaltyWorkItems.length} PDF 생성 중... ${item.car_number}`, 'info');
+
+    try {
+      const { pdf, fileName } = await generatePenaltyPdf(item);
+      const pdfBase64 = pdf.output('datauristring').split(',')[1];
+
+      showToast(`${i + 1}/${_penaltyWorkItems.length} 드라이브 업로드 중... ${fileName}`, 'info');
+      const resp = await fetch(DRIVE_SCRIPT_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        body: JSON.stringify({ file: pdfBase64, name: `${fileName}.pdf` }),
+      });
+      const text = await resp.text();
+      console.log('[drive resp]', resp.status, text);
+      uploaded++;
+    } catch (e) {
+      console.error('[drive upload]', e);
+      showToast(`${item.car_number} 업로드 실패: ${e.message}`, 'error');
+    }
+  }
+
+  showToast(`${uploaded}/${_penaltyWorkItems.length}건 드라이브 업로드 완료`, uploaded > 0 ? 'success' : 'error');
+}
+
+async function completePenaltyItem(workId) {
+  const idx = _penaltyWorkItems.findIndex(w => w._workId === workId);
+  if (idx < 0) return;
+  const item = _penaltyWorkItems[idx];
+
+  // Storage 업로드 시도 (실패해도 DB 저장 진행)
+  let fileUrl = '';
+  const dateOnly = (item.date || '').split(' ')[0];
+  try {
+    if (item._fileDataUrl) {
+      const resp = await fetch(item._fileDataUrl);
+      const blob = await resp.blob();
+      const ext = item._fileDataUrl.startsWith('data:application/pdf') ? 'pdf' : 'jpg';
+      const file = new File([blob], `${item.car_number}_고지서.${ext}`);
+      fileUrl = await uploadPenaltyFile(file, item.car_number, dateOnly);
+    }
+  } catch (e) { console.warn('[penalty upload on complete]', e); }
+
+  // DB 저장
+  await saveEvent({
+    event_type: 'penalty',
+    doc_type: item.doc_type,
+    car_number: item.car_number,
+    vin: item.vin || '',
+    date: item.date || '',
+    title: item.description || item.doc_type || '과태료',
+    penalty_amount: item.penalty_amount,
+    fine_amount: item.fine_amount,
+    demerit_points: item.demerit_points,
+    toll_amount: item.toll_amount,
+    amount: item.amount,
+    location: item.location,
+    description: item.description,
+    law_article: item.law_article,
+    due_date: item.due_date,
+    notice_no: item.notice_no,
+    issuer: item.issuer,
+    issue_date: item.issue_date,
+    payer_name: item.payer_name,
+    pay_account: item.pay_account,
+    customer_name: item.customer_name || '',
+    contract_code: item.contract_code || '',
+    partner_code: item.partner_code || '',
+    paid_status: '미납',
+    direction: 'out',
+    file_url: fileUrl,
+    note: `과태료처리 (${item._fileName || ''})`,
+  });
+
+  // 세션에서 제거
+  _penaltyWorkItems.splice(idx, 1);
+  renderPenaltyMatchList();
+  showToast(`${item.car_number} 처리완료 → DB 저장`, 'success');
+}
+
+async function completePenaltyAll() {
+  if (!_penaltyWorkItems.length) { showToast('처리할 건이 없습니다', 'info'); return; }
+  const total = _penaltyWorkItems.length;
+  // 역순으로 처리 (splice 안전)
+  while (_penaltyWorkItems.length) {
+    await completePenaltyItem(_penaltyWorkItems[0]._workId);
+  }
+  showToast(`${total}건 일괄 처리완료`, 'success');
 }
