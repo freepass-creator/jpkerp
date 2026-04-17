@@ -381,20 +381,7 @@ function renderCutoverTab() {
     defaultColDef: { resizable: true, sortable: true, filter: true, minWidth: 40 },
     rowHeight: 28, headerHeight: 28, animateRows: false,
   });
-
-  host.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:8px;height:100%">
-      <div style="font-size:var(--font-size-sm);color:var(--c-text-muted)">
-        현재 미수 명세를 입력하면 <b>전체 회차를 완납 처리</b>한 뒤, 입력된 차량의 <b>최근 회차부터 역산해 미수액만큼 미납</b>으로 되돌립니다.
-      </div>
-      <div style="display:flex;gap:6px">
-        <input type="text" id="cutoverUrl" class="ctrl" placeholder="구글시트 URL 붙여넣기" style="flex:1">
-        <button class="btn" id="cutoverLoadUrl">불러오기</button>
-      </div>
-      <textarea id="cutoverInput" class="ctrl" style="flex:1;min-height:200px;resize:vertical;font-family:monospace" placeholder="또는 직접 입력:
-123가4567, 900101-1******, 1650000
-34나5678, 950505-2******, 1100000"></textarea>
-    </div>`;
+  }
 
   // 패널헤드 버튼 연결
   const resetBtn = $('#devReset');
@@ -404,7 +391,7 @@ function renderCutoverTab() {
       $('#cutoverInput').value = '';
       $('#cutoverUrl').value = '';
       _cutoverPlan = null;
-      cutoverGridApi.setGridOption('rowData', []);
+      cutoverGridApi?.setGridOption('rowData', []);
       if (applyBtn) applyBtn.disabled = true;
       if (resultSub) resultSub.textContent = '';
     };
@@ -469,7 +456,7 @@ function renderCutoverTab() {
       return;
     }
     if (resultSub) resultSub.textContent = `${input.length}행 로딩 중...`;
-    cutoverGridApi.setGridOption('rowData', []);
+    cutoverGridApi?.setGridOption('rowData', []);
     const [bSnap, cSnap] = await Promise.all([get(ref(db, 'billings')), get(ref(db, 'contracts'))]);
     const bills = bSnap.exists() ? Object.entries(bSnap.val()).filter(([_, b]) => b && b.status !== 'deleted').map(([id, b]) => ({ id, ...b })) : [];
     const contracts = cSnap.exists() ? Object.values(cSnap.val()).filter(c => c && c.status !== 'deleted') : [];
@@ -762,34 +749,45 @@ async function renderDeliveryTab() {
     btn.textContent = '처리 중...';
     logEl.textContent = '';
 
-    const { saveEvent } = await import('../firebase/events.js');
-    let ok = 0, fail = 0;
+    // 일괄 업데이트 (1회 요청)
+    const now = Date.now();
+    const bulkUpdates = {};
+    _deliveryPlan.forEach((c, i) => {
+      const key = `EV${now}${String(i).padStart(4, '0')}`;
+      bulkUpdates[`events/${key}`] = {
+        event_id: key,
+        type: 'ioc',
+        event_type: 'ioc',
+        ioc_kind: '정상출고',
+        direction: 'out',
+        date: c.start_date || new Date().toISOString().slice(0, 10),
+        car_number: c.car_number,
+        vin: c.vin || '',
+        title: '정상출고 (일괄등록)',
+        customer_name: c.contractor_name || '',
+        contract_code: c.contract_code || '',
+        partner_code: c.partner_code || '',
+        note: '개발도구 일괄출고',
+        status: 'active',
+        match_status: 'unmatched',
+        amount: 0,
+        created_at: now,
+        updated_at: now,
+      };
+    });
 
-    for (const c of _deliveryPlan) {
-      try {
-        await saveEvent({
-          type: 'ioc',
-          event_type: 'ioc',
-          ioc_kind: '정상출고',
-          direction: 'out',
-          date: c.start_date || new Date().toISOString().slice(0, 10),
-          car_number: c.car_number,
-          vin: c.vin || '',
-          title: '정상출고 (일괄등록)',
-          customer_name: c.contractor_name || '',
-          contract_code: c.contract_code || '',
-          partner_code: c.partner_code || '',
-          note: '개발도구 일괄출고',
-        });
+    let ok = 0;
+    try {
+      await update(ref(db), bulkUpdates);
+      ok = _deliveryPlan.length;
+      _deliveryPlan.forEach(c => {
         logEl.textContent += `✅ ${c.car_number} → ${c.start_date} 출고\n`;
-        ok++;
-      } catch (e) {
-        logEl.textContent += `❌ ${c.car_number} — ${e.message}\n`;
-        fail++;
-      }
+      });
+    } catch (e) {
+      logEl.textContent += `❌ 일괄 처리 실패: ${e.message}\n`;
     }
 
-    logEl.textContent += `\n━━━\n완료: ${ok}건 / 실패: ${fail}건`;
+    logEl.textContent += `\n━━━\n완료: ${ok}건`;
     showToast(`일괄출고 ${ok}건 완료`, ok > 0 ? 'success' : 'error');
     btn.textContent = '일괄 출고 등록';
     _deliveryPlan = [];
