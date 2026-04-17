@@ -41,7 +41,7 @@ export const MENU = [
     { subgroup: '영업관리', icon: 'clipcheck' },
     { href: '/contract', label: '계약 관리' },
     { href: '/customer', label: '고객 관리' },
-    { href: '/product',  label: '상품 관리' },
+    { href: '/sales',    label: '실적 관리' },
 
     { subgroup: '재무관리', icon: 'dollar' },
     { href: '/billing',   label: '수납 관리' },

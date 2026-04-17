@@ -133,9 +133,11 @@ function renderHistory(key) {
           const unpaid = due - paid;
           const days = b.due_date ? Math.floor((todayDate - new Date(b.due_date)) / 86400000) : 0;
           const isOd = unpaid > 0 && b.due_date && b.due_date < today;
-          const status = paid >= due ? '완납' : (paid > 0 ? '부분' : (isOd ? `${days}일연체` : '미수'));
-          const color = paid >= due ? 'var(--c-success)' : (isOd && days >= 30 ? '#991b1b' : isOd && days >= 7 ? 'var(--c-danger)' : 'var(--c-warn)');
-          return `<tr><td>${b.seq || '-'}</td><td>${fmtDate(b.due_date)}</td><td class="is-num">${fmt(due)}</td><td class="is-num" style="color:var(--c-success)">${fmt(paid)}</td><td class="is-num" style="color:${unpaid?'var(--c-danger)':'var(--c-text-muted)'};font-weight:${unpaid?600:400}">${fmt(unpaid)}</td><td><span style="color:${color};font-weight:500">${status}</span></td></tr>`;
+          const isFuture = b.due_date && b.due_date > today;
+          const status = paid >= due ? '완납' : (paid > 0 ? '부분' : (isFuture ? '납부대기' : (isOd ? `${days}일연체` : '미수')));
+          const color = paid >= due ? 'var(--c-success)' : (isFuture ? 'var(--c-text-muted)' : (isOd && days >= 30 ? '#991b1b' : isOd && days >= 7 ? 'var(--c-danger)' : 'var(--c-warn)'));
+          const rowStyle = isFuture && unpaid > 0 ? 'opacity:0.5' : '';
+          return `<tr style="${rowStyle}"><td>${b.seq || '-'}</td><td>${fmtDate(b.due_date)}</td><td class="is-num">${fmt(due)}</td><td class="is-num" style="color:var(--c-success)">${fmt(paid)}</td><td class="is-num" style="color:${isFuture?'var(--c-text-muted)':unpaid?'var(--c-danger)':'var(--c-text-muted)'};font-weight:${unpaid&&!isFuture?600:400}">${fmt(unpaid)}</td><td><span style="color:${color};font-weight:500">${status}</span></td></tr>`;
         }).join('')}
       </tbody>
     </table>` : '<div style="color:var(--c-text-muted);padding:12px">청구 내역 없음</div>';

@@ -328,7 +328,8 @@ async function renderOverdueTab() {
 }
 
 // ─── 3. 미수 정산 (cutover) ───
-let _cutBills = [], _cutContracts = [], _cutUnsubs = [];
+// 계약 기준으로 수납 스케줄 새로 생성 + 미수 반영
+let _cutContracts = [];
 function renderCutoverTab() {
   const host = $('#devHost');
   const resultTitle = $('#devResultTitle');
@@ -336,30 +337,28 @@ function renderCutoverTab() {
   let _cutoverPlan = null;
   let cutoverGridApi = null;
 
-  // 실시간 데이터 로드 (다른 페이지에서 검증된 방식)
-  import('../firebase/billings.js').then(m => {
-    _cutUnsubs.push(m.watchBillings(items => { _cutBills = items; console.log('[cutover] billings loaded:', items.length); }));
-  });
+  // 계약 데이터 로드
   import('../firebase/contracts.js').then(m => {
-    _cutUnsubs.push(m.watchContracts(items => { _cutContracts = items; console.log('[cutover] contracts loaded:', items.length); }));
+    m.watchContracts(items => { _cutContracts = items; console.log('[cutover] contracts loaded:', items.length); });
   });
 
   if (resultTitle) resultTitle.textContent = '정산 검증';
   if (resultSub) resultSub.textContent = '';
 
-  // 폼 먼저 렌더
   host.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:8px;height:100%">
       <div style="font-size:var(--font-size-sm);color:var(--c-text-muted)">
-        현재 미수 명세를 입력하면 <b>전체 회차를 완납 처리</b>한 뒤, 입력된 차량의 <b>최근 회차부터 역산해 미수액만큼 미납</b>으로 되돌립니다.
+        미수 명세를 입력하면 <b>계약 기준으로 수납 스케줄을 새로 생성</b>합니다.<br>
+        오늘 이전 회차 → 미수 없으면 <b>완납</b>, 미수 있으면 최근 회차부터 <b>미납</b><br>
+        오늘 이후 회차 → <b>납부대기</b>
       </div>
       <div style="display:flex;gap:6px">
         <input type="text" id="cutoverUrl" class="ctrl" placeholder="구글시트 URL 붙여넣기" style="flex:1">
         <button class="btn" id="cutoverLoadUrl">불러오기</button>
       </div>
-      <textarea id="cutoverInput" class="ctrl" style="flex:1;min-height:200px;resize:vertical;font-family:monospace" placeholder="또는 직접 입력:
+      <textarea id="cutoverInput" class="ctrl" style="flex:1;min-height:200px;resize:vertical;font-family:monospace" placeholder="차량번호, 등록번호, 미수금액
 123가4567, 900101-1******, 1650000
-34나5678, 950505-2******, 1100000"></textarea>
+34나5678, 950505-2******, 0"></textarea>
     </div>`;
 
   // 우측 AG Grid
@@ -371,28 +370,29 @@ function renderCutoverTab() {
   const gridEl = $('#cutoverGrid');
   if (gridEl) {
     cutoverGridApi = agGrid.createGrid(gridEl, {
-    columnDefs: [
-      { headerName: '차량번호', field: 'car', width: 95, cellStyle: { fontWeight: 'var(--fw-bold)' } },
-      { headerName: '계약자', field: 'contractor', width: 80 },
-      { headerName: '입력미수', field: 'inputAmt', width: 90, type: 'numericColumn',
-        valueFormatter: p => p.value > 0 ? fmtKR(p.value) : '—',
-        cellStyle: p => ({ color: p.value > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)', textAlign: 'right' }) },
-      { headerName: 'DB미수', field: 'curUnpaid', width: 90, type: 'numericColumn',
-        valueFormatter: p => p.value > 0 ? fmtKR(p.value) : '—',
-        cellStyle: p => ({ color: p.value > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)', textAlign: 'right' }) },
-      { headerName: '총회차', field: 'totalBills', width: 60, type: 'numericColumn' },
-      { headerName: '완납', field: 'pastCnt', width: 50, type: 'numericColumn' },
-      { headerName: '대기', field: 'futureCnt', width: 50, type: 'numericColumn' },
-      { headerName: '상태', field: 'statusLabel', width: 90,
-        cellStyle: p => ({ color: p.data?.inputAmt > 0 ? 'var(--c-danger)' : 'var(--c-success)', fontWeight: 'var(--fw-bold)' }) },
-    ],
-    rowData: [],
-    defaultColDef: { resizable: true, sortable: true, filter: true, minWidth: 40 },
-    rowHeight: 28, headerHeight: 28, animateRows: false,
-  });
+      columnDefs: [
+        { headerName: '차량번호', field: 'car_number', width: 95, cellStyle: { fontWeight: 'var(--fw-bold)' } },
+        { headerName: '계약자', field: 'contractor', width: 80 },
+        { headerName: '월렌트', field: 'rent_amount', width: 85, type: 'numericColumn', valueFormatter: p => fmtKR(p.value) },
+        { headerName: '총회차', field: 'total_months', width: 60, type: 'numericColumn' },
+        { headerName: '완납', field: 'paid_cnt', width: 50, type: 'numericColumn',
+          cellStyle: { color: 'var(--c-success)' } },
+        { headerName: '미납', field: 'unpaid_cnt', width: 50, type: 'numericColumn',
+          cellStyle: p => ({ color: p.value > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)' }) },
+        { headerName: '대기', field: 'future_cnt', width: 50, type: 'numericColumn' },
+        { headerName: '미수액', field: 'unpaid_amount', width: 90, type: 'numericColumn',
+          valueFormatter: p => p.value > 0 ? fmtKR(p.value) : '—',
+          cellStyle: p => ({ color: p.value > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)', textAlign: 'right', fontWeight: 'var(--fw-bold)' }) },
+        { headerName: '상태', field: 'statusLabel', width: 80,
+          cellStyle: p => ({ color: p.data?.unpaid_amount > 0 ? 'var(--c-danger)' : 'var(--c-success)', fontWeight: 'var(--fw-bold)' }) },
+      ],
+      rowData: [],
+      defaultColDef: { resizable: true, sortable: true, filter: true, minWidth: 40 },
+      rowHeight: 28, headerHeight: 28, animateRows: false,
+    });
   }
 
-  // 패널헤드 버튼 연결
+  // 패널헤드 버튼
   const resetBtn = $('#devReset');
   const applyBtn = $('#devApply');
   if (resetBtn) {
@@ -412,12 +412,22 @@ function renderCutoverTab() {
     if (!text) return [];
     const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     if (!lines.length) return [];
-    const splitLine = (l) => l.split(/[,\t]/).map(s => s.trim().replace(/^"|"$/g, '').replace(/,/g, ''));
+    // CSV 파싱 — 따옴표 안 콤마 무시 ("990,000" → 990000)
+    const splitLine = (l) => {
+      const result = []; let cur = '', inQ = false;
+      for (const ch of l) {
+        if (ch === '"') { inQ = !inQ; continue; }
+        if ((ch === ',' || ch === '\t') && !inQ) { result.push(cur.trim()); cur = ''; continue; }
+        cur += ch;
+      }
+      result.push(cur.trim());
+      return result;
+    };
     const firstCols = splitLine(lines[0]);
     const hasHeader = firstCols.some(c => /차량번호|차번|등록번호|미수|회원사/i.test(c));
-    let carIdx = -1, regIdx = -1, amtIdx = -1, dataStart = 0;
+    let carIdx = -1, amtIdx = -1, dataStart = 0;
     if (hasHeader) {
-      firstCols.forEach((c, i) => { if (/차량번호|차번/i.test(c)) carIdx = i; else if (/등록번호|고객등록/i.test(c)) regIdx = i; else if (/미수|잔액|금액/i.test(c)) amtIdx = i; });
+      firstCols.forEach((c, i) => { if (/차량번호|차번/i.test(c)) carIdx = i; else if (/미수|잔액|금액/i.test(c)) amtIdx = i; });
       dataStart = 1;
     }
     if (carIdx < 0 || amtIdx < 0) {
@@ -425,17 +435,159 @@ function renderCutoverTab() {
       let bestAmtIdx = -1, bestAmtVal = 0;
       sample.forEach((v, i) => { const n = Number(v.replace(/[,원\s]/g, '')); if (!isNaN(n) && n > bestAmtVal) { bestAmtVal = n; bestAmtIdx = i; } });
       amtIdx = bestAmtIdx;
-      const regCandidate = sample.findIndex(v => /\d{6}-[\d*]{7}/.test(v));
-      regIdx = regCandidate >= 0 ? regCandidate : -1;
       const carCandidate = sample.findIndex(v => /\d{2,3}[가-힣]\d{4}/.test(v));
-      carIdx = carCandidate >= 0 ? carCandidate : 1;
+      carIdx = carCandidate >= 0 ? carCandidate : 0;
     }
+    const normCar = s => String(s || '').trim().replace(/\s+/g, '');
     return lines.slice(dataStart).map((line, i) => {
       const parts = splitLine(line);
-      return { line: i + 1 + dataStart, car_number: parts[carIdx] || '', reg_no: regIdx >= 0 ? (parts[regIdx] || '') : '', unpaid_amount: Number(String(parts[amtIdx] || '').replace(/[,원\s]/g, '')) || 0 };
-    }).filter(r => r.car_number && !/차량번호|차번|car|회원사/i.test(r.car_number));
+      return { car_number: normCar(parts[carIdx]), unpaid_amount: Number(String(parts[amtIdx] || '').replace(/[,원\s]/g, '')) || 0 };
+    }).filter(r => r.car_number && !/차량번호|차번|car/i.test(r.car_number));
   }
 
+  function parseFlexDate(s) {
+    if (!s) return null;
+    let v = String(s).trim().replace(/[./]/g, '-');
+    const m = v.match(/^(\d{2})-(\d{1,2})-(\d{1,2})$/);
+    if (m) v = `${Number(m[1]) < 50 ? 2000 + Number(m[1]) : 1900 + Number(m[1])}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // 계약 → 수납 스케줄 + 미수 반영 계산
+  function buildPlan(input) {
+    const today = new Date().toISOString().slice(0, 10);
+    const inputMap = {};
+    input.forEach(r => { inputMap[r.car_number] = r; });
+    const normCar = s => String(s || '').trim().replace(/\s+/g, '');
+    const rows = [];
+    const allBillings = []; // { contract, seq, due_date, amount, status, paid_total }
+
+    _cutContracts.forEach(c => {
+      if (c.status === 'deleted') return;
+      const cn = normCar(c.car_number);
+      if (!cn) return;
+      const months = Number(c.rent_months) || 0;
+      const amount = Number(String(c.rent_amount || '').replace(/,/g, '')) || 0;
+      const start = parseFlexDate(c.start_date);
+      if (!months || !amount || !start || !c.contract_code) return;
+
+      const debitDayRaw = String(c.auto_debit_day || '').trim();
+      const isLastDay = ['말일', '말'].includes(debitDayRaw);
+      const debitDay = isLastDay ? 31 : (Number(debitDayRaw) || 25);
+
+      const inputRow = inputMap[cn];
+      const unpaidAmt = inputRow ? inputRow.unpaid_amount : 0;
+
+      let paidCnt = 0, unpaidCnt = 0, futureCnt = 0;
+      const schedules = [];
+
+      for (let i = 0; i < months; i++) {
+        const d = isLastDay
+          ? new Date(start.getFullYear(), start.getMonth() + i + 1, 0)
+          : new Date(start.getFullYear(), start.getMonth() + i, debitDay);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dueDate = `${yyyy}-${mm}-${dd}`;
+        schedules.push({ seq: i + 1, due_month: `${yyyy}-${mm}`, due_date: dueDate, amount });
+      }
+
+      // 오늘 이전: 완납 or 미납 (미수액 역산)
+      // 오늘 이후: 납부대기
+      const pastSchedules = schedules.filter(s => s.due_date <= today);
+      const futureSchedules = schedules.filter(s => s.due_date > today);
+
+      // 미수 역산: 최근 회차부터 미수액만큼 미납
+      const sortedPast = [...pastSchedules].sort((a, b) => b.due_date.localeCompare(a.due_date));
+      let remain = unpaidAmt;
+      for (const s of sortedPast) {
+        if (remain >= s.amount) {
+          s.status = '미납'; s.paid_total = 0; remain -= s.amount; unpaidCnt++;
+        } else if (remain > 0) {
+          s.status = '부분납부'; s.paid_total = s.amount - remain; remain = 0; unpaidCnt++;
+        } else {
+          s.status = '완납'; s.paid_total = s.amount; paidCnt++;
+        }
+      }
+      futureSchedules.forEach(s => { s.status = '납부대기'; s.paid_total = 0; futureCnt++; });
+
+      const allSchedules = [...pastSchedules, ...futureSchedules];
+      allSchedules.forEach(s => {
+        allBillings.push({
+          contract_code: c.contract_code,
+          contractor_code: c.contractor_code || '',
+          contractor_name: c.contractor_name || '',
+          car_number: cn,
+          ...s,
+        });
+      });
+
+      rows.push({
+        car_number: cn,
+        contractor: c.contractor_name || '—',
+        contract_code: c.contract_code,
+        rent_amount: amount,
+        total_months: months,
+        paid_cnt: paidCnt,
+        unpaid_cnt: unpaidCnt,
+        future_cnt: futureCnt,
+        unpaid_amount: unpaidAmt,
+        statusLabel: unpaidAmt > 0 ? '미수' : '정산완료',
+      });
+    });
+
+    // 매칭 안 된 입력
+    const contractCars = new Set(_cutContracts.map(c => normCar(c.car_number)));
+    input.forEach(r => {
+      if (!contractCars.has(r.car_number)) {
+        rows.push({
+          car_number: r.car_number, contractor: '계약없음', contract_code: '',
+          rent_amount: 0, total_months: 0, paid_cnt: 0, unpaid_cnt: 0, future_cnt: 0,
+          unpaid_amount: r.unpaid_amount, statusLabel: '계약없음',
+        });
+      }
+    });
+
+    rows.sort((a, b) => (b.unpaid_amount || 0) - (a.unpaid_amount || 0));
+    return { rows, billings: allBillings };
+  }
+
+  async function runPreview() {
+    try {
+      _cutoverPlan = null;
+      const input = parseCutoverInput();
+      if (!input.length) {
+        if (resultSub) resultSub.textContent = '파싱 실패 — 차량번호/금액 확인';
+        showToast('데이터가 없습니다', 'error');
+        return;
+      }
+      if (resultSub) resultSub.textContent = `${input.length}행 로딩 중...`;
+
+      // 계약 대기
+      let waited = 0;
+      while (!_cutContracts.length && waited < 5000) { await new Promise(r => setTimeout(r, 300)); waited += 300; }
+      console.log('[cutover] contracts:', _cutContracts.length, 'input:', input.length);
+
+      const plan = buildPlan(input);
+      _cutoverPlan = plan.billings;
+      cutoverGridApi?.setGridOption('rowData', plan.rows);
+
+      const totalPaid = plan.rows.reduce((s, r) => s + r.paid_cnt, 0);
+      const totalUnpaid = plan.rows.reduce((s, r) => s + r.unpaid_cnt, 0);
+      const totalFuture = plan.rows.reduce((s, r) => s + r.future_cnt, 0);
+      if (resultSub) resultSub.textContent = `${plan.rows.length}대 · 완납${totalPaid} · 미납${totalUnpaid} · 대기${totalFuture} · 총${plan.billings.length}회차`;
+
+      const headApply = $('#devApply');
+      if (headApply) headApply.disabled = !plan.billings.length;
+    } catch (err) {
+      console.error('[cutover]', err);
+      if (resultSub) resultSub.textContent = `오류: ${err.message}`;
+      showToast(err.message, 'error');
+    }
+  }
+
+  // 불러오기
   $('#cutoverLoadUrl')?.addEventListener('click', async () => {
     const url = $('#cutoverUrl')?.value?.trim();
     if (!url) { showToast('URL을 입력하세요', 'error'); return; }
@@ -448,121 +600,68 @@ function renderCutoverTab() {
       const res = await fetch(`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
-      if (text.trim().startsWith('<')) throw new Error('시트가 비공개입니다 — 공유: 링크 있는 모든 사용자 뷰어');
+      if (text.trim().startsWith('<')) throw new Error('시트가 비공개입니다');
       $('#cutoverInput').value = text;
       showToast(`불러옴 · ${text.split(/\r?\n/).filter(Boolean).length}행`, 'success');
-      // 불러온 후 자동 미리보기
-      try { await runPreview(); } catch (err) { console.error('[cutover preview]', err); showToast(`미리보기 실패: ${err.message}`, 'error'); }
-    } catch (e) { showToast(`불러오기 실패: ${e.message}`, 'error'); }
+      await runPreview();
+    } catch (e) { showToast(`실패: ${e.message}`, 'error'); }
   });
 
-  async function runPreview() {
-    try {
-    _cutoverPlan = null;
-    const input = parseCutoverInput();
-    console.log('[cutover] parsed input:', input.length, 'rows');
-    if (!input.length) {
-      if (resultSub) resultSub.textContent = '파싱된 데이터 없음 — 차량번호/금액 컬럼 확인';
-      showToast('파싱된 데이터가 없습니다', 'error');
-      return;
-    }
-    if (resultSub) resultSub.textContent = `${input.length}행 로딩 중...`;
-    cutoverGridApi?.setGridOption('rowData', []);
-    // 데이터 로드 대기 (최대 5초)
-    let waited = 0;
-    while (!_cutBills.length && waited < 5000) { await new Promise(r => setTimeout(r, 300)); waited += 300; }
-    const bills = _cutBills;
-    const contracts = _cutContracts;
-    console.log('[cutover] bills:', bills.length, 'contracts:', contracts.length);
-    const billsByCar = {};
-    bills.forEach(b => { if (b.car_number) { b.id = b.id || b._key || b.billing_id; (billsByCar[b.car_number] ||= []).push(b); } });
-    const inputMap = {};
-    input.forEach(r => { if (r.car_number) inputMap[r.car_number] = r; });
-    console.log('[cutover] bills:', bills.length, '건, billsByCar:', Object.keys(billsByCar).length, '대, input cars:', Object.keys(inputMap).length);
-    console.log('[cutover] input sample:', input.slice(0, 3));
-    console.log('[cutover] bill car sample:', Object.keys(billsByCar).slice(0, 3));
-    const updates = [];
-    const lines = [];
-    let totalFullPaid = 0, totalUnpaid = 0, totalFuture = 0;
-    const processedCars = new Set();
-    const today = new Date().toISOString().slice(0, 10);
-
-    Object.entries(billsByCar).forEach(([car, carBills]) => {
-      const inputRow = inputMap[car];
-      const pastBills = carBills.filter(b => !b.due_date || b.due_date <= today);
-      const futureBills = carBills.filter(b => b.due_date && b.due_date > today);
-      futureBills.forEach(b => { updates.push({ id: b.id, paid_total: 0, status: '납부대기', payments: [] }); totalFuture++; });
-      if (!inputRow || inputRow.unpaid_amount <= 0) {
-        pastBills.forEach(b => { updates.push({ id: b.id, paid_total: Number(b.amount) || 0, status: '완납', payments: [] }); totalFullPaid++; });
-        processedCars.add(car); return;
-      }
-      const contract = contracts.find(c => c.car_number === car);
-      const looksLikeRegNo = /^\d{6}-[\d*]{7}$/.test(inputRow.reg_no);
-      if (looksLikeRegNo && contract?.contractor_reg_no && contract.contractor_reg_no !== inputRow.reg_no) { lines.push(`⚠ ${car}: 등록번호 불일치 — 건너뜀`); return; }
-      const sorted = [...pastBills].sort((x, y) => String(y.due_date || '').localeCompare(String(x.due_date || '')));
-      let remain = inputRow.unpaid_amount, unpaidCount = 0;
-      for (const b of sorted) {
-        const due = Number(b.amount) || 0;
-        if (remain >= due) { updates.push({ id: b.id, paid_total: 0, status: '미수', payments: [] }); remain -= due; unpaidCount++; }
-        else if (remain > 0) { updates.push({ id: b.id, paid_total: due - remain, status: '부분입금', payments: [] }); remain = 0; unpaidCount++; }
-        else { updates.push({ id: b.id, paid_total: due, status: '완납', payments: [] }); totalFullPaid++; }
-      }
-      totalUnpaid += unpaidCount;
-      processedCars.add(car);
-      lines.push(`✅ ${car}: 미납 ${unpaidCount}회 (${fmtKR(inputRow.unpaid_amount)}) / 완납 ${sorted.length - unpaidCount}회`);
-    });
-    input.forEach(r => { if (r.car_number && !processedCars.has(r.car_number)) lines.push(`⚠ ${r.car_number}: 회차 데이터 없음`); });
-    _cutoverPlan = updates;
-
-    // 검증 테이블 렌더
-    const rows = [];
-    Object.entries(billsByCar).forEach(([car, carBills]) => {
-      const inputRow = inputMap[car];
-      const pastBills = carBills.filter(b => !b.due_date || b.due_date <= today);
-      const futureBills = carBills.filter(b => b.due_date && b.due_date > today);
-      const curUnpaid = pastBills.filter(b => b.status === '미수' || b.status === '부분입금')
-        .reduce((s, b) => s + ((Number(b.amount) || 0) - (Number(b.paid_total) || 0)), 0);
-      const contract = contracts.find(c => c.car_number === car);
-      const inputAmt = inputRow?.unpaid_amount || 0;
-      const hasChange = inputAmt !== curUnpaid;
-      rows.push({ car, contractor: contract?.contractor_name || '—', inputAmt, curUnpaid, totalBills: carBills.length, pastCnt: pastBills.length, futureCnt: futureBills.length, hasChange });
-    });
-    // 미수 있는 건 먼저
-    rows.sort((a, b) => (b.inputAmt || 0) - (a.inputAmt || 0));
-
-    console.log('[cutover] result rows:', rows.length, 'updates:', updates.length);
-
-    // AG Grid에 결과 표시
-    const gridRows = rows.map(r => ({
-      ...r,
-      statusLabel: r.inputAmt > 0 ? `미수 ${fmtKR(r.inputAmt)}` : '정산완료',
-    }));
-    cutoverGridApi?.setGridOption('rowData', gridRows);
-    if (resultSub) resultSub.textContent = `${rows.length}대 · 완납${totalFullPaid} · 미납${totalUnpaid} · 대기${totalFuture} · 총${updates.length}건`;
-    const headApply = $('#devApply');
-    if (headApply) headApply.disabled = !updates.length;
-    } catch (err) { console.error('[cutover runPreview]', err); if (resultSub) resultSub.textContent = `오류: ${err.message}`; showToast(err.message, 'error'); }
-  }
-
-  // 패널헤드 반영하기 버튼 → 정산 적용
+  // 반영하기: 기존 billings 삭제 → 새로 생성
   const headApplyBtn = $('#devApply');
   if (headApplyBtn) {
     headApplyBtn.onclick = async () => {
       if (!_cutoverPlan?.length) return;
-      if (!confirm(`${_cutoverPlan.length}건 일괄 업데이트합니다. 진행?`)) return;
       headApplyBtn.disabled = true;
       const origText = headApplyBtn.innerHTML;
       headApplyBtn.innerHTML = '<i class="ph ph-spinner"></i> 처리 중...';
-      const now = Date.now();
-      const dbUpdates = {};
-      _cutoverPlan.forEach(p => { dbUpdates[`billings/${p.id}/paid_total`] = p.paid_total; dbUpdates[`billings/${p.id}/status`] = p.status; dbUpdates[`billings/${p.id}/payments`] = p.payments || []; dbUpdates[`billings/${p.id}/cutover_at`] = now; });
       try {
-        await update(ref(db), dbUpdates);
-        if (resultSub) resultSub.textContent = `완료 — ${_cutoverPlan.length}건 처리됨`;
+        // 1) 기존 billings 전부 삭제
+        if (resultSub) resultSub.textContent = '기존 데이터 삭제 중...';
+        await update(ref(db), { billings: null });
+
+        // 2) 새 billings 일괄 생성 (batch write)
+        const now = Date.now();
+        const batchSize = 500; // Firebase update 한번에 최대
+        const total = _cutoverPlan.length;
+        let created = 0;
+
+        for (let i = 0; i < total; i += batchSize) {
+          const chunk = _cutoverPlan.slice(i, i + batchSize);
+          const batchUpdates = {};
+          chunk.forEach((b, j) => {
+            const id = `BL${String(created + j + 1).padStart(5, '0')}`;
+            batchUpdates[`billings/${id}`] = {
+              ...b,
+              billing_id: id,
+              status: b.status || '미수',
+              paid_total: b.paid_total || 0,
+              created_at: now,
+              updated_at: now,
+            };
+          });
+          await update(ref(db), batchUpdates);
+          created += chunk.length;
+          if (resultSub) resultSub.textContent = `생성 중... ${created}/${total}`;
+          // 우측 그리드에 진행상황 업데이트
+          const progress = cutoverGridApi?.getDisplayedRowCount() ? null :
+            cutoverGridApi?.setGridOption('rowData', _cutoverPlan.slice(0, created).map((b, idx) => ({
+              car_number: b.car_number, contractor: b.contractor_name || '',
+              rent_amount: b.amount, total_months: '', paid_cnt: '', unpaid_cnt: '',
+              future_cnt: '', unpaid_amount: 0, statusLabel: `${idx + 1}/${total}`,
+            })));
+        }
+
+        // 시퀀스 카운터 업데이트
+        await update(ref(db), { 'sequences/billing': total });
+
+        if (resultSub) resultSub.textContent = `완료 — ${created}회차 생성`;
         _cutoverPlan = null;
-        showToast('미수 정산 완료', 'success');
-      } catch (e) { if (resultSub) resultSub.textContent = e.message; showToast(e.message, 'error'); }
-      finally { headApplyBtn.innerHTML = origText; }
+        showToast(`미수 정산 완료 — ${created}회차`, 'success');
+      } catch (e) {
+        if (resultSub) resultSub.textContent = `오류: ${e.message}`;
+        showToast(e.message, 'error');
+      } finally { headApplyBtn.innerHTML = origText; }
     };
   }
 }

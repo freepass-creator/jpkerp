@@ -111,7 +111,7 @@ ROUTES = [
     ('/ledger',    'pages/ledger.html',    '입출금관리', 'ledger'),
     ('/loan',      'pages/loan.html',      '할부관리',   'loan'),
     ('/insurance',         'pages/insurance.html',     '보험관리',   'insurance'),
-    ('/product',           'pages/product.html',       '상품관리',   'product'),
+    ('/sales',             'pages/sales.html',         '실적관리',   'sales'),
     ('/finance',           'pages/finance.html',       '재무관리',   'finance'),
     ('/operation/contact',  'pages/operation.html',    '고객응대',   'op_contact'),
     ('/operation/delivery', 'pages/operation.html',    '입출고센터',  'op_delivery'),

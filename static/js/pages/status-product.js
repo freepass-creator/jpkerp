@@ -3,6 +3,7 @@
  * freepasserp products 실시간 연동 — 등록된 상품 중 출고 전 대기 상태 목록
  */
 import { watchAssets } from '../firebase/assets.js';
+import { watchContracts } from '../firebase/contracts.js';
 import { watchProducts } from '../firebase/freepass-db.js';
 
 const $ = (s) => document.querySelector(s);
@@ -16,13 +17,42 @@ const fmtDate = (s) => {
   return m ? `${m[1].slice(2)}.${m[2]}.${m[3]}` : s;
 };
 
-let gridApi, assets = [];
+let gridApi, assets = [], contracts = [];
 let productMap = new Map(); // car_number → product
 let selectedCar = null;
 
+function normalizeDate(s) {
+  if (!s) return '';
+  let v = String(s).trim().replace(/[./]/g, '-');
+  const m = v.match(/^(\d{2})-(\d{1,2})-(\d{1,2})$/);
+  if (m) v = `${Number(m[1]) < 50 ? 2000 + Number(m[1]) : 1900 + Number(m[1])}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  return v;
+}
+function computeEnd(c) {
+  if (c.end_date) return normalizeDate(c.end_date);
+  const s = normalizeDate(c.start_date);
+  if (!s || !c.rent_months) return '';
+  const d = new Date(s); if (isNaN(d.getTime())) return '';
+  d.setMonth(d.getMonth() + Number(c.rent_months)); d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function buildRows() {
+  const today = new Date().toISOString().slice(0, 10);
+  // 활성 계약 차량 (출고 중) 제외
+  const activeCars = new Set(contracts.filter(c => {
+    if (c.status === 'deleted') return false;
+    if (!c.contractor_name?.trim()) return false;
+    const s = normalizeDate(c.start_date);
+    if (!s || s > today) return false;
+    const e = computeEnd(c);
+    return !e || e >= today;
+  }).map(c => c.car_number).filter(Boolean));
+
   const rows = [];
   for (const [cn, p] of productMap) {
+    // 출고 중인 차량 제외
+    if (activeCars.has(cn)) continue;
     const asset = assets.find(a => a.car_number === cn);
     rows.push({
       car_number: cn,
@@ -168,6 +198,7 @@ export async function mount() {
   el._agApi = gridApi;
 
   watchAssets((items) => { assets = items; refresh(); });
+  watchContracts((items) => { contracts = items; refresh(); });
   watchProducts((map) => { productMap = map; refresh(); });
 
   $('#productSearch')?.addEventListener('input', (e) => {

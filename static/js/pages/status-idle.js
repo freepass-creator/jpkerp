@@ -7,6 +7,7 @@ import { watchContracts } from '../firebase/contracts.js';
 import { watchEvents } from '../firebase/events.js';
 import { watchProducts, findProductByCarNumber, saveProductToFreepass } from '../firebase/freepass-db.js';
 import { showContextMenu } from '../core/context-menu.js';
+import { createPhotoUploader } from '../core/photo-ui.js';
 
 const $ = (s) => document.querySelector(s);
 const fmtDate = (s) => {
@@ -46,7 +47,8 @@ const EVENT_LABEL = {
 
 let gridApi, assets = [], contracts = [], events = [];
 let selectedCar = null;
-let productCache = new Map(); // car_number → product (실시간 동기화)
+let productCache = new Map();
+let productUploader = null; // car_number → product (실시간 동기화)
 
 function computeIdle() {
   const today = new Date().toISOString().slice(0, 10);
@@ -262,40 +264,45 @@ function renderProductForm(carNumber) {
     <div style="overflow:auto;flex:1">
       <div class="form-section">
         <div class="form-section-title"><i class="ph ph-car"></i>차량 정보</div>
-        <div class="form-grid">
-          <div class="field"><label>차량번호</label><input type="text" value="${asset.car_number || ''}" readonly></div>
-          <div class="field"><label>회사코드</label><input type="text" value="${asset.partner_code || ''}" readonly></div>
-          <div class="field"><label>제조사</label><input type="text" name="fp_maker" value="${asset.maker || ''}" placeholder="현대/기아/..."></div>
-          <div class="field"><label>모델명</label><input type="text" name="fp_model" value="${asset.car_model || ''}" placeholder="모델"></div>
-          <div class="field"><label>세부모델</label><input type="text" name="fp_sub_model" value="${asset.detail_model || ''}" placeholder="세부모델"></div>
-          <div class="field"><label>��식</label><input type="text" name="fp_year" value="${asset.year || ''}" placeholder="2024"></div>
-          <div class="field"><label>연료</label><input type="text" name="fp_fuel" value="${asset.fuel_type || ''}" placeholder="가솔린/디젤/전기"></div>
-          <div class="field"><label>외장색</label><input type="text" name="fp_ext_color" value="${asset.ext_color || ''}" placeholder="흰색"></div>
-          <div class="field"><label>차량가격</label><input type="text" name="fp_price" value="${fmtComma(asset.vehicle_price)}" inputmode="numeric" placeholder="0"></div>
-          <div class="field"><label>주행거리</label><input type="text" name="fp_mileage" value="${fmtComma(asset.mileage)}" inputmode="numeric" placeholder="0"></div>
+        <div class="ioc-car-info">
+          <div class="ioc-car-col">
+            <div class="ioc-car-row"><span class="k">차량번호</span><span class="v">${asset.car_number || '-'}</span></div>
+            <div class="ioc-car-row"><span class="k">회사코드</span><span class="v">${asset.partner_code || '-'}</span></div>
+            <div class="ioc-car-row"><span class="k">세부모델</span><span class="v">${asset.detail_model || asset.car_model || '-'}</span></div>
+            <div class="ioc-car-row"><span class="k">연식</span><span class="v">${asset.year || '-'}</span></div>
+          </div>
+          <div class="ioc-car-col">
+            <div class="ioc-car-row"><span class="k">연료</span><span class="v">${asset.fuel_type || '-'}</span></div>
+            <div class="ioc-car-row"><span class="k">외장색</span><span class="v">${asset.ext_color || '-'}</span></div>
+            <div class="ioc-car-row"><span class="k">차량가격</span><span class="v">${fmtComma(asset.vehicle_price) || '-'}</span></div>
+            <div class="ioc-car-row"><span class="k">주행거리</span><span class="v">${asset.mileage ? fmtComma(asset.mileage) + 'km' : '-'}</span></div>
+          </div>
         </div>
       </div>
 
       <div class="form-section">
         <div class="form-section-title"><i class="ph ph-currency-krw"></i>기간별 렌트료</div>
-        <table class="grid-table">
-          <thead><tr><th>기��</th><th class="is-num">월렌트료</th><th class="is-num">보증금</th></tr></thead>
-          <tbody>
-            ${periods.map(p => `<tr>
-              <td style="font-weight:var(--fw-bold)">${p}개월</td>
-              <td><input type="text" name="fp_rent_${p}" inputmode="numeric" placeholder="0" style="text-align:right"></td>
-              <td><input type="text" name="fp_dep_${p}" inputmode="numeric" placeholder="0" style="text-align:right"></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+        <div class="form-grid">
+          ${periods.map(p => `
+            <div class="field"><label>${p}개월 월렌트료</label><input type="text" name="fp_rent_${p}" inputmode="numeric" placeholder="0"></div>
+            <div class="field"><label>${p}개월 보증금</label><input type="text" name="fp_dep_${p}" inputmode="numeric" placeholder="0"></div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title"><i class="ph ph-image"></i>차량 사진</div>
+        <div id="productPhotoUploader"></div>
       </div>
 
       <div class="form-section">
         <div class="form-section-title"><i class="ph ph-note-pencil"></i>기타</div>
         <div class="form-grid">
+          <div class="field"><label>제조사</label><input type="text" name="fp_maker" value="${asset.maker || ''}" placeholder="현대/기아/..."></div>
+          <div class="field"><label>모델명</label><input type="text" name="fp_model" value="${asset.car_model || ''}" placeholder="모델"></div>
           <div class="field"><label>상품구분</label>
             <select name="fp_type">
-              <option value="중고렌트">중���렌트</option>
+              <option value="중고렌트">중고렌트</option>
               <option value="신차렌트">신차렌트</option>
               <option value="중고구독">중고구독</option>
               <option value="신차구독">신차구독</option>
@@ -320,6 +327,10 @@ function renderProductForm(carNumber) {
     });
   });
 
+  // 사진 업로더
+  const photoMount = host.querySelector('#productPhotoUploader');
+  if (photoMount) productUploader = createPhotoUploader(photoMount, { accept: 'image/*', multiple: true });
+
   $('#btnCancelProduct')?.addEventListener('click', () => renderHistory(carNumber));
   $('#btnSaveProduct')?.addEventListener('click', () => submitProduct(carNumber));
 }
@@ -340,23 +351,33 @@ async function submitProduct(carNumber) {
   });
 
   const btn = $('#btnSaveProduct');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ph ph-spinner"></i>등록 ���...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ph ph-spinner"></i>등록 중...'; }
 
   try {
+    // 사진 업로드
+    let imageUrls = [];
+    const photos = productUploader ? productUploader.getFiles() : [];
+    if (photos.length) {
+      const { uploadFilesToStorage } = await import('../core/photo-ui.js');
+      imageUrls = await uploadFilesToStorage(photos, { type: 'product', car: asset.car_number });
+      if (btn) btn.innerHTML = '<i class="ph ph-spinner"></i>상품 등록 중...';
+    }
+
     const result = await saveProductToFreepass({
       car_number: asset.car_number,
       partner_code: asset.partner_code || '',
       maker: val('fp_maker'),
       model_name: val('fp_model'),
-      sub_model: val('fp_sub_model'),
-      year: val('fp_year'),
-      fuel_type: val('fp_fuel'),
-      ext_color: val('fp_ext_color'),
+      sub_model: asset.detail_model || '',
+      year: asset.year || '',
+      fuel_type: asset.fuel_type || '',
+      ext_color: asset.ext_color || '',
       vehicle_price: num('fp_price'),
       mileage: num('fp_mileage'),
       product_type: val('fp_type') || '중고렌트',
       note: val('fp_note'),
       price,
+      image_urls: imageUrls,
       first_registration_date: asset.first_registration_date || '',
       vehicle_age_expiry_date: asset.vehicle_age_expiry_date || '',
     });
