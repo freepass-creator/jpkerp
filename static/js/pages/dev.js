@@ -27,13 +27,22 @@ const DEV_MENUS = [
   { key: 'cutover',  label: '미수 정산',  ph: 'ph-currency-krw' },
   { key: 'alimtalk', label: '알림톡',     ph: 'ph-chat-text' },
   { key: 'sms',      label: 'SMS',        ph: 'ph-envelope' },
+  { key: 'delivery',  label: '일괄출고',  ph: 'ph-truck' },
   { key: 'carmaster', label: '차종 등록', ph: 'ph-car' },
 ];
 
 let _devCurrentTab = '';
 
+const PATH_TAB = {
+  '/dev': 'data', '/dev/overdue': 'overdue', '/dev/cutover': 'cutover',
+  '/dev/alimtalk': 'alimtalk', '/dev/sms': 'sms', '/dev/delivery': 'delivery',
+  '/dev/car-master': 'carmaster',
+};
+
 export async function mount() {
+  _devCurrentTab = PATH_TAB[window.location.pathname] || '';
   renderDevList();
+  if (_devCurrentTab) renderDevContent();
 }
 
 // ── 좌측 기능 카드 ──
@@ -77,7 +86,7 @@ function renderDevContent() {
   if (resetBtn) { resetBtn.style.display = _devCurrentTab ? '' : 'none'; resetBtn.onclick = null; }
   if (applyBtn) { applyBtn.style.display = _devCurrentTab ? '' : 'none'; applyBtn.onclick = null; applyBtn.disabled = true; }
 
-  const renderers = { data: renderDataTab, overdue: renderOverdueTab, cutover: renderCutoverTab, alimtalk: renderAlimtalkTab, sms: renderSmsTab, carmaster: renderCarMasterTab };
+  const renderers = { data: renderDataTab, overdue: renderOverdueTab, cutover: renderCutoverTab, alimtalk: renderAlimtalkTab, sms: renderSmsTab, delivery: renderDeliveryTab, carmaster: renderCarMasterTab };
   const fn = renderers[_devCurrentTab];
   if (fn) fn();
   else {
@@ -321,19 +330,38 @@ async function renderOverdueTab() {
 // ─── 3. 미수 정산 (cutover) ───
 function renderCutoverTab() {
   const host = $('#devHost');
-  const resultHost = $('#devResultHost');
   const resultTitle = $('#devResultTitle');
   const resultSub = $('#devResultSub');
   let _cutoverPlan = null;
+  let cutoverGridApi = null;
 
   if (resultTitle) resultTitle.textContent = '정산 검증';
   if (resultSub) resultSub.textContent = '';
-  // 우측: AG Grid
-  if (resultHost) {
-    resultHost.style.padding = '0';
-    resultHost.innerHTML = '<div id="cutoverGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>';
+
+  // 폼 먼저 렌더
+  host.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;height:100%">
+      <div style="font-size:var(--font-size-sm);color:var(--c-text-muted)">
+        현재 미수 명세를 입력하면 <b>전체 회차를 완납 처리</b>한 뒤, 입력된 차량의 <b>최근 회차부터 역산해 미수액만큼 미납</b>으로 되돌립니다.
+      </div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="cutoverUrl" class="ctrl" placeholder="구글시트 URL 붙여넣기" style="flex:1">
+        <button class="btn" id="cutoverLoadUrl">불러오기</button>
+      </div>
+      <textarea id="cutoverInput" class="ctrl" style="flex:1;min-height:200px;resize:vertical;font-family:monospace" placeholder="또는 직접 입력:
+123가4567, 900101-1******, 1650000
+34나5678, 950505-2******, 1100000"></textarea>
+    </div>`;
+
+  // 우측 AG Grid
+  const rh = $('#devResultHost');
+  if (rh) {
+    rh.style.padding = '0';
+    rh.innerHTML = '<div id="cutoverGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>';
   }
-  const cutoverGridApi = agGrid.createGrid($('#cutoverGrid'), {
+  const gridEl = $('#cutoverGrid');
+  if (gridEl) {
+    cutoverGridApi = agGrid.createGrid(gridEl, {
     columnDefs: [
       { headerName: '차량번호', field: 'car', width: 95, cellStyle: { fontWeight: 'var(--fw-bold)' } },
       { headerName: '계약자', field: 'contractor', width: 80 },
@@ -428,17 +456,20 @@ function renderCutoverTab() {
       $('#cutoverInput').value = text;
       showToast(`불러옴 · ${text.split(/\r?\n/).filter(Boolean).length}행`, 'success');
       // 불러온 후 자동 미리보기
-      $('#cutoverPreview')?.click();
+      await runPreview();
     } catch (e) { showToast(`불러오기 실패: ${e.message}`, 'error'); }
   });
 
-  $('#cutoverPreview')?.addEventListener('click', async () => {
-    const resultEl = resultHost;
-    const applyBtn = $('#cutoverApply');
-    applyBtn.disabled = true;
+  async function runPreview() {
     _cutoverPlan = null;
     const input = parseCutoverInput();
-    resultEl.textContent = '로딩 중...';
+    if (!input.length) {
+      if (resultSub) resultSub.textContent = '파싱된 데이터 없음 — 차량번호/금액 컬럼 확인';
+      showToast('파싱된 데이터가 없습니다', 'error');
+      return;
+    }
+    if (resultSub) resultSub.textContent = `${input.length}행 로딩 중...`;
+    cutoverGridApi.setGridOption('rowData', []);
     const [bSnap, cSnap] = await Promise.all([get(ref(db, 'billings')), get(ref(db, 'contracts'))]);
     const bills = bSnap.exists() ? Object.entries(bSnap.val()).filter(([_, b]) => b && b.status !== 'deleted').map(([id, b]) => ({ id, ...b })) : [];
     const contracts = cSnap.exists() ? Object.values(cSnap.val()).filter(c => c && c.status !== 'deleted') : [];
@@ -504,7 +535,7 @@ function renderCutoverTab() {
     if (resultSub) resultSub.textContent = `${rows.length}대 · 완납${totalFullPaid} · 미납${totalUnpaid} · 대기${totalFuture} · 총${updates.length}건`;
     const headApply = $('#devApply');
     if (headApply) headApply.disabled = !updates.length;
-  });
+  }
 
   // 패널헤드 반영하기 버튼 → 정산 적용
   const headApplyBtn = $('#devApply');
@@ -640,7 +671,132 @@ function renderSmsTab() {
   });
 }
 
-// ─── 6. 차종 등록 ───
+// ─── 6. 일괄출고 ───
+async function renderDeliveryTab() {
+  const host = $('#devHost');
+  host.innerHTML = `
+    <div style="display:flex;gap:20px;height:100%">
+      <div style="flex:1;display:flex;flex-direction:column">
+        <div style="font-size:var(--font-size-sm);color:var(--c-text-muted);margin-bottom:12px">
+          계약 등록된 차량 중 <b>출고 이벤트가 없는 건</b>을 조회합니다.<br>
+          계약 시작일 기준으로 출고 이벤트를 일괄 생성합니다.
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <button class="btn" id="deliveryScan">미출고 조회</button>
+          <button class="btn btn-primary" id="deliveryApply" disabled>일괄 출고 등록</button>
+        </div>
+        <div id="deliveryResult" style="flex:1;overflow:auto"></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column">
+        <div style="font-weight:600;margin-bottom:6px">처리 결과</div>
+        <pre id="deliveryLog" style="flex:1;background:var(--c-bg-sub);padding:12px;font-size:var(--font-size-xs);overflow:auto;margin:0;white-space:pre-wrap;border-radius:var(--r-md)"></pre>
+      </div>
+    </div>`;
+
+  let _deliveryPlan = [];
+
+  $('#deliveryScan')?.addEventListener('click', async () => {
+    const resultEl = $('#deliveryResult');
+    const applyBtn = $('#deliveryApply');
+    applyBtn.disabled = true;
+    _deliveryPlan = [];
+    resultEl.innerHTML = '<span style="color:var(--c-text-muted)">조회 중...</span>';
+
+    const [cSnap, eSnap, aSnap] = await Promise.all([
+      get(ref(db, 'contracts')),
+      get(ref(db, 'events')),
+      get(ref(db, 'assets')),
+    ]);
+    const contracts = cSnap.exists() ? Object.values(cSnap.val()).filter(c => c && c.status !== 'deleted' && c.contract_status !== '계약해지') : [];
+    const events = eSnap.exists() ? Object.values(eSnap.val()).filter(e => e && e.status !== 'deleted') : [];
+    const assets = aSnap.exists() ? Object.values(aSnap.val()).filter(a => a && a.status !== 'deleted') : [];
+
+    // 출고 이벤트가 있는 차량 (ioc + 정상출고 or delivery)
+    const deliveredCars = new Set();
+    events.forEach(e => {
+      if ((e.type === 'ioc' && e.ioc_kind === '정상출고') || e.type === 'delivery' || e.event_type === 'delivery') {
+        deliveredCars.add(e.car_number);
+      }
+    });
+
+    // 계약중 + 미출고
+    const missing = contracts.filter(c => c.car_number && !deliveredCars.has(c.car_number));
+
+    if (!missing.length) {
+      resultEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--c-success)">모든 계약 차량이 출고 처리되어 있습니다.</div>';
+      return;
+    }
+
+    _deliveryPlan = missing;
+
+    const th = `<tr style="background:var(--c-bg-sub);font-weight:600;font-size:var(--font-size-xs)">
+      <td style="padding:6px 8px">차량번호</td><td style="padding:6px 8px">계약자</td>
+      <td style="padding:6px 8px">계약시작일</td><td style="padding:6px 8px">계약종료일</td>
+      <td style="padding:6px 8px">회사코드</td></tr>`;
+    const trs = missing.map(c => {
+      const asset = assets.find(a => a.car_number === c.car_number);
+      return `<tr style="border-bottom:1px solid var(--c-border)">
+        <td style="padding:4px 8px;font-weight:600">${c.car_number}</td>
+        <td style="padding:4px 8px">${c.contractor_name || '—'}</td>
+        <td style="padding:4px 8px">${c.start_date || '—'}</td>
+        <td style="padding:4px 8px">${c.end_date || '—'}</td>
+        <td style="padding:4px 8px">${c.partner_code || asset?.partner_code || '—'}</td>
+      </tr>`;
+    }).join('');
+
+    resultEl.innerHTML = `
+      <div style="margin-bottom:8px;font-size:var(--font-size-sm);color:var(--c-danger);font-weight:600">
+        미출고 ${missing.length}건 발견
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size-sm)">${th}${trs}</table>`;
+    applyBtn.disabled = false;
+  });
+
+  $('#deliveryApply')?.addEventListener('click', async () => {
+    if (!_deliveryPlan.length) return;
+    if (!confirm(`${_deliveryPlan.length}건 일괄 출고 등록합니다. 진행?`)) return;
+
+    const btn = $('#deliveryApply');
+    const logEl = $('#deliveryLog');
+    btn.disabled = true;
+    btn.textContent = '처리 중...';
+    logEl.textContent = '';
+
+    const { saveEvent } = await import('../firebase/events.js');
+    let ok = 0, fail = 0;
+
+    for (const c of _deliveryPlan) {
+      try {
+        await saveEvent({
+          type: 'ioc',
+          event_type: 'ioc',
+          ioc_kind: '정상출고',
+          direction: 'out',
+          date: c.start_date || new Date().toISOString().slice(0, 10),
+          car_number: c.car_number,
+          vin: c.vin || '',
+          title: '정상출고 (일괄등록)',
+          customer_name: c.contractor_name || '',
+          contract_code: c.contract_code || '',
+          partner_code: c.partner_code || '',
+          note: '개발도구 일괄출고',
+        });
+        logEl.textContent += `✅ ${c.car_number} → ${c.start_date} 출고\n`;
+        ok++;
+      } catch (e) {
+        logEl.textContent += `❌ ${c.car_number} — ${e.message}\n`;
+        fail++;
+      }
+    }
+
+    logEl.textContent += `\n━━━\n완료: ${ok}건 / 실패: ${fail}건`;
+    showToast(`일괄출고 ${ok}건 완료`, ok > 0 ? 'success' : 'error');
+    btn.textContent = '일괄 출고 등록';
+    _deliveryPlan = [];
+  });
+}
+
+// ─── 7. 차종 등록 ───
 async function renderCarMasterTab() {
   const host = $('#devHost');
   host.innerHTML = `

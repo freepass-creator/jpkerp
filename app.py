@@ -150,6 +150,7 @@ ROUTES = [
     ('/admin/contract', 'pages/admin-contract.html', '계약서관리',   'admin_contract'),
     ('/admin/seal',     'pages/admin-seal.html',     '인감/도장',    'admin_seal'),
     ('/dev',            'pages/dev.html',            '개발도구',     'dev'),
+    ('/dev/delivery',   'pages/dev.html',            '일괄출고',     'dev_delivery'),
 ]
 
 def _make_view(tpl, title):
