@@ -339,7 +339,7 @@ export async function mount() {
       { headerName: '내용', field: 'summary', width: 160 },
       { headerName: '상태', field: 'status', width: 75,
         cellStyle: p => ({ fontWeight: 'var(--fw-bold)' }) },
-      { headerName: '경과', field: 'elapsed', width: 65, sort: 'desc',
+      { headerName: '경과', field: 'elapsed', width: 65, sort: 'desc', filter: false,
         valueFormatter: p => p.value !== undefined ? `${p.value}일` : '-',
         cellStyle: p => ({
           fontWeight: 'var(--fw-bold)',
@@ -348,7 +348,7 @@ export async function mount() {
       { headerName: '일자', field: 'date', width: 80, valueFormatter: p => fmtDate(p.value) },
     ],
     rowData: [],
-    defaultColDef: { resizable: true, sortable: true, filter: true, editable: false, minWidth: 50 },
+    defaultColDef: { resizable: true, sortable: true, filter: 'agTextColumnFilter', editable: false, minWidth: 50 },
     rowHeight: 28,
     headerHeight: 28,
     animateRows: false,

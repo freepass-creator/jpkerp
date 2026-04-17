@@ -437,7 +437,7 @@ export async function mount() {
         valueFormatter: p => p.value || '미등록' },
       { headerName: '휴차사유', field: 'idle_reason', width: 110,
         cellStyle: p => ({ color: REASON_COLOR[p.value] || 'var(--c-text)', fontWeight: 'var(--fw-bold)' }) },
-      { headerName: '휴차기간', field: 'idle_days', width: 85,
+      { headerName: '휴차기간', field: 'idle_days', width: 85, filter: false,
         valueFormatter: p => p.value !== '' ? `${p.value}일` : '-',
         cellStyle: p => {
           if (p.value === '' || p.value < 7) return {};
@@ -448,7 +448,7 @@ export async function mount() {
         } },
     ],
     rowData: [],
-    defaultColDef: { resizable: true, sortable: true, filter: true, editable: false, minWidth: 50 },
+    defaultColDef: { resizable: true, sortable: true, filter: 'agTextColumnFilter', editable: false, minWidth: 50 },
     rowHeight: 28,
     headerHeight: 28,
     animateRows: false,

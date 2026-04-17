@@ -10,6 +10,8 @@
  *   });
  */
 
+import { JpkSetFilter } from './grid-set-filter.js';
+
 const DEFAULTS = {
   rowHeight: 28,
   headerHeight: 28,
@@ -19,8 +21,8 @@ const DEFAULTS = {
   undoRedoCellEditing: true,
   defaultColDef: {
     resizable: true,
-    sortable: false,
-    filter: false,
+    sortable: true,
+    filter: 'agTextColumnFilter',
     minWidth: 60,
   },
 };
@@ -115,6 +117,11 @@ export function schemaToColumns(schema, opts = {}) {
       field: s.col,
       headerName: s.label + (s.required ? ' *' : ''),
       editable: opts.editable || false,
+      ...(s.type === 'select'
+        ? { filter: JpkSetFilter }
+        : s.type === 'number'
+          ? { filter: false }
+          : { filter: 'agTextColumnFilter' }),
       ...(s.type === 'select' && s.options ? {
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: { values: ['', ...s.options] },

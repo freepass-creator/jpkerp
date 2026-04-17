@@ -38,7 +38,7 @@ export async function mount() {
       },
     ],
     rowData: [],
-    defaultColDef: { resizable: true, sortable: false, filter: false, minWidth: 50 },
+    defaultColDef: { resizable: true, sortable: true, filter: 'agTextColumnFilter', minWidth: 50 },
     rowHeight: 28,
     headerHeight: 28,
     animateRows: false,

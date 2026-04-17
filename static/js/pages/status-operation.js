@@ -259,14 +259,16 @@ function renderSummary(rows) {
 }
 
 function buildColumnDefs() {
-  const right = (extra = {}) => ({ type: 'numericColumn', cellStyle: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', ...extra } });
+  const right = (extra = {}) => ({ type: 'numericColumn', filter: false, cellStyle: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', ...extra } });
   const money = (color) => ({
     type: 'numericColumn',
+    filter: false,
     valueFormatter: p => p.value ? fmt(p.value) : '-',
     cellStyle: p => ({ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: color || 'var(--c-text)', fontWeight: p.value ? 500 : 400 }),
   });
   const days = {
     type: 'numericColumn',
+    filter: false,
     valueFormatter: p => p.value === null || p.value === undefined ? '-' : (p.value > 0 ? `D-${p.value}` : (p.value === 0 ? '오늘' : `D+${-p.value}`)),
     cellStyle: p => ({
       textAlign: 'right',

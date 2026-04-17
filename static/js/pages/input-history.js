@@ -89,7 +89,7 @@ function initGrid() {
         } },
     ],
     rowData: [],
-    defaultColDef: { resizable: true, sortable: true, filter: false, minWidth: 50 },
+    defaultColDef: { resizable: true, sortable: true, filter: 'agTextColumnFilter', minWidth: 50 },
     rowHeight: 30,
     headerHeight: 28,
     animateRows: false,

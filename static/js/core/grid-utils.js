@@ -2,8 +2,22 @@
  * grid-utils.js — AG Grid 공통 유틸 (스키마 → 컬럼, 상태 저장/복원)
  */
 
+import { JpkSetFilter } from './grid-set-filter.js';
+
 const MONEY_RE = /price|amount|fee|tax|principal|bond|duty|commission|insurance|deposit|rent|payment|cost|down|prepay|transfer/i;
 const isMoneyField = (s) => s.money === true || (s.type === 'number' && MONEY_RE.test(s.col));
+
+/**
+ * 컬럼 타입별 필터 규칙:
+ *   - select      → JpkSetFilter (빈도 내림차순 체크박스)
+ *   - number/money → 필터 없음 (정렬만)
+ *   - 그 외(text/date) → agTextColumnFilter
+ */
+function filterForType(s, money) {
+  if (s.type === 'select') return { filter: JpkSetFilter };
+  if (money || s.type === 'number') return { filter: false };
+  return { filter: 'agTextColumnFilter' };
+}
 
 /** 자산 노출 시 기본 컬럼 순서 — 정적 속성만 (변동값 제외) */
 export const ASSET_DEFAULT_ORDER = [
@@ -36,6 +50,7 @@ export function buildSchemaColumns(schema, { editableFn, savedState = {}, includ
     cols.push({
       field: s.col,
       headerName: s.label + (s.required ? ' *' : ''),
+      ...filterForType(s, money),
       ...(editableFn ? { editable: editableFn } : {}),
       ...(savedState[s.col]?.width ? { width: savedState[s.col].width } : {}),
       ...(s.type === 'select' && s.options ? {
@@ -102,7 +117,7 @@ export function baseGridOptions({ columnDefs, keyField, dirtyRows, onColStateCha
   return {
     columnDefs,
     rowData: [],
-    defaultColDef: { resizable: true, sortable: false, filter: 'agTextColumnFilter', minWidth: 60 },
+    defaultColDef: { resizable: true, sortable: true, filter: 'agTextColumnFilter', minWidth: 60 },
     rowHeight: 28,
     headerHeight: 28,
     animateRows: false,
