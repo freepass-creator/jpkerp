@@ -15,6 +15,7 @@ import { db } from '../firebase/config.js';
 const $ = s => document.querySelector(s);
 let gridApi = null;
 let customModels = [];
+let editingKey = null; // 수정 중인 커스텀 키
 
 export async function mount() {
   initGrid();
@@ -92,6 +93,16 @@ function fillForm(data) {
   // 모델 datalist 갱신
   const models = getModels(data.maker);
   $('#cmModelList').innerHTML = models.map(m => `<option value="${m}">`).join('');
+  // 추가분이면 수정 모드
+  if (data._source === '추가' && data._key) {
+    editingKey = data._key;
+    const btn = $('#cmSave');
+    if (btn) btn.textContent = '수정';
+  } else {
+    editingKey = null;
+    const btn = $('#cmSave');
+    if (btn) btn.textContent = '등록';
+  }
 }
 
 function readForm() {
@@ -107,11 +118,13 @@ function readForm() {
 }
 
 function resetForm() {
-  document.querySelectorAll('#cmReset').forEach(() => {});
   ['maker','model','sub','code','year_start','year_end','category'].forEach(n => {
     const el = $(`[name="${n}"]`);
     if (el) el.value = '';
   });
+  editingKey = null;
+  const btn = $('#cmSave');
+  if (btn) btn.textContent = '등록';
   $('[name="maker"]')?.focus();
 }
 
@@ -142,16 +155,25 @@ async function saveCustom() {
     showToast('제조사, 모델, 세부모델, 생산시작은 필수입니다', 'error');
     return;
   }
-  // 중복 체크
-  const exists = CAR_MODELS.some(m => m.maker === data.maker && m.sub === data.sub);
-  if (exists) { showToast('이미 등록된 세부모델입니다', 'error'); return; }
 
-  const key = `${data.maker}_${data.model}_${data.code || data.year_start}_${Date.now()}`.replace(/[\s./]/g, '_');
-  try {
-    await set(ref(db, `${CUSTOM_PATH}/${key}`), { ...data, created_at: Date.now() });
-    showToast(`${data.maker} ${data.model} ${data.sub} 추가 완료`, 'success');
-    resetForm();
-  } catch (e) { showToast(e.message, 'error'); }
+  if (editingKey) {
+    // 수정 모드
+    try {
+      await set(ref(db, `${CUSTOM_PATH}/${editingKey}`), { ...data, updated_at: Date.now() });
+      showToast(`${data.maker} ${data.sub} 수정 완료`, 'success');
+      resetForm();
+    } catch (e) { showToast(e.message, 'error'); }
+  } else {
+    // 신규 등록
+    const exists = CAR_MODELS.some(m => m.maker === data.maker && m.sub === data.sub);
+    if (exists) { showToast('이미 등록된 세부모델입니다', 'error'); return; }
+    const key = `${data.maker}_${data.model}_${data.code || data.year_start}_${Date.now()}`.replace(/[\s./]/g, '_');
+    try {
+      await set(ref(db, `${CUSTOM_PATH}/${key}`), { ...data, created_at: Date.now() });
+      showToast(`${data.maker} ${data.model} ${data.sub} 추가 완료`, 'success');
+      resetForm();
+    } catch (e) { showToast(e.message, 'error'); }
+  }
 }
 
 async function deleteCustom(key) {

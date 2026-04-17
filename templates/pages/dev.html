@@ -1,14 +1,26 @@
 {% extends 'workspace.html' %}
 {% from '_macros/ui.html' import btn %}
 {% block topbar_extra %}<span class="topbar-status">개발도구</span>{% endblock %}
+{% block workspace_layout %}layout-dev{% endblock %}
 {% block workspace %}
-<section class="panel" style="max-width:700px;margin:0 auto">
+<section class="panel">
   <div class="panel-head">
     <div style="display:flex;align-items:center;gap:6px">
-      <i class="ph ph-database" style="color:var(--c-text-muted)"></i>
-      <span class="panel-title">데이터 관리</span>
+      <i class="ph ph-list-bullets" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title">기능 선택</span>
     </div>
   </div>
-  <div class="panel-body is-pad" id="devHost" style="overflow-y:auto"></div>
+  <div class="panel-body" id="devList" style="overflow-y:auto"></div>
+</section>
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <span class="panel-title" id="devContentTitle">기능을 선택하세요</span>
+      <span class="panel-subtitle" id="devContentSub"></span>
+    </div>
+  </div>
+  <div class="panel-body is-pad" id="devHost" style="overflow-y:auto">
+    <div style="padding:24px;text-align:center;color:var(--c-text-muted)">좌측에서 기능을 선택하세요.</div>
+  </div>
 </section>
 {% endblock %}

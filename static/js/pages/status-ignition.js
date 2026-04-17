@@ -6,6 +6,7 @@ import { watchContracts } from '../firebase/contracts.js';
 import { watchBillings, computeTotalDue, computeOverdueDays } from '../firebase/billings.js';
 import { watchEvents } from '../firebase/events.js';
 import { watchAssets } from '../firebase/assets.js';
+import { showContextMenu } from '../core/context-menu.js';
 
 const $ = (s) => document.querySelector(s);
 const fmt = (v) => { const n = Number(v || 0); return n ? n.toLocaleString() : '-'; };
@@ -207,8 +208,52 @@ export async function mount() {
   });
   el._agApi = gridApi;
 
+  // 우클릭 — 상태 즉시 변경
+  el.addEventListener('contextmenu', (e) => {
+    const rowEl = e.target.closest('.ag-row');
+    if (!rowEl) return;
+    e.preventDefault();
+    const rowIndex = Number(rowEl.getAttribute('row-index'));
+    const node = gridApi.getDisplayedRowAtIndex(rowIndex);
+    const row = node?.data;
+    if (!row) return;
+    selectedRow = row;
+    node.setSelected(true);
+    renderDetail(row);
+
+    const c = row._contract;
+    const menuItems = [];
+    if (row.action_status !== '시동제어') {
+      menuItems.push({ label: '시동제어로 변경', icon: '🔒', action: () => changeStatus(c, '시동제어') });
+    }
+    if (row.action_status !== '제어해제') {
+      menuItems.push({ label: '제어해제', icon: '🔓', action: () => changeStatus(c, '제어해제') });
+    }
+    menuItems.push('sep');
+    menuItems.push({ label: '상세 보기', icon: '📋', action: () => renderDetail(row) });
+    showContextMenu(e, menuItems);
+  });
+
   watchContracts((items) => { contracts = items; refresh(); });
   watchBillings((items) => { billings = items; refresh(); });
   watchEvents((items) => { events = items; refresh(); });
   watchAssets((items) => { assets = items; });
+}
+
+async function changeStatus(contract, newStatus) {
+  try {
+    const { updateContract } = await import('../firebase/contracts.js');
+    await updateContract(contract.contract_code, { action_status: newStatus });
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-success';
+    toast.textContent = `조치상태 → ${newStatus}`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  } catch (err) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-error';
+    toast.textContent = err.message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
 }

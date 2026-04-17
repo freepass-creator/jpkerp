@@ -6,6 +6,7 @@ import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
 import { watchEvents } from '../firebase/events.js';
 import { watchProducts, findProductByCarNumber, saveProductToFreepass } from '../firebase/freepass-db.js';
+import { showContextMenu } from '../core/context-menu.js';
 
 const $ = (s) => document.querySelector(s);
 const fmtDate = (s) => {
@@ -305,7 +306,7 @@ function renderProductForm(carNumber) {
       </div>
 
       <div class="panel-foot">
-        <button id="btnCancelProduct" class="btn btn-outline"><i class="ph ph-x"></i>��소</button>
+        <button id="btnCancelProduct" class="btn"><i class="ph ph-clock-counter-clockwise"></i>이력보기</button>
         <button id="btnSaveProduct" class="btn btn-primary"><i class="ph ph-storefront"></i>프리패스 등록</button>
       </div>
     </div>
@@ -430,21 +431,7 @@ export async function mount() {
     rowHeight: 28,
     headerHeight: 28,
     animateRows: false,
-    suppressContextMenu: false,
-    getContextMenuItems: (params) => {
-      const car = params.node?.data?.car_number;
-      if (!car) return [];
-      const prod = productCache.get(car);
-      return [
-        { name: prod ? '상품 정보 보기' : '상품 등록하기',
-          icon: '<i class="ph ph-storefront"></i>',
-          action: () => { selectedCar = car; prod ? renderHistory(car) : renderProductForm(car); } },
-        'separator',
-        { name: '이력 보기',
-          icon: '<i class="ph ph-clock-counter-clockwise"></i>',
-          action: () => { selectedCar = car; renderHistory(car); } },
-      ];
-    },
+    suppressContextMenu: true,
     rowSelection: 'single',
     onRowClicked: (e) => {
       selectedCar = e.data?.car_number;
@@ -453,6 +440,25 @@ export async function mount() {
     onGridReady: (p) => p.api.autoSizeAllColumns(),
   });
   el._agApi = gridApi;
+
+  // 우클릭 컨텍스트 메뉴
+  el.addEventListener('contextmenu', (e) => {
+    const rowEl = e.target.closest('.ag-row');
+    if (!rowEl) return;
+    e.preventDefault();
+    const rowIndex = Number(rowEl.getAttribute('row-index'));
+    const node = gridApi.getDisplayedRowAtIndex(rowIndex);
+    const car = node?.data?.car_number;
+    if (!car) return;
+    selectedCar = car;
+    node.setSelected(true);
+    const prod = productCache.get(car);
+    showContextMenu(e, [
+      { label: prod ? '상품 정보 보기' : '상품 등록하기', icon: '🏪', action: () => { prod ? renderHistory(car) : renderProductForm(car); } },
+      'sep',
+      { label: '이력 보기', icon: '🕐', action: () => renderHistory(car) },
+    ]);
+  });
 
   // 패널헤드 상품등록 버튼
   const btn = $('#btnProductReg');

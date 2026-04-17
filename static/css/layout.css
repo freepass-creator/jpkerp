@@ -339,6 +339,9 @@
 .workspace.layout-37 > :last-child  { flex: 7; min-width: 0; }
 .workspace.layout-66 > :first-child { flex: 6; min-width: 0; }
 .workspace.layout-66 > :last-child  { flex: 4; min-width: 0; }
+/* 2패널 (좌 고정 220px : 우 flex) — 시스템/개발도구 */
+.workspace.layout-dev > .panel:nth-of-type(1) { flex: 0 0 220px; min-width: 0; }
+.workspace.layout-dev > .panel:nth-of-type(2) { flex: 1 1 0; min-width: 0; }
 /* 3패널 (목록:입력:컨텍스트) — 목록 고정, 입력:이력 = 5:5 */
 .workspace.layout-254 > .panel:nth-of-type(1) { flex: 0 0 220px; min-width: 0; }
 .workspace.layout-254 > .panel:nth-of-type(2) { flex: 1 1 0; min-width: 0; }

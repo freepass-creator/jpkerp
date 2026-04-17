@@ -21,7 +21,7 @@ export function watchCollection(path, callback, options = {}) {
   const r = ref(db, path);
   const unsub = onValue(r, (snap) => {
     const val = snap.val() || {};
-    let items = Object.values(val);
+    let items = Object.entries(val).map(([k, v]) => ({ ...v, _key: k }));
     if (options.filter !== undefined) items = items.filter(options.filter);
     else items = items.filter(isNotDeleted);
     if (options.sort) items.sort(options.sort);

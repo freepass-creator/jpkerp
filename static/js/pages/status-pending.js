@@ -5,6 +5,7 @@
 import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
 import { watchEvents } from '../firebase/events.js';
+import { showContextMenu } from '../core/context-menu.js';
 
 const $ = (s) => document.querySelector(s);
 const fmtDate = (s) => {
@@ -372,7 +373,57 @@ export async function mount() {
     });
   });
 
+  // 우클릭 컨텍스트 메뉴 — 미결 처리
+  el.addEventListener('contextmenu', (e) => {
+    const rowEl = e.target.closest('.ag-row');
+    if (!rowEl) return;
+    e.preventDefault();
+    const rowIndex = Number(rowEl.getAttribute('row-index'));
+    const node = gridApi.getDisplayedRowAtIndex(rowIndex);
+    const row = node?.data;
+    if (!row) return;
+    selectedRow = row;
+    node.setSelected(true);
+    renderDetail(row);
+
+    const items = [];
+    if (row.cat === 'accident') {
+      items.push({ label: '종결 처리', icon: '✅', action: () => resolveItem(row, { accident_status: '종결' }) });
+      items.push({ label: '수리중으로 변경', icon: '🔧', action: () => resolveItem(row, { accident_status: '수리중' }) });
+    } else if (row.cat === 'care') {
+      items.push({ label: '완료 처리', icon: '✅', action: () => resolveItem(row, { work_status: '완료' }) });
+      items.push({ label: '진행중으로 변경', icon: '🔄', action: () => resolveItem(row, { work_status: '진행중' }) });
+    } else if (row.cat === 'nodelivery') {
+      items.push({ label: '출고 입력하러 가기', icon: '🚗', action: () => { location.href = '/input/operation'; } });
+    } else if (row.cat === 'insurance') {
+      items.push({ label: '보험 갱신 입력하러 가기', icon: '🛡', action: () => { location.href = '/input/operation'; } });
+    }
+    items.push('sep');
+    items.push({ label: '상세 보기', icon: '📋', action: () => renderDetail(row) });
+    showContextMenu(e, items);
+  });
+
   watchAssets((items) => { assets = items; refresh(); });
   watchContracts((items) => { contracts = items; refresh(); });
   watchEvents((items) => { events = items; refresh(); });
+}
+
+async function resolveItem(row, updates) {
+  try {
+    const r = row._ref;
+    if (!r._key) throw new Error('이벤트 키를 찾을 수 없습니다');
+    const { updateRecord } = await import('../firebase/db.js');
+    await updateRecord(`events/${r._key}`, updates);
+    showToast('처리 완료', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function showToast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }

@@ -26,41 +26,17 @@ function computeContractEnd(c) {
   return d.toISOString().slice(0, 10);
 }
 
-/** 단순 컬렉션 카운트 (status !== 'deleted' 기본) */
+/** 단순 컬렉션 카운트 — 현황 메뉴만 */
 const PATHS = [
-  { collection: 'assets',           hrefs: ['/asset'] },
-  { collection: 'loans',            hrefs: ['/loan'] },
-  { collection: 'insurances',       hrefs: ['/insurance'] },
-  { collection: 'contracts',        hrefs: ['/contract'] },
-  { collection: 'customers',        hrefs: ['/customer'] },
-  { collection: 'members',          hrefs: ['/admin/member'] },
-  { collection: 'vendors',          hrefs: ['/admin/vendor'] },
-  { collection: 'products',         hrefs: ['/product'] },
-  { collection: 'billings',         hrefs: ['/billing'] },
-  { collection: 'autodebits',       hrefs: ['/autodebit'] },
-  { collection: 'finances',         hrefs: ['/finance'] },
-  { collection: 'uploads',          hrefs: ['/upload/list', '/input/history'] },
-  // 자산 하위 필터 (GPS·매각)
-  { collection: 'assets', filterFn: a => isActive(a) && a.gps_installed === 'Y', hrefs: ['/gps'] },
-  { collection: 'assets', filterFn: a => isActive(a) && (a.asset_status === '매각예정' || a.asset_status === '폐차'), hrefs: ['/disposal'] },
-  // 미납만 (billing/overdue 와 status/overdue 둘 다 표시)
+  // 미납 현황
   { collection: 'billings', filterFn: b => {
     if (!isActive(b)) return false;
     const due = (b.amount || 0) - (Number(b.paid_total) || 0);
     const today = new Date().toISOString().slice(0, 10);
     return due > 0 && b.due_date && b.due_date < today;
-  }, hrefs: ['/billing/overdue', '/status/overdue'] },
-  // 시동제어·회수진행 계약
-  { collection: 'contracts', filterFn: c => isActive(c) && ['시동제어','회수결정','회수완료'].includes(c.action_status), hrefs: ['/status/ignition'] },
-  // events 유형별
-  { collection: 'events', filterFn: e => isActive(e) && e.event_type === 'penalty',      hrefs: ['/admin/notice'] },
-  { collection: 'events', filterFn: e => isActive(e) && e.event_type === 'maint',        hrefs: ['/operation/maint'] },
-  { collection: 'events', filterFn: e => isActive(e) && e.event_type === 'accident',     hrefs: ['/operation/accident'] },
-  { collection: 'events', filterFn: e => isActive(e) && (e.event_type === 'delivery' || e.event_type === 'return'), hrefs: ['/operation/delivery'] },
-  { collection: 'events', filterFn: e => isActive(e) && e.event_type === 'contact',      hrefs: ['/operation/contact'] },
-  { collection: 'events', filterFn: e => isActive(e) && e.event_type === 'wash',         hrefs: ['/operation/wash'] },
-  { collection: 'events', filterFn: e => isActive(e) && e.event_type === 'fuel',         hrefs: ['/operation/fuel'] },
-  { collection: 'events', filterFn: e => isActive(e) && e.event_type === 'return_scheduled', hrefs: ['/return-schedule'] },
+  }, hrefs: ['/status/overdue'] },
+  // 시동제어
+  { collection: 'contracts', filterFn: c => isActive(c) && ['시동제어','제어해제'].includes(c.action_status), hrefs: ['/status/ignition'] },
 ];
 
 /** 파생 카운트 — 여러 컬렉션 조합. cache[coll] = 객체 맵 */
@@ -99,6 +75,37 @@ const DERIVED = [
       const due = (b.amount || 0) - (Number(b.paid_total) || 0);
       return due > 0 && b.due_date && b.due_date < today;
     }).length;
+  }},
+  // 미결업무 = 사고미종결 + 차량케어진행 + 미출고 + 보험만기(3개월)
+  { needs: ['assets', 'contracts', 'events'], hrefs: ['/status/pending'], compute: (c) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayDate = new Date(today);
+    let count = 0;
+    const evts = Object.values(c.events || {});
+    // 사고미종결
+    count += evts.filter(e => isActive(e) && e.type === 'accident' && e.accident_status && e.accident_status !== '종결').length;
+    // 차량케어 진행중
+    count += evts.filter(e => isActive(e) && ['maint','repair','product','wash'].includes(e.type) && (!e.work_status || e.work_status !== '완료')).length;
+    // 미출고
+    const delivered = new Set(evts.filter(e => isActive(e) && e.type === 'delivery').map(e => e.car_number));
+    const contracts = Object.values(c.contracts || {});
+    count += contracts.filter(x => {
+      if (!isActive(x) || !x.contractor_name?.trim()) return false;
+      const s = normalizeDate(x.start_date);
+      if (!s || s > today) return false;
+      const e = computeContractEnd(x);
+      if (e && e < today) return false;
+      return !delivered.has(x.car_number);
+    }).length;
+    // 보험만기 3개월 이내
+    const m3 = new Date(todayDate); m3.setMonth(m3.getMonth() + 3);
+    const m3s = m3.toISOString().slice(0, 10);
+    count += Object.values(c.assets || {}).filter(a => {
+      if (!isActive(a)) return false;
+      const exp = normalizeDate(a.insurance_expiry || a.vehicle_age_expiry_date);
+      return exp && exp >= today && exp <= m3s;
+    }).length;
+    return count;
   }},
 ];
 

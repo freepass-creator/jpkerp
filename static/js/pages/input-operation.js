@@ -309,6 +309,16 @@ function renderForm() {
     '외부세차': 'info', '실내크리닝': 'info', '풀세차': 'success', '광택': 'success',
     // 연료
     '휘발유': 'warn', '경유': 'info', 'LPG': 'info', '전기충전': 'success',
+    // 연료잔량
+    '3/4': 'success', '1/2': 'info',
+    // 운전자연령
+    '21세': 'danger', '26세': 'warn', '만30세': 'info', '만35세': 'info', '전연령': 'success',
+    // 사고부위
+    '앞범퍼': 'warn', '뒷범퍼': 'warn', '앞휀더': 'warn', '뒷휀더': 'warn',
+    '도어': 'warn', '본넷': 'danger', '트렁크': 'warn',
+    '사이드미러': 'info', '유리': 'danger', '헤드라이트/테일램프': 'warn', '휠': 'info',
+    // 점검유형
+    '출고전점검': 'success', '반납후점검': 'warn', '정기점검': 'info', '임시점검': 'warn',
   };
   const sel = (name, label, opts) => `<div class="field"><label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}"${OPT_TONE[o] ? ` data-tone="${OPT_TONE[o]}"` : ''}>${o}</span>`).join('')}</div></div>`;
 
@@ -379,7 +389,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"></label>일자</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"></label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"></label>정비내용</label><input type="text" name="title" placeholder="예: 엔진오일 교환"></div>
+        <div class="field"></label>정비내용</label><input type="text" name="title" placeholder="예: 엔진오일 교환"></div>
         ${sel('maint_type', '정비유형', ['정기점검','소모품교체','수리','판금/도색','타이어','기타'])}
         <div class="field"></label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"></label>정비업체</label><input type="text" name="vendor" placeholder="카센터명"></div>
@@ -396,7 +406,7 @@ function renderForm() {
       <div class="form-grid">
         <div class="field is-required"><label>사고일시</label><input type="date" name="date" value="${today}"></div>
         <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-        <div class="field is-required"><label>사고내용</label><input type="text" name="title" placeholder="예: 후방추돌"></div>
+        <div class="field"><label>사고내용</label><input type="text" name="title" placeholder="예: 후방추돌"></div>
         <div class="field"><label>사고장소</label><input type="text" name="vendor" placeholder="사고 발생 위치"></div>
       </div>
     </div>
@@ -478,7 +488,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-prohibit"></i>과태료 정보</div>
       <div class="form-grid">
-        <div class="field is-required"><label>위반내용</label><input type="text" name="title" placeholder="예: 주정차위반, 속도위반"></div>
+        <div class="field"><label>위반내용</label><input type="text" name="title" placeholder="예: 주정차위반, 속도위반"></div>
         ${sel('penalty_type', '위반유형', ['주정차위반','속도위반','신호위반','버스전용','기타'])}
         <div class="field"><label>위반장소</label><input type="text" name="vendor" placeholder="위반 위치"></div>
         <div class="field"><label>납부기한</label><input type="date" name="due_date"></div>
@@ -841,7 +851,7 @@ function renderForm() {
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-wallet"></i>수리 비용</div>
       <div class="form-grid">
-        <div class="field is-required"><label>총 수리비</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>총 수리비</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>보험처리금액</label><input type="text" name="insurance_amount" inputmode="numeric" placeholder="0"></div>
         <div class="field"><label>자기부담금</label><input type="text" name="self_pay" inputmode="numeric" placeholder="0"></div>
       </div>
@@ -2168,7 +2178,10 @@ async function submitForm() {
     const labelMap = {
       contact: data.contact_type || '고객응대',
       delivery: '출고', return: '반납', force: '강제회수', transfer: '차량이동',
-      maint: '정비', repair: '사고수리', product: '상품화', wash: '세차',
+      maint: data.maint_type || '정비',
+      repair: data.damage_area ? `사고수리 — ${data.damage_area}` : '사고수리',
+      product: '상품화',
+      wash: data.wash_type || '세차',
       key: (data.key_action || '차키') + ' 업무',
       penalty: data.penalty_type || '과태료',
       collect: '미수 조치', insurance: data.insurance_action || '보험업무',
@@ -2422,8 +2435,8 @@ function renderPcDetail() {
       <div class="form-section">
         <div class="form-section-title"><i class="ph ph-wrench"></i>정비 정보</div>
         <div class="form-grid">
-          <div class="field is-required"><label>작업내용</label><input type="text" name="title" placeholder="예: 엔진오일 교환"></div>
           ${_sel('maint_type', '정비유형', ['정기점검','소모품교체','수리','판금/도색','타이어','기타'])}
+          <div class="field"><label>작업내용</label><input type="text" name="title" placeholder="예: 엔진오일 교환"></div>
           <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
           <div class="field"><label>현 주행거리 (km)</label><input type="text" name="mileage" inputmode="numeric" placeholder="0"></div>
           <div class="field"><label>다음정비예정</label><input type="date" name="next_maint_date"></div>
@@ -2436,8 +2449,8 @@ function renderPcDetail() {
       <div class="form-section">
         <div class="form-section-title"><i class="ph ph-hammer"></i>사고수리 정보</div>
         <div class="form-grid">
-          <div class="field is-required"><label>수리내용</label><input type="text" name="title" placeholder="예: 후방 판금도색"></div>
           ${_sel('damage_area', '사고부위', ['앞범퍼','뒷범퍼','앞휀더','뒷휀더','도어','본넷','트렁크','사이드미러','유리','휠','기타'])}
+          <div class="field"><label>수리내용</label><input type="text" name="title" placeholder="예: 후방 판금도색"></div>
           ${_sel('damage_frame', '골격 손상', ['없음','경미','있음'])}
           <div class="field"><label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
           <div class="field"><label>보험금</label><input type="text" name="insurance_amount" inputmode="numeric" placeholder="0"></div>
@@ -2452,8 +2465,8 @@ function renderPcDetail() {
       <div class="form-section">
         <div class="form-section-title"><i class="ph ph-sparkle"></i>상품화 정보</div>
         <div class="form-grid">
-          <div class="field is-required"><label>작업내용</label><input type="text" name="title" placeholder="예: 실내크리닝 + 광택"></div>
           ${_sel('exterior', '외관', ['양호','경미흠집','손상있음'])}
+          <div class="field"><label>작업내용</label><input type="text" name="title" placeholder="예: 실내크리닝 + 광택"></div>
           ${_sel('interior', '실내', ['양호','보통','청소필요'])}
           ${_sel('tire_status', '타이어', ['양호','교체필요','편마모'])}
           <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
@@ -2467,8 +2480,8 @@ function renderPcDetail() {
       <div class="form-section">
         <div class="form-section-title"><i class="ph ph-drop"></i>세차 정보</div>
         <div class="form-grid">
-          <div class="field is-required"><label>작업내용</label><input type="text" name="title" placeholder="예: 외부세차 + 실내크리닝"></div>
           ${_sel('wash_type', '세차유형', ['외부세차','실내크리닝','풀세차','광택'])}
+          <div class="field"><label>작업내용</label><input type="text" name="title" placeholder="예: 외부세차 + 실내크리닝"></div>
           <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
           <div class="field"><label>예상 완료일</label><input type="date" name="expected_delivery"></div>
           <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>

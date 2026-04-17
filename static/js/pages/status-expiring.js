@@ -5,6 +5,7 @@
 import { watchAssets } from '../firebase/assets.js';
 import { watchContracts } from '../firebase/contracts.js';
 import { watchEvents } from '../firebase/events.js';
+import { showContextMenu } from '../core/context-menu.js';
 
 const $ = (s) => document.querySelector(s);
 const fmtDate = (s) => {
@@ -207,6 +208,26 @@ export async function mount() {
   });
   // 기본 3개월 활성화
   document.querySelector('[data-exp-month="3"]')?.classList.add('is-active');
+
+  // 우클릭 — 반납/연장 처리
+  el.addEventListener('contextmenu', (e) => {
+    const rowEl = e.target.closest('.ag-row');
+    if (!rowEl) return;
+    e.preventDefault();
+    const rowIndex = Number(rowEl.getAttribute('row-index'));
+    const node = gridApi.getDisplayedRowAtIndex(rowIndex);
+    const row = node?.data;
+    if (!row) return;
+    selectedCar = row.car_number;
+    node.setSelected(true);
+    renderHistory(row.car_number);
+    showContextMenu(e, [
+      { label: '반납 입력하러 가기', icon: '📥', action: () => { location.href = '/input/operation'; } },
+      { label: '연장 계약 입력하러 가기', icon: '📝', action: () => { location.href = '/contract'; } },
+      'sep',
+      { label: '이력 보기', icon: '📋', action: () => renderHistory(row.car_number) },
+    ]);
+  });
 
   watchAssets((items) => { assets = items; refresh(); });
   watchContracts((items) => { contracts = items; refresh(); });
