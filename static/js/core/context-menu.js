@@ -27,7 +27,7 @@ export function showContextMenu(e, items) {
     }
     const el = document.createElement('div');
     el.className = 'ctx-menu-item' + (item.disabled ? ' is-disabled' : '') + (item.danger ? ' is-danger' : '');
-    el.textContent = (item.icon ? item.icon + ' ' : '') + item.label;
+    el.innerHTML = (item.icon ? `<span style="display:inline-flex;align-items:center;width:20px">${item.icon}</span> ` : '') + item.label;
     if (!item.disabled) {
       el.addEventListener('click', (ev) => {
         ev.stopPropagation();

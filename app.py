@@ -135,6 +135,7 @@ ROUTES = [
     # 고객용
     ('/my',              'pages/my.html',             '계약조회',     'my'),
     ('/profile',         'pages/profile.html',        '내 정보',      'profile'),
+    ('/guide',           'pages/guide.html',          '사용설명',     'guide'),
     # 회사관리
     ('/admin/company',  'pages/admin-company.html',  '회사정보',     'admin_company'),
     ('/admin/staff',    'pages/admin-staff.html',    '직원관리',     'admin_staff'),
@@ -148,12 +149,7 @@ ROUTES = [
     ('/admin/lease',    'pages/admin-lease.html',    '임대관리',     'admin_lease'),
     ('/admin/contract', 'pages/admin-contract.html', '계약서관리',   'admin_contract'),
     ('/admin/seal',     'pages/admin-seal.html',     '인감/도장',    'admin_seal'),
-    ('/dev',            'pages/dev.html',            '데이터관리',   'dev'),
-    ('/dev/car-master', 'pages/dev.html',            '차종등록',     'dev_car_master'),
-    ('/dev/overdue',    'pages/dev.html',            '개별미수',     'dev_overdue'),
-    ('/dev/cutover',    'pages/dev.html',            '미수정산',     'dev_cutover'),
-    ('/dev/alimtalk',   'pages/dev.html',            '알림톡',       'dev_alimtalk'),
-    ('/dev/sms',        'pages/dev.html',            'SMS',          'dev_sms'),
+    ('/dev',            'pages/dev.html',            '개발도구',     'dev'),
 ]
 
 def _make_view(tpl, title):

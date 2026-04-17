@@ -69,14 +69,9 @@ export const MENU = [
     { href: '/admin/seal',     label: '인감 관리' },
     { href: '/admin/approval', label: '전자결재' },
 
-    { subgroup: '개발도구', icon: 'code' },
-    { href: '/dev',            label: '데이터관리' },
-    { href: '/dev/car-master', label: '차종 등록' },
-    { href: '/dev/overdue',    label: '개별 미수' },
-    { href: '/dev/cutover',    label: '미수 정산' },
-    { href: '/dev/alimtalk',   label: '알림톡' },
-    { href: '/dev/sms',        label: 'SMS' },
   ]},
+
+  { href: '/dev', label: '개발도구', icon: 'code' },
 ];
 
 const ICONS = {

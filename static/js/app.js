@@ -126,9 +126,10 @@ async function bootstrap() {
     const profileBtn = e.target.closest('#profileBtn');
     if (!profileBtn) return;
     showContextMenu(e, [
-      { label: '내 정보 / 설정', icon: '👤', action: () => { location.href = '/profile'; } },
+      { label: '내 정보 / 설정', icon: '<i class="ph ph-user-circle"></i>', action: () => { location.href = '/profile'; } },
+      { label: '사용설명', icon: '<i class="ph ph-book-open"></i>', action: () => { location.href = '/guide'; } },
       'sep',
-      { label: '로그아웃', icon: '🚪', danger: true, action: async () => {
+      { label: '로그아웃', icon: '<i class="ph ph-sign-out"></i>', danger: true, action: async () => {
         const { auth } = await import('./firebase/config.js');
         const { signOut } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
         await signOut(auth);

@@ -107,6 +107,7 @@ const OP_ICONS = {
   ignition:  { name: 'ph-engine',             color: '#ea580c' },  // orange-600
   penalty:   { name: 'ph-prohibit',           color: '#b91c1c' },  // red-700
   penalty_notice: { name: 'ph-receipt',       color: '#b91c1c' },  // red-700 (과태료처리)
+  product_register: { name: 'ph-storefront', color: '#059669' },  // emerald-600 (상품등록)
 
   // 🟠 관리·수리
   maint:     { name: 'ph-wrench',             color: '#f97316' },  // orange-500
@@ -138,6 +139,7 @@ const DEFAULT_TYPES = [
   { key: 'product',     label: '상품화',         sub: '반납 후 재상품화',           direction: 'out', hidden: true },
   { key: 'insurance',   label: '보험배서관리',   sub: '연령변경·갱신·신규·해지',     direction: 'out' },
   { key: 'penalty',     label: '과태료 변경부과', sub: '과태료 임차인 변경부과',      direction: 'out', hidden: true },
+  { key: 'product_register', label: '상품등록', sub: '휴차 → 상품대기 등록 · 대여조건', direction: 'out' },
   { key: 'penalty_notice', label: '과태료작업',  sub: '고지서 OCR · 확인서 병합 다운로드', direction: 'out' },
   { key: 'collect',     label: '미수관리',       sub: '독촉/내용증명/법적조치',     direction: 'out', hidden: true },
   { key: 'wash',        label: '세차',           sub: '세차/실내크리닝',           direction: 'out', hidden: true },
@@ -473,6 +475,35 @@ function renderForm() {
     <div class="form-section">
       <div class="form-grid">
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'product_register') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-info"></i>상품등록</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>등록일</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-tag"></i>대여조건</div>
+      <div class="form-grid">
+        ${sel('rental_type', '대여형태', ['장기렌트','단기렌트','리스','기타'])}
+        <div class="field"><label>월 렌탈료</label><input type="text" name="monthly_rent" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>보증금</label><input type="text" name="deposit" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>약정기간</label><input type="text" name="contract_period" placeholder="예: 12개월, 24개월"></div>
+        <div class="field"><label>약정주행</label><input type="text" name="mileage_limit" placeholder="예: 월 2,000km"></div>
+        ${sel('insurance_type', '보험조건', ['완전자차','일반자차','자차미포함'])}
+        <div class="field"><label>면책금</label><input type="text" name="deductible" inputmode="numeric" placeholder="0"></div>
+        ${sel('age_limit', '연령제한', ['만21세이상','만26세이상','제한없음'])}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-note"></i>특이사항</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><textarea name="note" rows="3" placeholder="상품 특이사항, 컨디션 메모"></textarea></div>
       </div>
     </div>`;
 

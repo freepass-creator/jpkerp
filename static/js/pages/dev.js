@@ -32,19 +32,8 @@ const DEV_MENUS = [
 
 let _devCurrentTab = '';
 
-const URL_TAB_MAP = {
-  '/dev': 'data',
-  '/dev/car-master': 'carmaster',
-  '/dev/overdue': 'overdue',
-  '/dev/cutover': 'cutover',
-  '/dev/alimtalk': 'alimtalk',
-  '/dev/sms': 'sms',
-};
-
 export async function mount() {
-  _devCurrentTab = URL_TAB_MAP[window.location.pathname] || 'data';
   renderDevList();
-  renderDevContent();
 }
 
 // ── 좌측 기능 카드 ──
@@ -74,10 +63,28 @@ function renderDevContent() {
   if (title) title.textContent = menu?.label || '기능을 선택하세요';
   if (sub) sub.textContent = menu?.sub || '';
 
+  // 우측 패널 초기화
+  const rt = $('#devResultTitle');
+  const rs = $('#devResultSub');
+  const rh = $('#devResultHost');
+  if (rt) rt.textContent = '결과';
+  if (rs) rs.textContent = '';
+  if (rh) { rh.style.padding = ''; rh.innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">실행 결과가 여기 표시됩니다.</div>'; }
+
+  // 초기화/반영 버튼 — 기능 선택되면 표시
+  const resetBtn = $('#devReset');
+  const applyBtn = $('#devApply');
+  if (resetBtn) { resetBtn.style.display = _devCurrentTab ? '' : 'none'; resetBtn.onclick = null; }
+  if (applyBtn) { applyBtn.style.display = _devCurrentTab ? '' : 'none'; applyBtn.onclick = null; applyBtn.disabled = true; }
+
   const renderers = { data: renderDataTab, overdue: renderOverdueTab, cutover: renderCutoverTab, alimtalk: renderAlimtalkTab, sms: renderSmsTab, carmaster: renderCarMasterTab };
   const fn = renderers[_devCurrentTab];
   if (fn) fn();
-  else $('#devHost').innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">좌측에서 기능을 선택하세요.</div>';
+  else {
+    $('#devHost').innerHTML = '<div style="padding:24px;text-align:center;color:var(--c-text-muted)">좌측에서 기능을 선택하세요.</div>';
+    if (resetBtn) resetBtn.style.display = 'none';
+    if (applyBtn) applyBtn.style.display = 'none';
+  }
 }
 
 // ─── 공통 유틸 ───
@@ -314,31 +321,67 @@ async function renderOverdueTab() {
 // ─── 3. 미수 정산 (cutover) ───
 function renderCutoverTab() {
   const host = $('#devHost');
+  const resultHost = $('#devResultHost');
+  const resultTitle = $('#devResultTitle');
+  const resultSub = $('#devResultSub');
   let _cutoverPlan = null;
 
+  if (resultTitle) resultTitle.textContent = '정산 검증';
+  if (resultSub) resultSub.textContent = '';
+  // 우측: AG Grid
+  if (resultHost) {
+    resultHost.style.padding = '0';
+    resultHost.innerHTML = '<div id="cutoverGrid" class="ag-theme-alpine" style="width:100%;height:100%"></div>';
+  }
+  const cutoverGridApi = agGrid.createGrid($('#cutoverGrid'), {
+    columnDefs: [
+      { headerName: '차량번호', field: 'car', width: 95, cellStyle: { fontWeight: 'var(--fw-bold)' } },
+      { headerName: '계약자', field: 'contractor', width: 80 },
+      { headerName: '입력미수', field: 'inputAmt', width: 90, type: 'numericColumn',
+        valueFormatter: p => p.value > 0 ? fmtKR(p.value) : '—',
+        cellStyle: p => ({ color: p.value > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)', textAlign: 'right' }) },
+      { headerName: 'DB미수', field: 'curUnpaid', width: 90, type: 'numericColumn',
+        valueFormatter: p => p.value > 0 ? fmtKR(p.value) : '—',
+        cellStyle: p => ({ color: p.value > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)', textAlign: 'right' }) },
+      { headerName: '총회차', field: 'totalBills', width: 60, type: 'numericColumn' },
+      { headerName: '완납', field: 'pastCnt', width: 50, type: 'numericColumn' },
+      { headerName: '대기', field: 'futureCnt', width: 50, type: 'numericColumn' },
+      { headerName: '상태', field: 'statusLabel', width: 90,
+        cellStyle: p => ({ color: p.data?.inputAmt > 0 ? 'var(--c-danger)' : 'var(--c-success)', fontWeight: 'var(--fw-bold)' }) },
+    ],
+    rowData: [],
+    defaultColDef: { resizable: true, sortable: true, filter: true, minWidth: 40 },
+    rowHeight: 28, headerHeight: 28, animateRows: false,
+  });
+
   host.innerHTML = `
-    <div style="display:flex;gap:20px;height:100%">
-      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-        <div style="font-size:var(--font-size-sm);color:var(--c-text-muted)">
-          현재 미수 명세를 입력하면 <b>전체 회차를 완납 처리</b>한 뒤, 입력된 차량의 <b>최근 회차부터 역산해 미수액만큼 미납</b>으로 되돌립니다.
-        </div>
-        <div style="display:flex;gap:6px">
-          <input type="text" id="cutoverUrl" class="ctrl" placeholder="구글시트 URL 붙여넣기" style="flex:1">
-          <button class="btn" id="cutoverLoadUrl">불러오기</button>
-        </div>
-        <textarea id="cutoverInput" class="ctrl" style="flex:1;min-height:200px;resize:vertical;font-family:monospace" placeholder="또는 직접 입력:
+    <div style="display:flex;flex-direction:column;gap:8px;height:100%">
+      <div style="font-size:var(--font-size-sm);color:var(--c-text-muted)">
+        현재 미수 명세를 입력하면 <b>전체 회차를 완납 처리</b>한 뒤, 입력된 차량의 <b>최근 회차부터 역산해 미수액만큼 미납</b>으로 되돌립니다.
+      </div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="cutoverUrl" class="ctrl" placeholder="구글시트 URL 붙여넣기" style="flex:1">
+        <button class="btn" id="cutoverLoadUrl">불러오기</button>
+      </div>
+      <textarea id="cutoverInput" class="ctrl" style="flex:1;min-height:200px;resize:vertical;font-family:monospace" placeholder="또는 직접 입력:
 123가4567, 900101-1******, 1650000
 34나5678, 950505-2******, 1100000"></textarea>
-        <div style="display:flex;gap:6px">
-          <button class="btn" id="cutoverPreview">미리보기</button>
-          <button class="btn btn-primary" id="cutoverApply" disabled>정산 적용</button>
-        </div>
-      </div>
-      <div style="flex:1;display:flex;flex-direction:column">
-        <div style="font-weight:600;margin-bottom:6px">정산 검증</div>
-        <div id="cutoverResult" style="flex:1;overflow:auto;font-size:var(--font-size-sm)"></div>
-      </div>
     </div>`;
+
+  // 패널헤드 버튼 연결
+  const resetBtn = $('#devReset');
+  const applyBtn = $('#devApply');
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      $('#cutoverInput').value = '';
+      $('#cutoverUrl').value = '';
+      _cutoverPlan = null;
+      cutoverGridApi.setGridOption('rowData', []);
+      if (applyBtn) applyBtn.disabled = true;
+      if (resultSub) resultSub.textContent = '';
+    };
+  }
+  if (applyBtn) applyBtn.disabled = true;
 
   function parseCutoverInput() {
     const text = $('#cutoverInput')?.value?.trim();
@@ -384,11 +427,13 @@ function renderCutoverTab() {
       if (text.trim().startsWith('<')) throw new Error('시트가 비공개입니다 — 공유: 링크 있는 모든 사용자 뷰어');
       $('#cutoverInput').value = text;
       showToast(`불러옴 · ${text.split(/\r?\n/).filter(Boolean).length}행`, 'success');
+      // 불러온 후 자동 미리보기
+      $('#cutoverPreview')?.click();
     } catch (e) { showToast(`불러오기 실패: ${e.message}`, 'error'); }
   });
 
   $('#cutoverPreview')?.addEventListener('click', async () => {
-    const resultEl = $('#cutoverResult');
+    const resultEl = resultHost;
     const applyBtn = $('#cutoverApply');
     applyBtn.disabled = true;
     _cutoverPlan = null;
@@ -450,48 +495,38 @@ function renderCutoverTab() {
     // 미수 있는 건 먼저
     rows.sort((a, b) => (b.inputAmt || 0) - (a.inputAmt || 0));
 
-    const th = `<tr style="background:var(--c-bg-sub);font-weight:600;font-size:var(--font-size-xs)">
-      <td style="padding:6px 8px">차량번호</td><td style="padding:6px 8px">계약자</td>
-      <td style="padding:6px 8px;text-align:right">입력 미수</td><td style="padding:6px 8px;text-align:right">DB 현재 미수</td>
-      <td style="padding:6px 8px;text-align:center">결제 회차</td><td style="padding:6px 8px;text-align:center">상태</td></tr>`;
-    const trs = rows.map(r => {
-      const statusLabel = r.inputAmt > 0 ? `미수 ${fmtKR(r.inputAmt)}원` : '미수없음';
-      const statusColor = r.inputAmt > 0 ? 'var(--c-danger)' : 'var(--c-success)';
-      const changeIcon = r.hasChange ? '⚠' : '✓';
-      return `<tr style="border-bottom:1px solid var(--c-border)">
-        <td style="padding:4px 8px;font-weight:600">${r.car}</td>
-        <td style="padding:4px 8px">${r.contractor}</td>
-        <td style="padding:4px 8px;text-align:right;color:${r.inputAmt > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)'}">${r.inputAmt > 0 ? fmtKR(r.inputAmt) : '—'}</td>
-        <td style="padding:4px 8px;text-align:right;color:${r.curUnpaid > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)'}">${r.curUnpaid > 0 ? fmtKR(r.curUnpaid) : '—'}</td>
-        <td style="padding:4px 8px;text-align:center">총${r.totalBills} (완납${r.pastCnt}/대기${r.futureCnt})</td>
-        <td style="padding:4px 8px;text-align:center;color:${statusColor}">${changeIcon} ${statusLabel}</td>
-      </tr>`;
-    }).join('');
-
-    resultEl.innerHTML = `
-      <div style="margin-bottom:8px;font-size:var(--font-size-xs);color:var(--c-text-muted)">
-        입력 ${input.length}행 · 완납 ${totalFullPaid}회 · 미납 ${totalUnpaid}회 · 대기 ${totalFuture}회 · 총 ${updates.length}건
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:var(--font-size-sm)">${th}${trs}</table>`;
-    applyBtn.disabled = !updates.length;
+    // AG Grid에 결과 표시
+    const gridRows = rows.map(r => ({
+      ...r,
+      statusLabel: r.inputAmt > 0 ? `미수 ${fmtKR(r.inputAmt)}` : '정산완료',
+    }));
+    cutoverGridApi.setGridOption('rowData', gridRows);
+    if (resultSub) resultSub.textContent = `${rows.length}대 · 완납${totalFullPaid} · 미납${totalUnpaid} · 대기${totalFuture} · 총${updates.length}건`;
+    const headApply = $('#devApply');
+    if (headApply) headApply.disabled = !updates.length;
   });
 
-  $('#cutoverApply')?.addEventListener('click', async () => {
-    if (!_cutoverPlan?.length) return;
-    if (!confirm(`${_cutoverPlan.length}건 일괄 업데이트합니다. 진행?`)) return;
-    const btn = $('#cutoverApply');
-    btn.disabled = true; btn.textContent = '처리 중...';
-    const now = Date.now();
-    const updates = {};
-    _cutoverPlan.forEach(p => { updates[`billings/${p.id}/paid_total`] = p.paid_total; updates[`billings/${p.id}/status`] = p.status; updates[`billings/${p.id}/payments`] = p.payments || []; updates[`billings/${p.id}/cutover_at`] = now; });
-    try {
-      await update(ref(db), updates);
-      $('#cutoverResult').insertAdjacentHTML('beforeend', `<div style="margin-top:12px;padding:10px;background:var(--c-success-bg,#f0fdf4);border-radius:var(--r-sm);font-weight:600;color:var(--c-success)">✅ 완료 — ${_cutoverPlan.length}건 처리됨</div>`);
-      _cutoverPlan = null;
-      showToast('미수 정산 완료', 'success');
-    } catch (e) { $('#cutoverResult').textContent += `\n\n❌ ${e.message}`; showToast(e.message, 'error'); }
-    finally { btn.textContent = '정산 적용'; }
-  });
+  // 패널헤드 반영하기 버튼 → 정산 적용
+  const headApplyBtn = $('#devApply');
+  if (headApplyBtn) {
+    headApplyBtn.onclick = async () => {
+      if (!_cutoverPlan?.length) return;
+      if (!confirm(`${_cutoverPlan.length}건 일괄 업데이트합니다. 진행?`)) return;
+      headApplyBtn.disabled = true;
+      const origText = headApplyBtn.innerHTML;
+      headApplyBtn.innerHTML = '<i class="ph ph-spinner"></i> 처리 중...';
+      const now = Date.now();
+      const dbUpdates = {};
+      _cutoverPlan.forEach(p => { dbUpdates[`billings/${p.id}/paid_total`] = p.paid_total; dbUpdates[`billings/${p.id}/status`] = p.status; dbUpdates[`billings/${p.id}/payments`] = p.payments || []; dbUpdates[`billings/${p.id}/cutover_at`] = now; });
+      try {
+        await update(ref(db), dbUpdates);
+        if (resultSub) resultSub.textContent = `완료 — ${_cutoverPlan.length}건 처리됨`;
+        _cutoverPlan = null;
+        showToast('미수 정산 완료', 'success');
+      } catch (e) { if (resultSub) resultSub.textContent = e.message; showToast(e.message, 'error'); }
+      finally { headApplyBtn.innerHTML = origText; }
+    };
+  }
 }
 
 // ─── 4. 알림톡 ───
