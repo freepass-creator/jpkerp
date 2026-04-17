@@ -176,6 +176,22 @@ textarea::placeholder {
   border-color: var(--c-primary);
   font-weight: var(--fw-medium);
 }
+/* tone별 — 비활성에서도 글자색 힌트, 활성 시 배경+테두리 */
+.btn-group .btn-opt[data-tone="danger"]          { color: #c06060; }
+.btn-group .btn-opt[data-tone="danger"]:hover     { background: #fef2f2; }
+.btn-group .btn-opt[data-tone="danger"].is-active { background: var(--c-danger-bg); color: var(--c-danger); border-color: var(--c-danger); }
+
+.btn-group .btn-opt[data-tone="warn"]          { color: #a07030; }
+.btn-group .btn-opt[data-tone="warn"]:hover     { background: #fefce8; }
+.btn-group .btn-opt[data-tone="warn"].is-active { background: var(--c-warn-bg); color: var(--c-warn); border-color: var(--c-warn); }
+
+.btn-group .btn-opt[data-tone="success"]          { color: #508050; }
+.btn-group .btn-opt[data-tone="success"]:hover     { background: #f0fdf4; }
+.btn-group .btn-opt[data-tone="success"].is-active { background: var(--c-success-bg); color: var(--c-success); border-color: var(--c-success); }
+
+.btn-group .btn-opt[data-tone="info"]          { color: #5070a0; }
+.btn-group .btn-opt[data-tone="info"]:hover     { background: #eff6ff; }
+.btn-group .btn-opt[data-tone="info"].is-active { background: var(--c-info-bg); color: var(--c-info); border-color: var(--c-info); }
 /* 토글 버튼 (복수 선택) */
 .btn-group .btn-toggle { cursor: pointer; }
 .btn-group .btn-toggle.is-on {

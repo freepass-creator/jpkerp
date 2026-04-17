@@ -95,33 +95,54 @@ export async function ocrFile(file, opts = {}) {
   let fullText = '';
 
   if (ext === 'pdf') {
-    progress('render', 0, 1, 'PDF 페이지 렌더링 중...');
-    const images = await pdfToImages(file, scale);
-    const total = images.length;
-    progress('render', total, total, `${total}장 렌더 완료`);
+    progress('render', 0, 1, 'PDF 분석 중...');
+    const pdfjsLib = await loadPdfjs();
+    const arrayBuf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+    const total = pdf.numPages;
 
-    // 병렬 워커 풀: 각 워커가 다음 인덱스를 가져가 OCR
+    // 1단계: 텍스트 레이어 직접 추출 시도 (디지털 PDF)
     const texts = new Array(total);
-    let nextIdx = 0;
-    let done = 0;
-    progress('ocr', 0, total, `OCR 0/${total}`);
+    let hasText = false;
+    for (let i = 0; i < total; i++) {
+      const page = await pdf.getPage(i + 1);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(item => item.str).join(' ');
+      texts[i] = pageText;
+      if (pageText.replace(/\s/g, '').length > 30) hasText = true;
+      progress('render', i + 1, total, `텍스트 추출 ${i + 1}/${total}`);
+    }
 
-    await Promise.all(Array.from({ length: Math.min(concurrency, total) }, async () => {
-      while (true) {
-        const i = nextIdx++;
-        if (i >= total) break;
-        try {
-          texts[i] = await ocrBase64(images[i]);
-        } catch (e) {
-          texts[i] = '';
-          console.warn(`[OCR] page ${i + 1} failed:`, e);
+    if (hasText) {
+      // 디지털 PDF → 텍스트 직접 사용 (OCR 불필요)
+      console.log('[PDF] 텍스트 레이어 감지 — OCR 생략');
+      fullText = texts.join('\n\n--- 페이지 구분 ---\n\n');
+    } else {
+      // 스캔 이미지 PDF → 기존 OCR 방식
+      console.log('[PDF] 텍스트 레이어 없음 — 이미지 OCR 진행');
+      const images = await pdfToImages(file, scale);
+      const ocrTexts = new Array(total);
+      let nextIdx = 0;
+      let done = 0;
+      progress('ocr', 0, total, `OCR 0/${total}`);
+
+      await Promise.all(Array.from({ length: Math.min(concurrency, total) }, async () => {
+        while (true) {
+          const i = nextIdx++;
+          if (i >= total) break;
+          try {
+            ocrTexts[i] = await ocrBase64(images[i]);
+          } catch (e) {
+            ocrTexts[i] = '';
+            console.warn(`[OCR] page ${i + 1} failed:`, e);
+          }
+          done++;
+          progress('ocr', done, total, `OCR ${done}/${total}`);
         }
-        done++;
-        progress('ocr', done, total, `OCR ${done}/${total}`);
-      }
-    }));
+      }));
 
-    fullText = texts.join('\n\n--- 페이지 구분 ---\n\n');
+      fullText = ocrTexts.join('\n\n--- 페이지 구분 ---\n\n');
+    }
   } else {
     progress('ocr', 0, 1, 'OCR 중...');
     const base64 = await fileToBase64(file);

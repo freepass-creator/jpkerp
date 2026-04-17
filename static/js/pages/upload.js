@@ -886,8 +886,18 @@ async function handleOcr(file) {
         console.log(`[OCR 페이지 ${i+1}] 보험증권 원문:`, txt);
         const p = insuranceModule.parse(txt, lines);
         console.log(`[OCR 페이지 ${i+1}] 보험증권 파싱:`, p);
-        const carNum = p.car_number;
-        const asset = carNum ? existingData.assets.find(a => a.car_number === carNum) : null;
+        let carNum = p.car_number;
+        let asset = carNum ? existingData.assets.find(a => a.car_number === carNum) : null;
+        // 차량번호 없으면 1) 숫자만 매칭 2) 차대번호 VIN 뒷6자리 매칭
+        if (!carNum && p._car_digits) {
+          asset = existingData.assets.find(a => a.car_number && a.car_number.replace(/[^0-9]/g, '') === p._car_digits);
+          if (asset) { carNum = asset.car_number; p.car_number = carNum; }
+        }
+        if (!carNum && p.vin) {
+          const vinTail = p.vin.slice(-6);
+          asset = existingData.assets.find(a => a.vin && a.vin.endsWith(vinTail));
+          if (asset) { carNum = asset.car_number; p.car_number = carNum; }
+        }
         const contract = carNum ? existingData.contracts.find(c => c.car_number === carNum && c.contract_status !== '계약해지') : null;
         const prevIns = carNum ? existingData.events.filter(e => e.car_number === carNum && e.event_type === 'insurance') : [];
         const isDup = prevIns.some(e =>

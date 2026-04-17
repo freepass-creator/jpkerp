@@ -139,11 +139,24 @@ function initGrid() {
       // ── 기본 식별 (좌측 고정) ──
       { headerName: '기본', headerClass: 'grp-basic', children: [
         { headerName: '차량번호', field: 'car_number', width: 100, pinned: 'left' },
+        { headerName: '차대번호', field: 'vin', width: 160 },
         { headerName: '차량', field: '_car_info', width: 140, pinned: 'left' },
         { headerName: '보험사', field: 'insurance_company', width: 110 },
         { headerName: '증권번호', field: 'policy_no', width: 150 },
+        { headerName: '상품명', field: 'insurance_product', width: 200 },
+        { headerName: '유형', field: 'insurance_type', width: 80 },
         { headerName: '시작일', field: 'insurance_start', width: 100 },
         { headerName: '만료일', field: 'insurance_end', width: 100 },
+        { headerName: '계약일', field: 'contract_date', width: 100 },
+        { headerName: '발행일', field: 'issue_date', width: 100 },
+      ]},
+      // ── 계약자·피보험자 ──
+      { headerName: '계약자 · 피보험자', headerClass: 'grp-holder', children: [
+        { headerName: '피보험자', field: 'insured_name', width: 140 },
+        { headerName: '사업자번호', field: 'insured_biz_no', width: 130 },
+        { headerName: '계약자', field: 'policyholder_name', width: 140 },
+        { headerName: '계약자번호', field: 'policyholder_biz_no', width: 130 },
+        { headerName: '주소', field: 'insured_address', width: 200 },
       ]},
       // ── ⭐ 보장한도 (핵심) ──
       { headerName: '🛡️ 보장한도', headerClass: 'grp-coverage', children: [
@@ -156,8 +169,11 @@ function initGrid() {
         { headerName: '자손', field: 'coverage_self_injury', width: 160 },
         { headerName: '무보험', field: 'coverage_uninsured', width: 110 },
         { headerName: '자차', field: 'coverage_self_damage', width: 90,
-          cellStyle: p => /미가입/.test(p.value || '') ? { color: 'var(--c-text-muted)' } : { fontWeight: 600 } },
+          valueFormatter: p => p.value || '미가입',
+          cellStyle: p => !p.value || /미가입/.test(p.value) ? { color: 'var(--c-danger)' } : { fontWeight: 600 } },
         { headerName: '할증금액', field: 'deductible_amount', width: 100, type: 'numericColumn', valueFormatter: fmtNum },
+        { headerName: '자기부담금', field: 'self_burden', width: 100 },
+        { headerName: '할증한정', field: 'surcharge_limit', width: 100 },
       ]},
       // ── ⭐ 납부 스케줄 (핵심) ──
       { headerName: '💰 납부 스케줄', headerClass: 'grp-payment', children: [
@@ -165,6 +181,7 @@ function initGrid() {
           cellStyle: { background: 'var(--c-primary-bg)', color: 'var(--c-primary)', fontWeight: 700 } },
         { headerName: '납입액', field: 'paid_amount', width: 100, type: 'numericColumn', valueFormatter: fmtNum,
           cellStyle: { fontWeight: 600 } },
+        { headerName: '납입방법', field: 'payment_method', width: 110 },
         { headerName: '분납', field: 'installment_count', width: 65, type: 'numericColumn',
           valueFormatter: p => p.value ? `${p.value}회` : '' },
         { headerName: '납부은행', field: 'payment_bank', width: 110 },
@@ -173,29 +190,27 @@ function initGrid() {
       ]},
       // ── ⭐ 분납 일정 (회차별 분리) ──
       { headerName: '📅 분납 일정', headerClass: 'grp-payment', children: instColumns },
-      // ── 계약자 ──
-      { headerName: '계약자 · 피보험자', headerClass: 'grp-holder', children: [
-        { headerName: '상품명', field: 'insurance_product', width: 200 },
-        { headerName: '유형', field: 'insurance_type', width: 80 },
-        { headerName: '계약자', field: 'policyholder_name', width: 140 },
-        { headerName: '사업자번호', field: 'policyholder_biz_no', width: 130 },
-        { headerName: '피보험자', field: 'insured_name', width: 140 },
-      ]},
       // ── 차량 ──
       { headerName: '차량', headerClass: 'grp-car', children: [
         { headerName: '차명', field: 'car_model', width: 140 },
         { headerName: '연식', field: 'car_year', width: 60 },
         { headerName: '차종', field: 'car_type', width: 140 },
+        { headerName: '용도', field: 'car_use', width: 70 },
         { headerName: '배기량', field: 'engine_cc', width: 80, type: 'numericColumn', valueFormatter: fmtNum },
         { headerName: '정원', field: 'seat_capacity', width: 55, type: 'numericColumn' },
+        { headerName: '적재정량', field: 'load_capacity', width: 90 },
         { headerName: '차량가액', field: 'car_value', width: 100, type: 'numericColumn', valueFormatter: fmtNum },
-        { headerName: '부속가액', field: 'accessory_value', width: 90, type: 'numericColumn', valueFormatter: fmtNum },
+        { headerName: '부속가액', field: 'accessory_value', width: 90, type: 'numericColumn',
+          valueFormatter: p => p.value ? fmtNum(p) : '없음',
+          cellStyle: p => !p.value ? { color: 'var(--c-text-muted)' } : {} },
         { headerName: '부속품', field: 'accessories', width: 120 },
       ]},
       // ── 운전자 / 특약 ──
       { headerName: '운전 · 특약', children: [
         { headerName: '운전범위', field: 'driver_range', width: 100 },
         { headerName: '연령한정', field: 'age_limit', width: 120 },
+        { headerName: '지정1운전자', field: 'designated_driver_1', width: 120 },
+        { headerName: '지정2운전자', field: 'designated_driver_2', width: 120 },
         { headerName: '출동', field: 'sos_count', width: 60, type: 'numericColumn',
           valueFormatter: p => p.value ? `${p.value}회` : '' },
         { headerName: '견인(Km)', field: 'sos_tow_km', width: 80, type: 'numericColumn' },
@@ -203,6 +218,7 @@ function initGrid() {
       ]},
       // ── 기타 ──
       { headerName: '기타', children: [
+        { headerName: '질권', field: 'pledge', width: 80 },
         { headerName: '지점', field: 'branch', width: 120 },
         { headerName: '이메일', field: 'contact_email', width: 160 },
         { headerName: '메모', field: 'note', flex: 1, minWidth: 200 },

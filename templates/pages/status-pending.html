@@ -1,0 +1,35 @@
+{% extends 'workspace.html' %}
+{% block topbar_extra %}<span class="topbar-status">미결업무</span>{% endblock %}
+{% block workspace_layout %}layout-55{% endblock %}
+{% block workspace %}
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <i class="ph ph-clipboard-text" style="color:var(--c-warn)"></i>
+      <span class="panel-title">미결 업무</span>
+      <span class="panel-subtitle" id="pendingCount">0건</span>
+    </div>
+    <div class="panel-actions">
+      <div class="btn-group" id="pendingFilter">
+        <span class="btn-opt is-active" data-cat="all">전체</span>
+        <span class="btn-opt" data-cat="accident">사고</span>
+        <span class="btn-opt" data-cat="care">차량케어</span>
+        <span class="btn-opt" data-cat="nodelivery">미출고</span>
+        <span class="btn-opt" data-cat="insurance">보험만기</span>
+      </div>
+    </div>
+  </div>
+  <div id="pendingGrid" class="ag-theme-alpine" style="flex:1;min-height:0;width:100%"></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <i class="ph ph-note-pencil" style="color:var(--c-text-muted)"></i>
+      <span class="panel-title" id="pendingDetailTitle">상세</span>
+      <span class="panel-subtitle" id="pendingDetailSub">좌측에서 항목을 선택하세요</span>
+    </div>
+  </div>
+  <div id="pendingDetail" style="flex:1;min-height:0;overflow:auto"></div>
+</section>
+{% endblock %}

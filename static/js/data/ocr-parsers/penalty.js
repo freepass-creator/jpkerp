@@ -27,20 +27,19 @@ export function parse(text, lines) {
   else if (/과태료/.test(text)) data.doc_type = '과태료';
   else data.doc_type = '기타';
 
-  // ── 차량번호 ──
-  // 여러 패턴: "161호1063", "161호 1063", "161 호 1063"
+  // ── 차량번호 (00가0000 또는 000가0000) ──
+  const CAR_RE = /(\d{2,3}\s?[가-힣]\s?\d{4})/;
   const carPatterns = [
-    /위반\s*차량[\s\S]{0,30}?(\d{2,3})\s*호?\s*(\d{4})/,
-    /차량\s*번호[\s\S]{0,30}?(\d{2,3})\s*호?\s*(\d{4})/,
+    new RegExp('위반\\s*차량[\\s\\S]{0,30}?' + CAR_RE.source),
+    new RegExp('차량\\s*번호[\\s\\S]{0,30}?' + CAR_RE.source),
   ];
   for (const p of carPatterns) {
     const m = text.match(p);
-    if (m) { data.car_number = `${m[1]}호${m[2]}`; break; }
+    if (m) { data.car_number = m[1].replace(/\s/g, ''); break; }
   }
   if (!data.car_number) {
-    // 일반 차량번호 패턴
-    const cm = text.match(/(\d{2,3})[가-힣]\s?(\d{4})/);
-    if (cm) data.car_number = cm[0].replace(/\s/g, '');
+    const cm = text.match(CAR_RE);
+    if (cm) data.car_number = cm[1].replace(/\s/g, '');
   }
 
   // ── 납부자 (회사명) ──

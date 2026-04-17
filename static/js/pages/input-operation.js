@@ -57,6 +57,7 @@ function removeLocation(place) {
   let list = loadLocations().filter(p => p !== place);
   localStorage.setItem(LOC_KEY, JSON.stringify(list));
 }
+const LAST_FROM_KEY = 'jpk.op.last_from';
 const TITLE_KEY = 'jpk.op.titles';
 
 function loadRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; } }
@@ -103,6 +104,7 @@ const OP_ICONS = {
   // 🔴 문제·긴급
   force:     { name: 'ph-warning-octagon',    color: '#dc2626' },  // red-600
   accident:  { name: 'ph-car-profile',        color: '#ef4444' },  // red-500
+  ignition:  { name: 'ph-engine',             color: '#ea580c' },  // orange-600
   penalty:   { name: 'ph-prohibit',           color: '#b91c1c' },  // red-700
   penalty_notice: { name: 'ph-receipt',       color: '#b91c1c' },  // red-700 (과태료처리)
 
@@ -131,6 +133,7 @@ const DEFAULT_TYPES = [
   { key: 'key',         label: '차키 전달/분출', sub: '키 전달/회수/분실',               direction: 'out', hidden: true },
   { key: 'maint',       label: '정비',           sub: '소모품교체 + 기능수리',           direction: 'out', hidden: true },
   { key: 'accident',    label: '사고접수',       sub: '사고 발생/보험접수',        direction: 'out' },
+  { key: 'ignition',   label: '시동제어',       sub: '시동제어·회수결정·회수진행', direction: 'out' },
   { key: 'repair',      label: '사고수리',       sub: '판금/도색/수리',             direction: 'out', hidden: true },
   { key: 'product',     label: '상품화',         sub: '반납 후 재상품화',           direction: 'out', hidden: true },
   { key: 'insurance',   label: '보험배서관리',   sub: '연령변경·갱신·신규·해지',     direction: 'out' },
@@ -243,31 +246,82 @@ function renderForm() {
   togglePenaltyButtons(false);
 
   const host = $('#opFormHost');
-  const carList = `<datalist id="opCarList">${assets.map(a => `<option value="${a.car_number || ''}">`).join('')}</datalist>`;
+  const carList = `<datalist id="opCarList">${assets.map(a => {
+    const _c = contracts.find(c => c.car_number === a.car_number && c.contract_status !== '계약해지');
+    const info = [a.partner_code, a.car_model, _c?.contractor_name].filter(Boolean).join(' ');
+    return `<option value="${a.car_number || ''}">${info}</option>`;
+  }).join('')}</datalist>`;
   const chk = (name, label) => `<span class="btn-opt btn-toggle" data-name="${name}" data-val="">${label}</span>`;
   const chkGroup = (items) => `<div class="btn-group" style="flex-wrap:wrap">${items}</div>`;
-  const sel = (name, label, opts) => `<div class="field"><label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}">${o}</span>`).join('')}</div></div>`;
+  // 옵션값 → tone 매핑 (성격별 색상 — CSS data-tone 기반)
+  const OPT_TONE = {
+    // ── danger: 위험/부정/긴급 ──
+    '미납': 'danger', '계약위반': 'danger', '사고방치': 'danger',
+    '심각손상': 'danger', '파손심함': 'danger', '사고차': 'danger',
+    '강제회수': 'danger', '처리불가': 'danger', '거부': 'danger',
+    'E': 'danger', '해지': 'danger', '분실': 'danger',
+    // ── warn: 주의/경고 ──
+    '연락두절': 'warn', '손상있음': 'warn', '수리필요': 'warn',
+    '청소필요': 'warn', '세차필요': 'warn',
+    '교체필요': 'warn', '편마모': 'warn', '이상있음': 'warn',
+    '보류': 'warn', '연락불가': 'warn', '경미흠집': 'warn', '경미손상': 'warn',
+    '법적조치진행': 'warn', '법적조치예고': 'warn', '내용증명발송': 'warn', '소송진행': 'warn',
+    '미진행': 'warn', '보통': 'warn', '1/4': 'warn',
+    '미제공': 'warn', '미정': 'warn', '미납해소': 'warn',
+    // ── success: 양호/완료/긍정 ──
+    '양호': 'success', '깨끗': 'success', '정상': 'success',
+    '납부완료': 'success', '처리완료': 'success', '종결': 'success', '완료': 'success',
+    '즉시납부': 'success', 'F': 'success', '분할합의': 'success',
+    '대차반납': 'success', '납부약속': 'success', '회수': 'success',
+    // ── info: 진행중/접수/중립 ──
+    '진행중': 'info', '처리중': 'info', '수리중': 'info', '접수': 'info',
+    '대차중': 'info', '대차제공': 'info',
+    '전화독촉': 'info', '문자발송': 'info',
+    // 이동방식
+    '탁송': 'info', '직접': 'success',
+    // 입출고 업무구분
+    '차량이동': 'info', '정상출고': 'success', '정상반납': 'warn', '강제회수': 'danger',
+    // 차량케어 작업구분
+    '정비': 'warn', '사고수리': 'danger', '상품화': 'info', '세차': 'success',
+    // 작업상태
+    '입고': 'warn',
+    // 정비유형
+    '정기점검': 'info', '소모품교체': 'info', '수리': 'warn', '판금/도색': 'danger',
+    // 사고 — 형태/역할
+    '단독': 'warn', '쌍방': 'danger', '가해': 'danger', '피해': 'warn',
+    // 다음예정
+    '재출고': 'success', '정비입고': 'warn', '매각': 'danger',
+    // 과태료
+    '주정차위반': 'warn', '속도위반': 'danger', '신호위반': 'danger', '버스전용': 'warn',
+    '고객부담': 'info', '회사부담': 'warn',
+    // 고객센터 유형
+    '일반문의': 'info', '컴플레인': 'danger', '계약문의': 'info', '정비요청': 'warn',
+    '사고접수': 'danger', '반납협의': 'warn', '연장문의': 'info',
+    // 고객센터 처리결과 (접수/진행중 이미 위에 있음)
+    // 차키
+    '전달': 'success', '복제': 'info',
+    // 보험업무
+    '배서(연령변경)': 'info', '신규가입': 'success', '갱신': 'info', '보험청구': 'warn',
+    // 이동사유
+    '배차': 'success', '정비입고': 'warn',
+    // 회수사유 (미납/연락두절/계약위반 이미 위에 있음)
+    // 세차유형
+    '외부세차': 'info', '실내크리닝': 'info', '풀세차': 'success', '광택': 'success',
+    // 연료
+    '휘발유': 'warn', '경유': 'info', 'LPG': 'info', '전기충전': 'success',
+  };
+  const sel = (name, label, opts) => `<div class="field"><label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}"${OPT_TONE[o] ? ` data-tone="${OPT_TONE[o]}"` : ''}>${o}</span>`).join('')}</div></div>`;
+
+  // 차량케어센터: 기본정보 고정 + 세부 폼만 교체
+  if (currentType === 'pc' || (_pcActive && ['maint', 'repair', 'product', 'wash'].includes(currentType))) {
+    renderPcMode(host, today, carList, sel);
+    return;
+  }
 
   // 유형별 폼 생성
   let sections = '';
 
-  if (currentType === 'pc') {
-    sections = `
-    <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
-      <div class="form-grid">
-        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
-        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="form-section-title"><i class="ph ph-tag"></i>작업구분</div>
-      ${sel('pc_kind', '', ['정비','사고수리','상품화','세차']).replace('<label></label>', '')}
-      <div style="margin-top:10px;color:var(--c-text-muted);font-size:var(--font-size-sm);padding:10px;background:var(--c-bg-sub);border:1px solid var(--c-border);border-radius:var(--r-md)">
-        작업구분을 선택하면 해당 세부 양식이 표시됩니다.
-      </div>
-    </div>`;
-  } else if (currentType === 'ioc') {
+  if (currentType === 'ioc') {
     sections = `
     <div class="form-section">
       <div class="form-section-title"><i class="ph ph-info"></i>기본정보</div>
@@ -293,6 +347,9 @@ function renderForm() {
             </div>
           </div>
         </div>
+        <div class="field"><label>출발지</label><input type="text" name="from_location" list="iocLocList" value="${localStorage.getItem(LAST_FROM_KEY) || ''}" placeholder="출발 위치"></div>
+        <div class="field"><label>도착지</label><input type="text" name="to_location" list="iocLocList" placeholder="도착 위치"></div>
+        <datalist id="iocLocList">${[...new Set([...loadLocations(), ...loadFavorites()])].map(l => `<option value="${l}">`).join('')}</datalist>
         <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="3" placeholder="탁송기사 연락처 · 특이사항 · 참고" class="ctrl" style="height:auto;padding:6px 8px"></textarea></div>
       </div>
     </div>
@@ -612,6 +669,30 @@ function renderForm() {
         <div class="field"></label>주행거리</label><input type="text" name="mileage" inputmode="numeric" placeholder="km"></div>
         <div class="field"></label>비용</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
         <div class="field" style="grid-column:1/-1"></label>메모</label><textarea name="note" rows="2"></textarea></div>
+      </div>
+    </div>`;
+
+  } else if (currentType === 'ignition') {
+    sections = `
+    <div class="form-section">
+      <div class="form-section-title"><i class="ph ph-engine"></i>시동제어</div>
+      <div class="form-grid">
+        <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+        <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+        <input type="hidden" name="title">
+        <div class="field"><label>조치구분</label><input type="hidden" name="ignition_action" value="시동제어">
+          <div class="btn-group" data-name="ignition_action">
+            <span class="btn-opt is-active" data-val="시동제어" data-tone="warn">시동제어</span>
+            <span class="btn-opt" data-val="제어해제" data-tone="success">제어해제</span>
+          </div>
+        </div>
+        <div class="field" id="ignitionReasonWrap"><label>사유</label>
+          <input type="hidden" name="ignition_reason">
+          <div class="btn-group" data-name="ignition_reason" id="ignitionReasonGroup"></div>
+        </div>
+        <div class="field"><label>미납액</label><input type="text" name="unpaid_amount" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>담당자</label><input type="text" name="handler" placeholder="담당자"></div>
+        <div class="field" style="grid-column:1/-1"><label>상세내역</label><textarea name="note" rows="3" placeholder="시동제어 사유, 고객 연락 상황 등"></textarea></div>
       </div>
     </div>`;
 
@@ -1222,95 +1303,7 @@ function renderForm() {
     if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
   }
 
-  // 차량케어센터 — 작업구분 헤더 + 전환 (pc 진입 상태면 항상 상단 노출)
-  if (_pcActive && currentType !== 'pc') {
-    // 세부 폼 위에 작업구분 헤더 prepend
-    const KIND_MAP_REV = { maint: '정비', repair: '사고수리', product: '상품화', wash: '세차' };
-    const curLabel = KIND_MAP_REV[currentType] || '';
-    const header = document.createElement('div');
-    header.className = 'form-section';
-    header.id = 'pcKindHeader';
-    const vList = vendors.map(v => `<option value="${v.vendor_name}">`).join('');
-    const preserveVendor = host.querySelector('input[name="vendor"]')?.value || '';
-    const preserveMileage = host.querySelector('input[name="mileage"]')?.value || '';
-    const preserveExpected = host.querySelector('input[name="expected_delivery"]')?.value || '';
-    const preserveWS = host.querySelector('input[name="work_status"]')?.value || '입고';
-    header.innerHTML = `
-      <div class="form-section-title"><i class="ph ph-tag"></i>작업구분</div>
-      <div class="btn-group" data-name="pc_kind_inline" style="margin-bottom:var(--sp-4)">
-        ${['정비','사고수리','상품화','세차'].map(k => `<span class="btn-opt${k===curLabel?' is-active':''}" data-val="${k}">${k}</span>`).join('')}
-      </div>
-      <div class="form-grid">
-        <div class="field"><label>업체</label><input type="text" name="vendor" list="pcVendorList" placeholder="정비소/수리업체/세차장" value="${preserveVendor}"><datalist id="pcVendorList">${vList}</datalist></div>
-        <div class="field"><label>작업상태</label><input type="hidden" name="work_status" value="${preserveWS}"><div class="btn-group" data-name="work_status">${['입고','진행중','완료'].map((s)=>`<span class="btn-opt${s===preserveWS?' is-active':''}" data-val="${s}">${s}</span>`).join('')}</div></div>
-        <div class="field"><label>현 주행거리 (km)</label><input type="text" name="mileage" inputmode="numeric" placeholder="0" value="${preserveMileage}"></div>
-        <div class="field"><label>예상 완료일자</label><input type="date" name="expected_delivery" value="${preserveExpected}"></div>
-      </div>
-    `;
-    // 기본정보(첫 form-section) 뒤에 삽입
-    const firstSec = host.querySelector('.form-section');
-    if (firstSec && firstSec.nextSibling) host.insertBefore(header, firstSec.nextSibling);
-    else if (firstSec) host.appendChild(header);
-    else host.insertBefore(header, host.firstChild);
-    // 작업상태 btn-group 수동 바인딩
-    const wsGroup = header.querySelector('.btn-group[data-name="work_status"]');
-    const wsHidden = header.querySelector('input[name="work_status"]');
-    wsGroup?.querySelectorAll('.btn-opt').forEach(opt => {
-      opt.addEventListener('click', () => {
-        wsGroup.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
-        opt.classList.add('is-active');
-        if (wsHidden) wsHidden.value = opt.dataset.val;
-      });
-    });
-    // 작업구분 전환
-    header.querySelector('.btn-group[data-name="pc_kind_inline"]').addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-opt'); if (!btn) return;
-      const v = btn.dataset.val;
-      const map = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product', '세차': 'wash' };
-      const t = map[v]; if (!t || t === currentType) return;
-      const preserveDate = host.querySelector('input[name="date"]')?.value;
-      const preserveCar = host.querySelector('input[name="car_number"]')?.value;
-      currentType = t;
-      renderForm();
-      const host2 = $('#opFormHost');
-      if (preserveDate) { const d = host2.querySelector('input[name="date"]'); if (d) d.value = preserveDate; }
-      if (preserveCar) {
-        const c = host2.querySelector('input[name="car_number"]');
-        if (c) { c.value = preserveCar; c.dispatchEvent(new Event('input')); c.dispatchEvent(new Event('change')); }
-      }
-    });
-  }
-
-  // pc 루트 — 작업구분 버튼 클릭시 전환
-  if (currentType === 'pc') {
-    const pcGroup = host.querySelector('.btn-group[data-name="pc_kind"]');
-    const preserveDate = host.querySelector('input[name="date"]')?.value;
-    const preserveCar = host.querySelector('input[name="car_number"]')?.value;
-    pcGroup?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-opt'); if (!btn) return;
-      const v = btn.dataset.val;
-      const map = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product', '세차': 'wash' };
-      const t = map[v]; if (!t) return;
-      currentType = t;
-      _pcActive = true;  // pc 상태 유지
-      renderForm();
-      const host2 = $('#opFormHost');
-      if (preserveDate) { const d = host2.querySelector('input[name="date"]'); if (d) d.value = preserveDate; }
-      if (preserveCar) {
-        const c = host2.querySelector('input[name="car_number"]');
-        if (c) { c.value = preserveCar; c.dispatchEvent(new Event('input')); c.dispatchEvent(new Event('change')); }
-      }
-    });
-  }
-
-  // pc 상태면 타이틀은 '차량케어센터' 고정 (하위 구분은 섹션으로 표시)
-  if (_pcActive && currentType !== 'pc') {
-    const pcType = TYPES.find(x => x.key === 'pc');
-    const ft = $('#opFormTitle');
-    if (ft && pcType) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>${pcType.label}</span></span>`;
-    const sub = $('#opFormSubtitle');
-    if (sub && pcType) sub.textContent = pcType.sub || '';
-  }
+  // pcKindHeader/pc전환은 renderPcMode에서 처리 (위에서 early return)
 
   if (currentType === 'ioc') {
     if (iocUploader) iocUploader.clear();
@@ -1753,6 +1746,49 @@ function renderForm() {
     });
   });
 
+  // 시동제어 — 조치구분 선택 시 사유 동적 변경
+  if (currentType === 'ignition') {
+    const IGNITION_REASONS = {
+      '시동제어': ['미납', '연락두절', '계약위반', '기타'],
+      '제어해제': ['납부완료', '분할합의', '기타'],
+    };
+    const REASON_TONE = {
+      '미납': 'danger', '연락두절': 'warn', '계약위반': 'danger', '기타': '',
+      '납부완료': 'success', '분할합의': 'success',
+    };
+
+    const actionGroup = host.querySelector('.btn-group[data-name="ignition_action"]');
+    const reasonGroup = host.querySelector('#ignitionReasonGroup');
+    const reasonHidden = host.querySelector('input[name="ignition_reason"]');
+
+    function updateReasons(action) {
+      const opts = IGNITION_REASONS[action] || [];
+      reasonGroup.innerHTML = opts.map((o, i) =>
+        `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}"${REASON_TONE[o] ? ` data-tone="${REASON_TONE[o]}"` : ''}>${o}</span>`
+      ).join('');
+      if (reasonHidden) reasonHidden.value = opts[0] || '';
+      // btn-group 클릭 바인딩
+      reasonGroup.querySelectorAll('.btn-opt').forEach(opt => {
+        opt.addEventListener('click', () => {
+          reasonGroup.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
+          opt.classList.add('is-active');
+          if (reasonHidden) reasonHidden.value = opt.dataset.val;
+        });
+      });
+    }
+
+    const initAction = actionGroup?.querySelector('.btn-opt.is-active')?.dataset.val || '시동제어';
+    updateReasons(initAction);
+
+    // 조치구분 변경 시 사유 갱신
+    actionGroup?.querySelectorAll('.btn-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.classList.contains('is-active') ? btn.dataset.val : '';
+        if (val) updateReasons(val);
+      });
+    });
+  }
+
   // 금액 콤마 — 모든 금액 계열 필드에 천단위 자동 포맷
   const MONEY_NAMES = new Set([
     'amount', 'extra_mileage', 'extra_fuel', 'extra_damage',
@@ -2136,6 +2172,7 @@ async function submitForm() {
       key: (data.key_action || '차키') + ' 업무',
       penalty: data.penalty_type || '과태료',
       collect: '미수 조치', insurance: data.insurance_action || '보험업무',
+      ignition: `시동${data.ignition_action === '제어해제' ? ' 해제' : '제어'} — ${data.ignition_reason || ''}`,
       fuel: data.fuel_type || '연료보충',
     };
     data.title = labelMap[currentType] || currentType;
@@ -2190,6 +2227,7 @@ async function submitForm() {
       'force_reason', 'unpaid_amount', 'damage_claim', 'legal_action',
       'assignee', 'participants',
       'key_action', 'key_type', 'key_info',
+      'ignition_action', 'ignition_reason',
       'customer_name', 'customer_phone', 'contact_type', 'contact_result', 'handler',
     ];
     extras.forEach(k => { if (data[k]) event[k] = data[k]; });
@@ -2217,6 +2255,21 @@ async function submitForm() {
       } catch (e) { console.warn('[key decrement]', e); }
     }
 
+    // 시동제어 → 계약 action_status 자동 반영
+    if (event.type === 'ignition' && data.ignition_action && data.car_number) {
+      try {
+        const { updateContract } = await import('../firebase/contracts.js');
+        const active = contracts.find(c =>
+          c.car_number === data.car_number && c.status !== 'deleted' &&
+          (!c.contract_status || c.contract_status === '계약진행')
+        );
+        if (active?.contract_code) {
+          await updateContract(active.contract_code, { action_status: data.ignition_action });
+          showToast(`계약 조치상태 → ${data.ignition_action}`, 'info');
+        }
+      } catch (e) { console.warn('[ignition status]', e); }
+    }
+
     showToast('등록 완료', 'success');
     // 학습: 최근 차량 / 제목 / 즐겨찾기
     if (data.car_number) saveRecent(data.car_number);
@@ -2224,7 +2277,7 @@ async function submitForm() {
     if (data.vendor) saveFavorite(data.vendor);
     if (data.delivery_location) saveFavorite(data.delivery_location);
     if (data.return_location) saveFavorite(data.return_location);
-    if (data.from_location) saveLocation(data.from_location);
+    if (data.from_location) { saveLocation(data.from_location); localStorage.setItem(LAST_FROM_KEY, data.from_location); }
     if (data.to_location) saveLocation(data.to_location);
     if (data.insurance_company) saveInsCo(data.insurance_company);
     if (data.other_insurance) saveInsCo(data.other_insurance);
@@ -2241,19 +2294,266 @@ export async function mount() {
   watchBillings((items) => { _billings = items; });
   watchVendors((items) => { vendors = items; });
   renderList();
-  $('#opReset')?.addEventListener('click', resetForm);
-  $('#opSubmit')?.addEventListener('click', submitForm);
+  // 초기 상태: 업무 미선택 → 버튼 숨김 (HTML에서 hidden 기본)
+  _reset?.addEventListener('click', resetForm);
+  _submit?.addEventListener('click', submitForm);
 }
 
 // ─────────────────────────────────────────────────────────
 // 과태료처리 모드 (OCR 업로드 + 매칭 + 일괄 다운로드)
 // ─────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────
+// 차량케어센터 — 기본정보 고정 + 세부 폼만 교체
+// ─────────────────────────────────────────────────────────
+
+function renderPcMode(host, today, carList, sel) {
+  const KIND_MAP = { '정비': 'maint', '사고수리': 'repair', '상품화': 'product', '세차': 'wash' };
+  const KIND_MAP_REV = { maint: '정비', repair: '사고수리', product: '상품화', wash: '세차' };
+  const subType = KIND_MAP_REV[currentType] || '정비';
+  const lastFrom = localStorage.getItem(LAST_FROM_KEY) || '';
+  const locOpts = [...new Set([...loadLocations(), ...loadFavorites()])].map(l => `<option value="${l}">`).join('');
+  const vList = vendors.map(v => `<option value="${v.vendor_name}">`).join('');
+
+  // 타이틀 = 차량케어센터 고정
+  const pcType = TYPES.find(x => x.key === 'pc');
+  const ft = $('#opFormTitle');
+  if (ft && pcType) ft.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${opIcon('pc')}<span>${pcType.label}</span></span>`;
+  const sub = $('#opFormSubtitle');
+  if (sub && pcType) sub.textContent = pcType.sub || '';
+
+  // 차량 조회 패널
+  const carInfoPanel = `
+    <div id="iocCarInfo" class="ioc-car-info" hidden style="margin:0 var(--sp-5) var(--sp-3)">
+      <div class="ioc-car-col">
+        <div class="ioc-car-col-title"><i class="ph ph-car"></i>차량 스펙</div>
+        <div class="ioc-car-row"><span class="k">회사명</span><span class="v" data-f="company">—</span></div>
+        <div class="ioc-car-row"><span class="k">차량번호</span><span class="v" data-f="car">—</span></div>
+        <div class="ioc-car-row"><span class="k">세부모델</span><span class="v" data-f="model">—</span></div>
+        <div class="ioc-car-row"><span class="k">보험연령</span><span class="v" data-f="insAge">—</span></div>
+      </div>
+      <div class="ioc-car-col">
+        <div class="ioc-car-col-title"><i class="ph ph-clipboard-text"></i>계약 / 상태</div>
+        <div class="ioc-car-row"><span class="k">계약자</span><span class="v" data-f="contractor">—</span></div>
+        <div class="ioc-car-row"><span class="k">연락처</span><span class="v" data-f="phone">—</span></div>
+        <div class="ioc-car-row"><span class="k">계약상태</span><span class="v" data-f="carStatus">—</span></div>
+        <div class="ioc-car-row"><span class="k">미납여부</span><span class="v" data-f="unpaidYn">—</span></div>
+      </div>
+    </div>`;
+
+  // 기본정보 (고정 — 작업구분 변경해도 유지)
+  const baseHtml = `
+  <div class="form-section" id="pcBaseInfo">
+    <div class="form-section-title">기본정보</div>
+    <div class="form-grid">
+      <div class="field is-required"><label>일자</label><input type="date" name="date" value="${today}"></div>
+      <div class="field is-required"><label>차량번호</label><input type="text" name="car_number" list="opCarList" autocomplete="off">${carList}</div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      ${sel('pc_kind', '작업구분', ['정비','사고수리','상품화','세차'])}
+      ${sel('work_status', '작업상태', ['접수','진행중','완료'])}
+    </div>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="field"><label>출발지</label><input type="text" name="from_location" list="pcLocList" value="${lastFrom}" placeholder="출발 위치"><datalist id="pcLocList">${locOpts}</datalist></div>
+      <div class="field"><label>도착지(입고처)</label><input type="text" name="vendor" list="pcVendorList" placeholder="정비소 · 도색업체"><datalist id="pcVendorList">${vList}</datalist></div>
+    </div>
+  </div>`;
+
+  host.innerHTML = carInfoPanel + baseHtml + `<div id="pcDetailHost"></div>`;
+
+  // 작업구분 기본 선택 맞추기
+  const pcKindGroup = host.querySelector('.btn-group[data-name="pc_kind"]');
+  pcKindGroup?.querySelectorAll('.btn-opt').forEach(o => {
+    o.classList.toggle('is-active', o.dataset.val === subType);
+  });
+  const pcKindHidden = host.querySelector('input[name="pc_kind"]');
+  if (pcKindHidden) pcKindHidden.value = subType;
+
+  // 세부 폼 초기 렌더
+  _pcActive = true;
+  if (currentType === 'pc') currentType = KIND_MAP[subType] || 'maint';
+  renderPcDetail();
+
+  // 작업구분 전환 — 버튼 활성화 + 세부 폼 교체 (기본정보 유지)
+  pcKindGroup?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-opt'); if (!btn) return;
+    const t = KIND_MAP[btn.dataset.val]; if (!t) return;
+    pcKindGroup.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
+    btn.classList.add('is-active');
+    if (pcKindHidden) pcKindHidden.value = btn.dataset.val;
+    currentType = t;
+    renderPcDetail();
+  });
+
+  // 작업상태 btn-group 바인딩
+  const wsGroup = host.querySelector('.btn-group[data-name="work_status"]');
+  const wsHidden = host.querySelector('input[name="work_status"]');
+  wsGroup?.querySelectorAll('.btn-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      wsGroup.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
+      opt.classList.add('is-active');
+      if (wsHidden) wsHidden.value = opt.dataset.val;
+    });
+  });
+}
+
+function renderPcDetail() {
+  const detailHost = document.getElementById('pcDetailHost');
+  if (!detailHost) return;
+
+  const OPT_TONE = {
+    '양호': 'success', '경미흠집': 'warn', '손상있음': 'warn', '심각손상': 'danger',
+    '깨끗': 'success', '보통': 'warn', '청소필요': 'warn',
+    // 정비유형
+    '정기점검': 'info', '소모품교체': 'info', '수리': 'warn', '판금/도색': 'danger', '타이어': 'warn', '기타': '',
+    // 세차유형
+    '외부세차': 'info', '실내크리닝': 'info', '풀세차': 'success', '광택': 'success',
+    '교체필요': 'warn', '편마모': 'warn',
+    '없음': 'success', '경미': 'warn', '있음': 'danger',
+    '미정': 'warn', '대차제공': 'info', '대차없음': 'success',
+    '대차중': 'info', '미제공': 'warn', '대차반납': 'success',
+  };
+  const _sel = (name, label, opts) => `<div class="field"><label>${label}</label><input type="hidden" name="${name}"><div class="btn-group" data-name="${name}">${opts.map((o, i) => `<span class="btn-opt${i === 0 ? ' is-active' : ''}" data-val="${o}"${OPT_TONE[o] ? ` data-tone="${OPT_TONE[o]}"` : ''}>${o}</span>`).join('')}</div></div>`;
+
+  let fields = '';
+
+  if (currentType === 'maint') {
+    fields = `
+      <div class="form-section">
+        <div class="form-section-title"><i class="ph ph-wrench"></i>정비 정보</div>
+        <div class="form-grid">
+          <div class="field is-required"><label>작업내용</label><input type="text" name="title" placeholder="예: 엔진오일 교환"></div>
+          ${_sel('maint_type', '정비유형', ['정기점검','소모품교체','수리','판금/도색','타이어','기타'])}
+          <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label>현 주행거리 (km)</label><input type="text" name="mileage" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label>다음정비예정</label><input type="date" name="next_maint_date"></div>
+          <div class="field"><label>예상 완료일</label><input type="date" name="expected_delivery"></div>
+          <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        </div>
+      </div>`;
+  } else if (currentType === 'repair') {
+    fields = `
+      <div class="form-section">
+        <div class="form-section-title"><i class="ph ph-hammer"></i>사고수리 정보</div>
+        <div class="form-grid">
+          <div class="field is-required"><label>수리내용</label><input type="text" name="title" placeholder="예: 후방 판금도색"></div>
+          ${_sel('damage_area', '사고부위', ['앞범퍼','뒷범퍼','앞휀더','뒷휀더','도어','본넷','트렁크','사이드미러','유리','휠','기타'])}
+          ${_sel('damage_frame', '골격 손상', ['없음','경미','있음'])}
+          <div class="field"><label>수리예상금액</label><input type="text" name="repair_estimate" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label>보험금</label><input type="text" name="insurance_amount" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label>자기부담금</label><input type="text" name="self_pay" inputmode="numeric" placeholder="0"></div>
+          ${_sel('rental_car', '대차', ['미정','대차제공','대차없음'])}
+          <div class="field"><label>예상 완료일</label><input type="date" name="expected_delivery"></div>
+          <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        </div>
+      </div>`;
+  } else if (currentType === 'product') {
+    fields = `
+      <div class="form-section">
+        <div class="form-section-title"><i class="ph ph-sparkle"></i>상품화 정보</div>
+        <div class="form-grid">
+          <div class="field is-required"><label>작업내용</label><input type="text" name="title" placeholder="예: 실내크리닝 + 광택"></div>
+          ${_sel('exterior', '외관', ['양호','경미흠집','손상있음'])}
+          ${_sel('interior', '실내', ['양호','보통','청소필요'])}
+          ${_sel('tire_status', '타이어', ['양호','교체필요','편마모'])}
+          <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label>현 주행거리 (km)</label><input type="text" name="mileage" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label>예상 완료일</label><input type="date" name="expected_delivery"></div>
+          <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        </div>
+      </div>`;
+  } else if (currentType === 'wash') {
+    fields = `
+      <div class="form-section">
+        <div class="form-section-title"><i class="ph ph-drop"></i>세차 정보</div>
+        <div class="form-grid">
+          <div class="field is-required"><label>작업내용</label><input type="text" name="title" placeholder="예: 외부세차 + 실내크리닝"></div>
+          ${_sel('wash_type', '세차유형', ['외부세차','실내크리닝','풀세차','광택'])}
+          <div class="field"><label>금액</label><input type="text" name="amount" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label>예상 완료일</label><input type="date" name="expected_delivery"></div>
+          <div class="field" style="grid-column:1/-1"><label>메모</label><textarea name="note" rows="2"></textarea></div>
+        </div>
+      </div>`;
+  }
+
+  detailHost.innerHTML = fields + `
+  <div class="form-section">
+    <div class="form-section-title"><i class="ph ph-paperclip"></i>첨부파일</div>
+    <div class="form-grid"><div class="field" style="grid-column:1/-1"><div id="pcPhotoUploader"></div></div></div>
+  </div>`;
+
+  // btn-group 바인딩 (세부 폼 내)
+  detailHost.querySelectorAll('.btn-group').forEach(group => {
+    if (group.querySelector('.btn-toggle')) return;
+    const hidden = group.previousElementSibling;
+    if (hidden && hidden.tagName === 'INPUT') {
+      hidden.value = group.querySelector('.btn-opt.is-active')?.dataset.val || '';
+    }
+    group.querySelectorAll('.btn-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const wasActive = opt.classList.contains('is-active');
+        group.querySelectorAll('.btn-opt').forEach(o => o.classList.remove('is-active'));
+        if (!wasActive) opt.classList.add('is-active');
+        if (hidden && hidden.tagName === 'INPUT') {
+          hidden.value = wasActive ? '' : opt.dataset.val;
+        }
+      });
+    });
+  });
+
+  // 첨부파일 바인딩
+  const mount = detailHost.querySelector('#pcPhotoUploader');
+  if (mount) iocUploader = createPhotoUploader(mount, { accept: 'image/*,.pdf', multiple: true });
+}
+
 function togglePenaltyButtons(hide) {
   const reset = $('#opReset');
   const submit = $('#opSubmit');
   if (reset) reset.style.display = hide ? 'none' : '';
   if (submit) submit.style.display = hide ? 'none' : '';
+
+  // 중앙 패널 헤드에 과태료 전용 버튼
+  const formActions = reset?.parentElement;
+  const ctxActions = document.getElementById('opContextActions');
+  const penFormId = 'penFormActions';
+  const penCtxId = 'penCtxActions';
+
+  if (hide) {
+    // 중앙: 드라이브 저장 + 열기 + 처리완료
+    if (formActions && !document.getElementById(penFormId)) {
+      const wrap = document.createElement('span');
+      wrap.id = penFormId;
+      wrap.style.cssText = 'display:flex;gap:4px;align-items:center';
+      wrap.innerHTML = `
+        <button class="btn btn-sm" id="penClearAll"><i class="ph ph-arrow-counter-clockwise"></i> 초기화</button>
+        <button class="btn btn-sm" id="penDriveUpload"><i class="ph ph-google-drive-logo"></i> 드라이브</button>
+        <a class="btn btn-sm" href="https://drive.google.com/drive/folders/1DZFCXfD6vvrW2ufaYavw5Eojy8kJ1XB9" target="_blank" style="text-decoration:none"><i class="ph ph-arrow-square-out"></i> 열기</a>
+        <button class="btn btn-sm btn-primary" id="penCompleteAll"><i class="ph ph-check-circle"></i> 처리완료</button>`;
+      formActions.appendChild(wrap);
+      wrap.querySelector('#penClearAll').addEventListener('click', () => {
+        _penaltyWorkItems = [];
+        renderPenaltyMatchList();
+        const status = $('#penNoticeStatus');
+        if (status) status.innerHTML = '';
+        showToast('작업 목록 초기화', 'info');
+      });
+      wrap.querySelector('#penDriveUpload').addEventListener('click', uploadPenaltyToDrive);
+      wrap.querySelector('#penCompleteAll').addEventListener('click', completePenaltyAll);
+    }
+    // 우측: ZIP 다운로드 + 초기화
+    if (ctxActions && !document.getElementById(penCtxId)) {
+      ctxActions.id = 'opContextActions';
+      ctxActions.innerHTML = `
+        <span id="${penCtxId}" style="display:flex;gap:4px;align-items:center">
+          <button class="btn btn-sm" id="penDownloadAll"><i class="ph ph-download-simple"></i> 다운로드</button>
+        </span>`;
+      ctxActions.querySelector('#penDownloadAll').addEventListener('click', downloadPenaltyAll);
+    }
+  } else {
+    // 복원
+    document.getElementById(penFormId)?.remove();
+    if (ctxActions) ctxActions.innerHTML = '';
+  }
 }
 
 function renderPenaltyNoticeMode() {
@@ -2268,22 +2568,6 @@ function renderPenaltyNoticeMode() {
         <div class="photo-dropzone-sub">PDF · 이미지 · 여러 장 가능 · 클릭 또는 드래그</div>
       </label>
       <div id="penNoticeStatus" style="display:flex;flex-direction:column;gap:6px;margin-top:12px"></div>
-    </div>
-    <div class="form-section" style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-primary" id="penDownloadAll" style="width:100%">
-        <i class="ph ph-download-simple"></i> 일괄 ZIP 다운로드
-      </button>
-      <div style="display:flex;gap:6px">
-        <button class="btn" id="penDriveUpload" style="flex:1;background:var(--c-bg-sub)">
-          <i class="ph ph-google-drive-logo"></i> 드라이브 저장
-        </button>
-        <a class="btn" href="https://drive.google.com/drive/folders/1DZFCXfD6vvrW2ufaYavw5Eojy8kJ1XB9" target="_blank" style="background:var(--c-bg-sub);text-decoration:none">
-          <i class="ph ph-arrow-square-out"></i> 열기
-        </a>
-      </div>
-      <button class="btn" id="penCompleteAll" style="width:100%">
-        <i class="ph ph-check-circle"></i> 일괄 처리완료 (DB 저장)
-      </button>
     </div>
     <div class="form-section" id="penSummary" style="font-size:var(--font-size-sm);color:var(--c-text-muted);text-align:center">
       작업 대기: <b id="penWorkCount">0</b>건
@@ -2301,10 +2585,7 @@ function renderPenaltyNoticeMode() {
     handlePenaltyFiles(Array.from(e.dataTransfer.files));
   });
 
-  // 일괄 다운로드 / 드라이브 저장 / 일괄 처리완료
-  $('#penDownloadAll')?.addEventListener('click', downloadPenaltyAll);
-  $('#penDriveUpload')?.addEventListener('click', uploadPenaltyToDrive);
-  $('#penCompleteAll')?.addEventListener('click', completePenaltyAll);
+  // 버튼은 패널 헤드에서 togglePenaltyButtons가 관리
 }
 
 // getPenaltyRows 제거 — 세션 기반(_penaltyWorkItems) 사용

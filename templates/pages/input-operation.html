@@ -22,8 +22,8 @@
       <span class="panel-subtitle" id="opFormSubtitle"></span>
     </div>
     <div class="panel-actions">
-      {{ btn('reset', '초기화', id='opReset') }}
-      {{ btn('check', '등록', cls='btn-primary', id='opSubmit') }}
+      <button type="button" class="btn" id="opReset" style="display:none"><i class="ph ph-arrow-counter-clockwise"></i> 초기화</button>
+      <button type="button" class="btn btn-primary" id="opSubmit" style="display:none"><i class="ph ph-check"></i> 등록</button>
     </div>
   </div>
   <div class="panel-body is-pad" id="opFormHost" style="overflow-y:auto">
@@ -37,6 +37,7 @@
       <span class="panel-title" id="opContextTitle">이력관리</span>
       <span class="panel-subtitle" id="opContextSubtitle">차량번호를 입력하세요</span>
     </div>
+    <div class="panel-actions" id="opContextActions"></div>
   </div>
   <div class="panel-body is-pad" id="opContextHost" style="overflow-y:auto">
     <div style="padding:24px;text-align:center;color:var(--c-text-muted)">차량번호 입력 시<br>계약/수납/운영이력이 여기 표시됩니다.</div>

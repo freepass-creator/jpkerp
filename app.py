@@ -128,6 +128,8 @@ ROUTES = [
     ('/status/operation','pages/status-operation.html','운영현황', 'status_operation'),
     ('/status/overdue',  'pages/status-overdue.html',  '미납현황', 'status_overdue'),
     ('/status/idle',     'pages/status-idle.html',     '휴차현황', 'status_idle'),
+    ('/status/product',  'pages/status-product.html',  '상품대기', 'status_product'),
+    ('/status/pending',  'pages/status-pending.html',  '미결업무', 'status_pending'),
     ('/status/ignition', 'pages/status-ignition.html', '시동제어', 'status_ignition'),
     ('/status/expiring', 'pages/status-expiring.html', '만기도래', 'status_expiring'),
     # 고객용

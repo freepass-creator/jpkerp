@@ -13,9 +13,12 @@ export const MENU = [
   ]},
 
   { group: '현황', icon: 'trending', children: [
-    { href: '/status/overdue', label: '미납',      icon: 'alert' },
-    { href: '/status/idle',    label: '휴차',      icon: 'pause' },
-    { href: '/status/ignition',label: '시동제어',  icon: 'alert' },
+    { href: '/status/overdue',   label: '미납',      icon: 'alert' },
+    { href: '/status/idle',      label: '휴차',      icon: 'pause' },
+    { href: '/status/product',   label: '상품대기',  icon: 'storefront' },
+    { href: '/status/expiring',  label: '만기도래',  icon: 'clock' },
+    { href: '/status/pending',   label: '미결업무',  icon: 'clipboard' },
+    { href: '/status/ignition',  label: '시동제어',  icon: 'alert' },
   ]},
 
   { group: '조회', icon: 'searchck', children: [
@@ -139,6 +142,7 @@ const PH_MAP = {
   // ── 현황 소메뉴 ──
   alert:      'ph-warning-circle',     // 미납현황
   pause:      'ph-pause-circle',       // 휴차현황
+  storefront: 'ph-storefront',        // 상품대기
   clock:      'ph-clock-countdown',    // 만기도래
 
   // ── 조회 중분류 ──
