@@ -2020,11 +2020,17 @@ i.ph {
 .auth-brand {
   font-family: 'Exo 2', 'Pretendard', sans-serif;
   font-size: 28px;
-  font-weight: 600;
   letter-spacing: -0.5px;
+}
+.auth-brand__base {
+  font-weight: 300;
+  color: #7F8599;
+}
+.auth-brand__main {
+  font-weight: 600;
   color: #0D0D0F;
 }
-.auth-brand__sub {
+.auth-brand__erp {
   font-weight: 300;
   color: #1B2A4A;
   margin-left: 4px;
@@ -2034,6 +2040,29 @@ i.ph {
   font-size: 11px;
   color: #9ca3af;
   letter-spacing: 0.01em;
+}
+
+/* ── Auth Loading Screen ── */
+.auth-loading {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: #f8f9fa;
+}
+.auth-loading__brand {
+  font-family: 'Exo 2', 'Pretendard', sans-serif;
+  font-size: 32px;
+  letter-spacing: -0.5px;
+}
+.auth-loading__spinner {
+  font-size: 24px;
+  color: #1B2A4A;
+  animation: spin 0.9s linear infinite;
+  display: inline-block;
 }
 
 .auth-card {

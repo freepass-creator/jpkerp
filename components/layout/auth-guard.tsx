@@ -18,9 +18,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center gap-2 text-text-muted">
-        <i className="ph ph-spinner spin" />
-        <span>인증 확인 중...</span>
+      <div className="auth-loading">
+        <div className="auth-loading__brand"><span className="auth-brand__base">team</span><span className="auth-brand__main">jpk</span> <span className="auth-brand__erp">ERP</span></div>
+        <i className="ph ph-spinner auth-loading__spinner" />
       </div>
     );
   }

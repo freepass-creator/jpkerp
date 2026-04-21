@@ -41,7 +41,7 @@ function LoginInner() {
 
   return (
     <div className="auth-shell">
-      <div className="auth-brand">teamjpk <span className="auth-brand__sub">ERP</span></div>
+      <div className="auth-brand"><span className="auth-brand__base">team</span><span className="auth-brand__main">jpk</span> <span className="auth-brand__erp">ERP</span></div>
       <section className="auth-card" aria-label="로그인">
         <header className="auth-card__head">
           <h2 className="auth-card__title">로그인</h2>
@@ -76,7 +76,7 @@ function LoginInner() {
             <p className="auth-message" role="alert">{error}</p>
           )}
           <button type="submit" className="auth-submit" disabled={busy}>
-            {busy ? '로그인 중...' : '로그인'}
+            {busy ? <><i className="ph ph-spinner spin" /> 접속 중...</> : '로그인'}
           </button>
         </form>
         <p className="auth-guide">기존 jpkerp 계정으로 로그인</p>
