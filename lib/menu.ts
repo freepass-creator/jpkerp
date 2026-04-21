@@ -81,6 +81,7 @@ export const MENU: MenuEntry[] = [
       { href: '/task', label: '업무 목록' },
 
       { subgroup: '재무관리', icon: 'dollar' },
+      { href: '/billing-schedule', label: '수납 스케줄' },
       { href: '/billing', label: '수납 관리' },
       { href: '/autodebit', label: '자동이체' },
       { href: '/fund', label: '자금 관리' },

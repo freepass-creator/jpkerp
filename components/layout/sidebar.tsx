@@ -218,7 +218,8 @@ function SidebarLink({
   if (depth > 0) classes.push('sidebar-child');
   if (active) classes.push('is-active');
 
-  // 현황 페이지 긴급성 표시
+  // 현황 페이지에만 숫자 표시
+  const isStatus = item.href.startsWith('/status/');
   const isUrgent = (item.href === '/status/overdue' || item.href === '/status/pending' || item.href === '/status/ignition') && count > 0;
   const countClass = isUrgent ? 'sidebar-count urgent' : 'sidebar-count';
 
@@ -227,7 +228,7 @@ function SidebarLink({
       {index !== undefined && <span className="sidebar-num">{index}</span>}
       {item.icon && <i className={`ph ${iconClass(item.icon)}`} />}
       <span className="sidebar-link-label">{item.label}</span>
-      {count > 0 && <span className={countClass}>{count}</span>}
+      {isStatus && count > 0 && <span className={countClass}>{count}</span>}
     </Link>
   );
 }

@@ -28,18 +28,22 @@ const CAT_META: Record<Cat, { label: string; icon: string; color: string }> = {
   nodelivery: { label: '미출고', icon: 'ph-truck', color: '#8b5cf6' },
 };
 
+export { CAT_META };
+export type { Cat };
+
 interface Props {
   gridRef?: RefObject<JpkGridApi<PendingRow> | null>;
   onCountChange?: (count: number) => void;
+  filter?: 'all' | Cat;
 }
 
-export function PendingClient({ gridRef: externalRef, onCountChange }: Props = {}) {
+export function PendingClient({ gridRef: externalRef, onCountChange, filter: externalFilter }: Props = {}) {
   const internalRef = useRef<JpkGridApi<PendingRow> | null>(null);
   const gridRef = externalRef ?? internalRef;
   const assets = useRtdbCollection<RtdbAsset>('assets');
   const contracts = useRtdbCollection<RtdbContract>('contracts');
   const events = useRtdbCollection<RtdbEvent>('events');
-  const [filter, setFilter] = useState<'all' | Cat>('all');
+  const filter = externalFilter ?? 'all';
 
   const allRows = useMemo<PendingRow[]>(() => {
     const t = today();
@@ -125,12 +129,6 @@ export function PendingClient({ gridRef: externalRef, onCountChange }: Props = {
 
   useEffect(() => { onCountChange?.(rows.length); }, [rows.length, onCountChange]);
 
-  const counts = useMemo(() => {
-    const c = { accident: 0, care: 0, nodelivery: 0 };
-    for (const r of allRows) c[r.cat]++;
-    return c;
-  }, [allRows]);
-
   const columnDefs = useMemo<ColDef<PendingRow>[]>(
     () =>
       [
@@ -171,26 +169,6 @@ export function PendingClient({ gridRef: externalRef, onCountChange }: Props = {
 
   return (
     <div className="flex flex-col" style={{ height: '100%' }}>
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
-        <button
-          type="button"
-          className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setFilter('all')}
-        >
-          전체 {allRows.length}
-        </button>
-        {(Object.keys(CAT_META) as Cat[]).map((k) => (
-          <button
-            key={k}
-            type="button"
-            className={`btn btn-sm ${filter === k ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setFilter(k)}
-          >
-            <i className={`ph ${CAT_META[k].icon}`} style={{ color: filter === k ? '#fff' : CAT_META[k].color }} />
-            {CAT_META[k].label} {counts[k]}
-          </button>
-        ))}
-      </div>
       <div className="flex-1 min-h-0">
         <JpkGrid<PendingRow>
           ref={gridRef as Ref<JpkGridApi<PendingRow>>}

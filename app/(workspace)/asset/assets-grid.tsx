@@ -46,8 +46,8 @@ export function AssetsGrid({ gridRef: externalRef, onCountChange }: AssetsGridPr
 
   const columnDefs = useMemo<ColDef<Asset>[]>(() => [
     // ── 차량 식별 ──
-    typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 40, cellStyle: { color: 'var(--c-text-muted)' } }),
-    typedColumn('select', { headerName: '회사코드', field: 'partner_code', width: 80 }),
+    typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 40, pinned: 'left', cellStyle: { color: 'var(--c-text-muted)' } }),
+    typedColumn('select', { headerName: '회사코드', field: 'partner_code', width: 80, pinned: 'left' }),
     typedColumn('text', { headerName: '차량번호', field: 'car_number', width: 90, pinned: 'left', cellStyle: { fontWeight: 600 } }),
 
     // ── 제조사 스펙 ──
@@ -58,7 +58,7 @@ export function AssetsGrid({ gridRef: externalRef, onCountChange }: AssetsGridPr
     typedColumn('select', { headerName: '내장색', field: 'int_color', width: 70 }),
     typedColumn('select', { headerName: '구동', field: 'drive_type', width: 60 }),
 
-    // ── 등록증 스펙 ──
+    // ── 등록증 스펙 (등록증 반영 후 채워짐) ──
     typedColumn('text', { headerName: '차대번호', field: 'vin', width: 150 }),
     typedColumn('number', { headerName: '연식', field: 'car_year', width: 60 }),
     typedColumn('select', { headerName: '연료', field: 'fuel_type', width: 70 }),

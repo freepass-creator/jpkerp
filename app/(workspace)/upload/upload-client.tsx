@@ -9,6 +9,7 @@ import { ref as rtdbRef, push, set } from 'firebase/database';
 import { getRtdb } from '@/lib/firebase/rtdb';
 import { parseCsvObjects } from '@/lib/csv';
 import { ocrFile, extractCarNumber, extractAmount, extractDate } from '@/lib/ocr';
+import { detectInsurance, parseInsurance, type InsuranceParsed } from '@/lib/parsers/insurance';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { normalizeAsset } from '@/lib/asset-normalize';
 import type { RtdbCarModel } from '@/lib/types/rtdb-entities';
@@ -110,12 +111,39 @@ const SCHEMAS: TypeSpec[] = [
   {
     key: 'insurance', label: '보험', path: 'insurances', groupLabel: '기본 마스터',
     schema: [
+      { col: 'partner_code', label: '회원사코드' },
       { col: 'car_number', label: '차량번호', required: true },
+      { col: 'car_name', label: '차명' },
       { col: 'insurance_company', label: '보험사' },
       { col: 'policy_no', label: '증권번호' },
       { col: 'start_date', label: '개시일' },
       { col: 'end_date', label: '만기일' },
-      { col: 'premium', label: '보험료', num: true },
+      { col: 'premium', label: '총보험료', num: true },
+      { col: 'paid', label: '납입액', num: true },
+      { col: 'age_limit', label: '연령한정' },
+      { col: 'driver_range', label: '운전자범위' },
+      { col: 'deductible', label: '자기부담금', num: true },
+      { col: 'coverage', label: '담보' },
+      { col: 'installment_method', label: '분납방법' },
+      { col: 'auto_debit_bank', label: '이체은행' },
+      { col: 'auto_debit_account', label: '이체계좌' },
+      { col: 'inst_1_date', label: '1회 납부일' },
+      { col: 'inst_1_amount', label: '1회 금액', num: true },
+      { col: 'inst_2_date', label: '2회 납부일' },
+      { col: 'inst_2_amount', label: '2회 금액', num: true },
+      { col: 'inst_3_date', label: '3회 납부일' },
+      { col: 'inst_3_amount', label: '3회 금액', num: true },
+      { col: 'inst_4_date', label: '4회 납부일' },
+      { col: 'inst_4_amount', label: '4회 금액', num: true },
+      { col: 'inst_5_date', label: '5회 납부일' },
+      { col: 'inst_5_amount', label: '5회 금액', num: true },
+      { col: 'inst_6_date', label: '6회 납부일' },
+      { col: 'inst_6_amount', label: '6회 금액', num: true },
+      { col: 'car_value', label: '차량가액', num: true },
+      { col: 'year', label: '연식', num: true },
+      { col: 'cc', label: '배기량', num: true },
+      { col: 'seats', label: '정원', num: true },
+      { col: 'doc_type', label: '구분' },
     ],
   },
   {
@@ -278,6 +306,7 @@ export function UploadClient() {
           headerName: f.label + (f.required ? ' *' : ''),
           field: f.col,
           width: 120,
+          ...(f.num ? { valueFormatter: (p: { value: unknown }) => { const v = Number(p.value); return v ? v.toLocaleString('ko-KR') : '-'; } } : {}),
           cellStyle: (p) => {
             const corr = (p.data as Record<string, unknown>)?._corrections as Record<string, string> | undefined;
             if (corr && f.col in corr) {
@@ -332,35 +361,97 @@ export function UploadClient() {
         // 페이지 구분자로 분리 — 각 페이지를 독립 행으로
         const pages = result.text.split(/---\s*페이지 구분\s*---/).map((t) => t.trim()).filter(Boolean);
         // 이미지(1페이지)면 pages가 1개
-        const allRows: Array<Record<string, string>> = [];
 
-        for (const pageText of pages) {
-          const carNumber = extractCarNumber(pageText);
-          const amount = extractAmount(pageText);
-          const date = extractDate(pageText);
-          const row: Record<string, string> = {};
-          if (carNumber) row['차량번호'] = carNumber;
-          if (amount) row['금액'] = String(amount);
-          if (date) row['일자'] = date;
-
-          // 줄 단위 키:값 파싱
-          const lines = pageText.split('\n').map((l) => l.trim()).filter(Boolean);
-          for (const line of lines) {
-            const kv = line.match(/^(.+?)\s*[:：]\s*(.+)$/);
-            if (kv && kv[1].length < 15 && !row[kv[1].trim()]) {
-              row[kv[1].trim()] = kv[2].trim();
-            }
+        // ── 보험증권 감지: 3페이지 이상 보험증권이면 전용 파서 ──
+        const insurancePages = pages.filter((p) => detectInsurance(p));
+        if (insurancePages.length >= 1 && insurancePages.length >= pages.length * 0.5) {
+          const parsed: InsuranceParsed[] = [];
+          const seen = new Set<string>();
+          for (const p of insurancePages) {
+            const ins = parseInsurance(p);
+            if (!ins.car_number) continue;
+            const key = `${ins.car_number}|${ins.policy_no}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            parsed.push(ins);
           }
 
-          if (Object.keys(row).length > 0) allRows.push(row);
-        }
-
-        if (allRows.length > 0) {
-          setRawRows(allRows);
-          toast.success(`OCR 완료 · ${allRows.length}건 추출 (${pages.length}페이지)`);
+          if (parsed.length > 0) {
+            // col 키로 직접 매핑 — mapHeaders를 거치지 않도록 col 이름 사용
+            const insuranceRows: Array<Record<string, string>> = parsed.map((ins) => {
+              const row: Record<string, string> = {
+                car_number: ins.car_number,
+                insurance_company: ins.insurance_company,
+                policy_no: ins.policy_no,
+                start_date: ins.start_date,
+                end_date: ins.end_date,
+                premium: String(ins.premium),
+                age_limit: ins.age_limit,
+                driver_range: ins.driver_range,
+                deductible: String(ins.deductible),
+                coverage: ins.coverage,
+                car_name: ins.car_name,
+                car_value: String(ins.car_value),
+                paid: String(ins.paid),
+                year: String(ins.year ?? ''),
+                cc: String(ins.cc ?? ''),
+                seats: String(ins.seats ?? ''),
+                doc_type: ins.doc_type,
+                installment_method: ins.installment_method,
+                auto_debit_bank: ins.auto_debit_bank,
+                auto_debit_account: ins.auto_debit_account,
+                installments: ins.installments.length > 0 ? JSON.stringify(ins.installments) : '',
+              };
+              // 분납 스케줄 flat 컬럼
+              for (const entry of ins.installments) {
+                row[`inst_${entry.seq}_date`] = entry.date;
+                row[`inst_${entry.seq}_amount`] = String(entry.amount);
+              }
+              // 1회차 납부일 = 보험 개시일 (fallback)
+              if (!row.inst_1_date && ins.start_date) {
+                row.inst_1_date = ins.start_date;
+              }
+              return row;
+            });
+            setRawRows(insuranceRows);
+            setDetectedKey('insurance');
+            toast.success(`보험증권 OCR 완료 · ${parsed.length}대 추출 (${pages.length}페이지)`);
+          } else {
+            setRawRows([]);
+            toast.info('보험증권 인식됐으나 차량번호 추출 실패');
+          }
         } else {
-          setRawRows([]);
-          toast.info('OCR 완료 · 자동 추출 항목 없음 (원문 텍스트 확인)');
+          // ── 범용 OCR 추출 ──
+          const allRows: Array<Record<string, string>> = [];
+
+          for (const pageText of pages) {
+            const carNumber = extractCarNumber(pageText);
+            const amount = extractAmount(pageText);
+            const date = extractDate(pageText);
+            const row: Record<string, string> = {};
+            if (carNumber) row['차량번호'] = carNumber;
+            if (amount) row['금액'] = String(amount);
+            if (date) row['일자'] = date;
+
+            // 줄 단위 키:값 파싱
+            const lines = pageText.split('\n').map((l) => l.trim()).filter(Boolean);
+            for (const line of lines) {
+              const kv = line.match(/^(.+?)\s*[:：]\s*(.+)$/);
+              if (kv && kv[1].length < 15 && !row[kv[1].trim()]) {
+                row[kv[1].trim()] = kv[2].trim();
+              }
+            }
+
+            if (Object.keys(row).length > 0) allRows.push(row);
+          }
+
+          if (allRows.length > 0) {
+            setRawRows(allRows);
+            toast.success(`OCR 완료 · ${allRows.length}건 추출 (${pages.length}페이지)`);
+          } else {
+            setRawRows([]);
+            toast.info('OCR 완료 · 자동 추출 항목 없음 (원문 텍스트 확인)');
+          }
         }
       } catch (err) {
         toast.error(`OCR 실패: ${(err as Error).message}`);

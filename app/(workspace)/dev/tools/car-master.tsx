@@ -678,6 +678,9 @@ export function CarMasterTool() {
             <button type="button" className="btn btn-sm btn-outline" onClick={seedKorean} disabled={busy} title={`차종 시드 ${KOREAN_CAR_MODELS.length}종 일괄 등록 (국산+수입 스펙 포함)`}>
               <i className={`ph ${busy ? 'ph-spinner spin' : 'ph-flag'}`} />차종 시드
             </button>
+            <button type="button" className="btn btn-sm btn-outline" onClick={enrichExisting} disabled={busy} title="기존 레코드의 빈 스펙을 시드 데이터로 보완">
+              <i className={`ph ${busy ? 'ph-spinner spin' : 'ph-wrench'}`} />기존 보완
+            </button>
             <button type="button" className="btn btn-sm btn-outline" onClick={startPrep}>
               <i className="ph ph-table" />데이터 준비
             </button>

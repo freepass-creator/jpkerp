@@ -101,9 +101,11 @@ export function parseVehicleReg(text: string, lines: string[]): VehicleRegParsed
   const category = text.match(/차\s*종\s+((?:대형|중형|소형|경형)\s*(?:승용|승합|화물|특수))/);
   if (category) d.category_hint = category[1].replace(/\s/g, ' ');
 
-  // 용도
-  const usage = text.match(/용\s*도\s+(자가용|렌터카|영업용|관용)/);
-  if (usage) d.usage_type = usage[1];
+  // 용도 — 차량번호 한글로 판별 (하허호 = 렌터카, 나머지 = 자가용)
+  if (d.car_number) {
+    const hangul = d.car_number.match(/[가-힣]/);
+    d.usage_type = hangul && '하허호'.includes(hangul[0]) ? '렌터카' : '자가용';
+  }
 
   // 승차정원
   const seats = text.match(/승차정원\s*(\d+)\s*명/);

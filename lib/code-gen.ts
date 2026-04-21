@@ -1,49 +1,48 @@
 /**
  * 엔티티 코드 자동 생성.
- * 형식: PREFIX-YYMMDD-XXXX (예: CUS-260420-A1B2)
+ * 형식: XX00000 (약어 2글자 + 숫자 5자리 순번)
+ * 예: CU00001, CT00042, AS00130
  *
- * 모든 엔티티는 고유 코드를 가지며, 이 코드로 상호 연결.
  * 코드 체계:
- *   CUS  — 고객 (customer_code)
- *   CTR  — 계약 (contract_code)
- *   AST  — 자산 (asset_code)
- *   BIL  — 청구 (billing_code)
- *   EVT  — 이벤트 (event_code)
- *   INS  — 보험 (insurance_code)
- *   GPS  — GPS (gps_code)
- *   PTR  — 회원사 (partner_code)
- *   VND  — 거래처 (vendor_code)
- *   LON  — 할부 (loan_code)
+ *   CU — 고객 (customer_code)
+ *   CT — 계약 (contract_code)
+ *   AS — 자산 (asset_code)
+ *   BL — 청구 (billing_code)
+ *   EV — 이벤트 (event_code)
+ *   IN — 보험 (insurance_code)
+ *   GP — GPS (gps_code)
+ *   PT — 회원사 (partner_code)
+ *   VD — 거래처 (vendor_code)
+ *   LN — 할부 (loan_code)
  */
 
-function rand4(): string {
-  return Math.random().toString(36).slice(2, 6).toUpperCase();
-}
+// 순번 카운터 (메모리 내, 앱 재시작 시 타임스탬프 기반 리셋)
+const counters = new Map<string, number>();
 
-function dateStamp(): string {
-  const d = new Date();
-  const yy = String(d.getFullYear()).slice(2);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yy}${mm}${dd}`;
+function nextSeq(prefix: string): number {
+  const cur = counters.get(prefix) ?? Math.floor(Date.now() % 100000);
+  const next = cur + 1;
+  counters.set(prefix, next);
+  return next;
 }
 
 export type CodePrefix =
-  | 'CUS' | 'CTR' | 'AST' | 'BIL' | 'EVT'
-  | 'INS' | 'GPS' | 'PTR' | 'VND' | 'LON';
+  | 'CU' | 'CT' | 'AS' | 'BL' | 'EV'
+  | 'IN' | 'GP' | 'PT' | 'VD' | 'LN';
 
 export function generateCode(prefix: CodePrefix): string {
-  return `${prefix}-${dateStamp()}-${rand4()}`;
+  const seq = nextSeq(prefix);
+  return `${prefix}${String(seq).padStart(5, '0')}`;
 }
 
 /** 편의 함수 */
-export const genCustomerCode = () => generateCode('CUS');
-export const genContractCode = () => generateCode('CTR');
-export const genAssetCode = () => generateCode('AST');
-export const genBillingCode = () => generateCode('BIL');
-export const genEventCode = () => generateCode('EVT');
-export const genInsuranceCode = () => generateCode('INS');
-export const genGpsCode = () => generateCode('GPS');
-export const genPartnerCode = () => generateCode('PTR');
-export const genVendorCode = () => generateCode('VND');
-export const genLoanCode = () => generateCode('LON');
+export const genCustomerCode = () => generateCode('CU');
+export const genContractCode = () => generateCode('CT');
+export const genAssetCode = () => generateCode('AS');
+export const genBillingCode = () => generateCode('BL');
+export const genEventCode = () => generateCode('EV');
+export const genInsuranceCode = () => generateCode('IN');
+export const genGpsCode = () => generateCode('GP');
+export const genPartnerCode = () => generateCode('PT');
+export const genVendorCode = () => generateCode('VD');
+export const genLoanCode = () => generateCode('LN');
