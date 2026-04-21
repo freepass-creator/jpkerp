@@ -1,3 +1,5 @@
+'use client';
+
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
 import { typedColumn } from '@/lib/grid/typed-column';

@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
