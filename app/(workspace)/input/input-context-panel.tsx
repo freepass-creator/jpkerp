@@ -39,7 +39,7 @@ export function InputContextPanel({ selected }: Props) {
         key: a._key!,
         primary: a.car_number ?? '—',
         secondary: [a.manufacturer, a.car_model].filter(Boolean).join(' ') || '—',
-        when: a.created_at ? fmtDate(new Date(a.created_at).toISOString().slice(0, 10)) : '—',
+        when: a.created_at ? fmtDate(new Date(a.created_at as number).toISOString().slice(0, 10)) : '—',
         href: a.car_number ? `/asset/${encodeURIComponent(a.car_number)}` : undefined,
       }));
     }

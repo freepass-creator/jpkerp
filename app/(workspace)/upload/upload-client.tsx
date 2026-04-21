@@ -301,7 +301,7 @@ export function UploadClient() {
     if (!spec) return [];
     return [
       typedColumn<Record<string, unknown>>('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
-      ...spec.schema.map((f) =>
+      ...(spec.schema.map((f) =>
         typedColumn<Record<string, unknown>>(f.num ? 'number' : 'text', {
           headerName: f.label + (f.required ? ' *' : ''),
           field: f.col,
@@ -322,8 +322,8 @@ export function UploadClient() {
             }
             return undefined;
           },
-        } as ColDef<Record<string, unknown>>),
-      ),
+        }),
+      )),
     ];
   }, [spec]);
 

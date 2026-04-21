@@ -7,7 +7,7 @@ import { typedColumn } from '@/lib/grid/typed-column';
 import { fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
 
-interface TaskRow {
+interface TaskRow extends Record<string, unknown> {
   _key?: string;
   title?: string;
   assignee_name?: string;

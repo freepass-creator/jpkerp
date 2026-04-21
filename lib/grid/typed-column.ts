@@ -1,18 +1,18 @@
-import type { ColDef } from 'ag-grid-community';
+import type { CellStyle, ColDef } from 'ag-grid-community';
 import { JpkSetFilter } from './set-filter';
 
 export type ColType = 'select' | 'text' | 'number' | 'date' | 'action';
 
+/** cellStyle에서 분기별로 다른 키를 반환해도 허용하는 느슨한 함수 타입 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseCellStyleFn<T = any> = (params: { value: unknown; data: T; [k: string]: unknown }) => Record<string, string | number | undefined> | CellStyle | null | undefined;
+type LooseColDef<T> = Omit<ColDef<T>, 'cellStyle'> & { cellStyle?: CellStyle | LooseCellStyleFn<T> };
+
 /**
  * 타입별 기본 필터·정렬·정렬방식을 주입한 ColDef 생성.
- *
- * @example
- *   typedColumn('select', { headerName: '회사코드', field: 'partner_code', width: 85 })
- *   typedColumn('number', { headerName: '연체일', field: 'max_days', width: 75 })
- *   typedColumn('action', { headerName: '#', valueGetter: ... })
  */
-export function typedColumn<T>(type: ColType, def: ColDef<T>): ColDef<T> {
-  const base = { ...def };
+export function typedColumn<T>(type: ColType, def: LooseColDef<T>): ColDef<T> {
+  const base = { ...def } as ColDef<T>;
 
   if (type === 'number') {
     // 숫자: 필터 없음, 정렬(오름/내림)만. 우측 정렬 + tabular-nums

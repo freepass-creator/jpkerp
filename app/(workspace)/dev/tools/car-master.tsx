@@ -596,18 +596,19 @@ export function CarMasterTool() {
     typedColumn('text',   { headerName: '세부모델', field: 'sub', flex: 1, minWidth: 200 }),
     typedColumn('select', {
       headerName: '구분', field: 'origin', width: 60,
-      cellStyle: (p: { value: unknown }) => p.value === '수입'
-        ? { color: 'var(--c-primary)', fontWeight: 600 }
-        : p.value === '국산' ? { color: 'var(--c-text-sub)' } : { color: 'var(--c-text-muted)' },
+      cellStyle: (p: { value: unknown }) => {
+        if (p.value === '수입') return { color: 'var(--c-primary)', fontWeight: '600' } as const;
+        return { color: p.value === '국산' ? 'var(--c-text-sub)' : 'var(--c-text-muted)', fontWeight: '400' } as const;
+      },
     }),
     typedColumn('select', {
       headerName: '동력', field: 'powertrain', width: 70,
       cellStyle: (p: { value: unknown }) => {
         const v = String(p.value ?? '');
-        if (v === '전기') return { color: 'var(--c-success)', fontWeight: 600 };
-        if (v === '수소') return { color: 'var(--c-primary)', fontWeight: 600 };
-        if (v === '하이브리드') return { color: 'var(--c-warn)' };
-        return { color: 'var(--c-text-muted)' };
+        if (v === '전기') return { color: 'var(--c-success)', fontWeight: '600' };
+        if (v === '수소') return { color: 'var(--c-primary)', fontWeight: '600' };
+        if (v === '하이브리드') return { color: 'var(--c-warn)', fontWeight: '400' };
+        return { color: 'var(--c-text-muted)', fontWeight: '400' };
       },
     }),
     typedColumn('number', {
@@ -630,7 +631,7 @@ export function CarMasterTool() {
       valueFormatter: (p) => fmt(Number(p.value)),
       cellStyle: (p: { value: unknown }) => {
         const v = Number(p.value);
-        return v > 0 ? { color: 'var(--c-primary)', fontWeight: 600 } : { color: 'var(--c-text-muted)' };
+        return v > 0 ? { color: 'var(--c-primary)', fontWeight: '600' } : { color: 'var(--c-text-muted)', fontWeight: '400' };
       },
     }),
   ], []);
