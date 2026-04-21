@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { useRecentCars } from '@/lib/hooks/useRecentCars';
@@ -10,7 +10,7 @@ import { metaFor } from '@/lib/event-meta';
 import { fmt, fmtDate } from '@/lib/utils';
 import type { RtdbAsset, RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 
-export default function MobileScan() {
+function MobileScanInner() {
   const sp = useSearchParams();
   const initialQ = sp.get('q') ?? '';
   const [q, setQ] = useState(initialQ);
@@ -167,4 +167,9 @@ export default function MobileScan() {
       )}
     </div>
   );
+}
+
+
+export default function MobileScan() {
+  return <Suspense><MobileScanInner /></Suspense>;
 }

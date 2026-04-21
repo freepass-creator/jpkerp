@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useSearchParams } from 'next/navigation';
 import { Workspace } from '@/components/shared/panel';
@@ -58,7 +58,7 @@ function FormFor({ k }: { k: OpKey }) {
   }
 }
 
-export function OpInputWorkspace() {
+function OpInputWorkspaceInner() {
   const params = useSearchParams();
   const initial = params.get('type') as OpKey | null;
   const [selected, setSelected] = useState<OpKey>(
@@ -166,4 +166,9 @@ export function OpInputWorkspace() {
       </section>
     </Workspace>
   );
+}
+
+
+export function OpInputWorkspace() {
+  return <Suspense><OpInputWorkspaceInner /></Suspense>;
 }

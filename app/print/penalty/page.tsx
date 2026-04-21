@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { PenaltyWorkItem } from '@/app/(workspace)/input/operation/penalty-notice-store';
 import { fmt } from '@/lib/utils';
@@ -16,7 +16,7 @@ function penaltyFileName(item: PenaltyWorkItem): string {
   return [issuer, car, dateKey, contractor, model].filter(Boolean).join('_').replace(/[\\/:*?"<>|]/g, '');
 }
 
-export default function PenaltyPrintPage() {
+function PenaltyPrintInner() {
   const params = useSearchParams();
   const auto = params.get('auto') === '1';
   const [items, setItems] = useState<PenaltyWorkItem[] | null>(null);
@@ -164,4 +164,9 @@ function Row({ k, v }: { k: string; v?: string | number | null }) {
       <td>{v === undefined || v === null || v === '' ? '-' : String(v)}</td>
     </tr>
   );
+}
+
+
+export default function PenaltyPrintPage() {
+  return <Suspense><PenaltyPrintInner /></Suspense>;
 }

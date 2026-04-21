@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 
-export default function LoginPage() {
+function LoginInner() {
   const { user, loading, signIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -83,5 +83,13 @@ export default function LoginPage() {
       </section>
       <div className="auth-copyright">&copy; 2026 teamjpk. All Rights Reserved.</div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginInner />
+    </Suspense>
   );
 }

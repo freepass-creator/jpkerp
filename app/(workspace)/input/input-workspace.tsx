@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Workspace } from '@/components/shared/panel';
 import { INPUT_LABELS, INPUT_SUBS, INPUT_ICONS, type InputKey } from './input-types';
@@ -32,7 +32,7 @@ function FormFor({ k }: { k: InputKey }) {
   }
 }
 
-export function InputWorkspace() {
+function InputWorkspaceInner() {
   const params = useSearchParams();
   const initial = (params.get('type') as InputKey | null);
   const [selected, setSelected] = useState<InputKey>(
@@ -106,4 +106,9 @@ export function InputWorkspace() {
       </section>
     </Workspace>
   );
+}
+
+
+export function InputWorkspace() {
+  return <Suspense><InputWorkspaceInner /></Suspense>;
 }
