@@ -12,7 +12,7 @@ import { ocrFile, extractCarNumber, extractAmount, extractDate } from '@/lib/ocr
 import { detectInsurance, parseInsurance, type InsuranceParsed } from '@/lib/parsers/insurance';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { normalizeAsset } from '@/lib/asset-normalize';
-import type { RtdbCarModel } from '@/lib/types/rtdb-entities';
+import type { RtdbCarModel, RtdbAsset } from '@/lib/types/rtdb-entities';
 import { deriveBillingsFromContract } from '@/lib/derive/billings';
 import type { RtdbContract } from '@/lib/types/rtdb-entities';
 import type { ColDef } from 'ag-grid-community';
@@ -272,6 +272,7 @@ export function UploadClient() {
   const [dragOver, setDragOver] = useState(false);
   const [saving, setSaving] = useState(false);
   const vehicleMasters = useRtdbCollection<RtdbCarModel>('vehicle_master');
+  const assets = useRtdbCollection<RtdbAsset>('assets');
   const [ocrBusy, setOcrBusy] = useState(false);
   const [ocrProgress, setOcrProgress] = useState('');
   const [ocrRawText, setOcrRawText] = useState('');
@@ -377,9 +378,21 @@ export function UploadClient() {
           }
 
           if (parsed.length > 0) {
+            // 차량번호 → partner_code 매칭 맵 구축
+            const carToPartner = new Map<string, string>();
+            for (const a of assets.data) {
+              if (a.car_number && a.partner_code && a.status !== 'deleted') {
+                carToPartner.set(a.car_number, a.partner_code);
+              }
+            }
+            let matchedCount = 0;
+
             // col 키로 직접 매핑 — mapHeaders를 거치지 않도록 col 이름 사용
             const insuranceRows: Array<Record<string, string>> = parsed.map((ins) => {
+              const partnerCode = carToPartner.get(ins.car_number) ?? '';
+              if (partnerCode) matchedCount++;
               const row: Record<string, string> = {
+                partner_code: partnerCode,
                 car_number: ins.car_number,
                 insurance_company: ins.insurance_company,
                 policy_no: ins.policy_no,
@@ -415,7 +428,8 @@ export function UploadClient() {
             });
             setRawRows(insuranceRows);
             setDetectedKey('insurance');
-            toast.success(`보험증권 OCR 완료 · ${parsed.length}대 추출 (${pages.length}페이지)`);
+            const partnerMsg = matchedCount > 0 ? ` · 회원사 ${matchedCount}건 매칭` : '';
+            toast.success(`보험증권 OCR 완료 · ${parsed.length}대 추출 (${pages.length}페이지)${partnerMsg}`);
           } else {
             setRawRows([]);
             toast.info('보험증권 인식됐으나 차량번호 추출 실패');
@@ -537,9 +551,16 @@ export function UploadClient() {
       let skippedDup = 0;
       let derivedBillings = 0;
 
-      // 보험 업로드 시 기존 증권번호 조회 (중복 방지)
+      // 보험 업로드 시 차량→회원사 매칭 + 기존 증권번호 조회 (중복 방지)
+      let carToPartnerMap: Map<string, string> | null = null;
       let existingPolicyKeys: Set<string> | null = null;
       if (spec.key === 'insurance') {
+        carToPartnerMap = new Map();
+        for (const a of assets.data) {
+          if (a.car_number && a.partner_code && a.status !== 'deleted') {
+            carToPartnerMap.set(a.car_number, a.partner_code);
+          }
+        }
         existingPolicyKeys = new Set();
         const snap = await get(rtdbRef(db, 'insurances'));
         if (snap.exists()) {
@@ -554,6 +575,11 @@ export function UploadClient() {
         // 필수필드 검증
         const missing = spec.schema.filter((f) => f.required && !row[f.col]).map((f) => f.label);
         if (missing.length) continue;
+
+        // 보험: partner_code 자동 매칭 (빈 경우)
+        if (carToPartnerMap && row.car_number && !row.partner_code) {
+          row.partner_code = carToPartnerMap.get(String(row.car_number)) ?? '';
+        }
 
         // 보험: 증권번호 중복 체크
         if (existingPolicyKeys && row.policy_no) {
