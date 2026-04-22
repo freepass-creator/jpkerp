@@ -61,6 +61,7 @@ export function DashboardClient() {
     { icon: 'ph-truck', label: '출고 대기', count: stats.pending_tasks.not_delivered, href: '/status/pending' },
     { icon: 'ph-warning-circle', label: '통장·카드 미매칭', count: stats.pending_tasks.unmatched_bank, href: '/ledger' },
     { icon: 'ph-warning-octagon', label: '사고 미종결', count: stats.pending_tasks.open_accidents, href: '/status/pending', tone: 'danger' as const },
+    { icon: 'ph-coins', label: '면책금 미수', count: stats.pending_tasks.unpaid_deductibles, href: '/operation/accident', tone: 'warn' as const },
     { icon: 'ph-wrench', label: '차량케어 진행중', count: stats.pending_tasks.open_works, href: '/status/pending' },
     { icon: 'ph-phone', label: '응대 진행중', count: stats.pending_tasks.open_contacts, href: '/operation/contact' },
     { icon: 'ph-clock-countdown', label: '미수 조치 미완료', count: stats.pending_tasks.open_collects, href: '/status/overdue', tone: 'warn' as const },

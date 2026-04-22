@@ -91,6 +91,7 @@ export interface DashboardStats {
     open_works: number;
     open_contacts: number;
     open_collects: number;
+    unpaid_deductibles: number;
   };
 }
 
@@ -227,6 +228,11 @@ export function computeDashboardStats({
       e.collect_result !== '즉시납부',
   ).length;
 
+  // 면책금 미수 — 사고 이벤트 중 deductible_status가 '미수'인 건
+  const unpaid_deductibles = events.filter(
+    (e) => e.type === 'accident' && e.deductible_status === '미수',
+  ).length;
+
   return {
     active_contracts: activeContracts.length,
     total_assets,
@@ -244,6 +250,7 @@ export function computeDashboardStats({
       open_works,
       open_contacts,
       open_collects,
+      unpaid_deductibles,
     },
   };
 }

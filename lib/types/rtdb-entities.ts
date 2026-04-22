@@ -160,6 +160,9 @@ export type RtdbEvent = RtdbBase & {
   delivery_location?: string;
   return_location?: string;
   accident_status?: string;
+  deductible_amount?: number;
+  deductible_paid?: number;
+  deductible_status?: string;
   work_status?: string;
   contact_result?: string;
   contact_channel?: string;

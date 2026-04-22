@@ -11,6 +11,7 @@ const ACC_TYPES = ['단독', '쌍방'];
 const ROLES = ['가해', '피해'];
 const STATUS = ['접수', '처리중', '수리중', '종결'];
 const RENTAL = ['미정', '대차제공', '대차없음'];
+const DEDUCT_STATUS = ['미수', '수납완료', '면제'];
 const FAULT_STEPS = ['0', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100'];
 const INS_OPTIONS: { key: string; label: string }[] = [
   { key: 'ins_car', label: '자차' },
@@ -35,6 +36,7 @@ export function AccidentForm() {
   const [otherPhone, setOtherPhone] = useState('');
   const [insContact, setInsContact] = useState(''); // 우리 보험사 담당자 연락처
   const [otherInsContact, setOtherInsContact] = useState(''); // 상대 보험사 담당자 연락처
+  const [deductStatus, setDeductStatus] = useState('미수'); // 면책금 수납 상태
   const titles = useTitles('accident');
   const locations = useLocations();
   const insCo = useInsuranceCompanies();
@@ -68,6 +70,9 @@ export function AccidentForm() {
           other_insurance_contact: otherInsContact || undefined,
           amount: Number(String(d.amount ?? '').replace(/,/g, '')) || 0,
           insurance_amount: Number(String(d.insurance_amount ?? '').replace(/,/g, '')) || undefined,
+          deductible_amount: Number(String(d.deductible_amount ?? '').replace(/,/g, '')) || 0,
+          deductible_paid: Number(String(d.deductible_paid ?? '').replace(/,/g, '')) || 0,
+          deductible_status: deductStatus,
           location,
           memo: d.memo,
         };
@@ -154,6 +159,19 @@ export function AccidentForm() {
         </Field>
         <Field label="보험처리 금액">
           <NumberInput name="insurance_amount" placeholder="0" />
+        </Field>
+        <Field label="면책금 (고객부담)">
+          <NumberInput name="deductible_amount" placeholder="0" />
+        </Field>
+        <Field label="수납한 면책금">
+          <NumberInput name="deductible_paid" placeholder="0" />
+        </Field>
+        <Field label="면책금 상태" span={2}>
+          <BtnGroup value={deductStatus} onChange={setDeductStatus} options={DEDUCT_STATUS} />
+          <div className="text-2xs text-text-muted" style={{ marginTop: 4 }}>
+            <i className="ph ph-warning-circle" style={{ marginRight: 4 }} />
+            미수 면책금은 대시보드 미결업무에 표시됩니다
+          </div>
         </Field>
         <Field label="제목">
           <TextInput name="title" placeholder="사고 요약" autoComplete="off" />

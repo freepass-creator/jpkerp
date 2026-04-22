@@ -78,10 +78,10 @@ const SCHEMAS: TypeSpec[] = [
   {
     key: 'member', label: '회원사', path: 'partners', groupLabel: '기본 마스터',
     schema: [
-      { col: 'partner_code', label: '회원사코드', required: true },
       { col: 'partner_name', label: '회원사명', required: true },
       { col: 'ceo', label: '대표자' },
-      { col: 'biz_no', label: '사업자번호' },
+      { col: 'biz_no', label: '사업자등록번호', required: true },
+      { col: 'corp_no', label: '법인등록번호', required: true },
       { col: 'phone', label: '전화' },
       { col: 'contact_name', label: '담당자' },
     ],
@@ -385,14 +385,35 @@ export function UploadClient() {
                 carToPartner.set(a.car_number, a.partner_code);
               }
             }
+
+            // 사업자번호 → partner_code fallback 매칭 (차량 미등록 시 대비)
+            const bizToPartner = new Map<string, string>();
+            try {
+              const pSnap = await get(rtdbRef(getRtdb(), 'partners'));
+              if (pSnap.exists()) {
+                for (const v of Object.values(pSnap.val() as Record<string, { biz_no?: string; partner_code?: string; status?: string }>)) {
+                  if (v?.status === 'deleted' || !v?.biz_no || !v?.partner_code) continue;
+                  const norm = String(v.biz_no).replace(/\D/g, '');
+                  if (norm) bizToPartner.set(norm, v.partner_code);
+                }
+              }
+            } catch { /* silent */ }
+
             let matchedCount = 0;
 
             // col 키로 직접 매핑 — mapHeaders를 거치지 않도록 col 이름 사용
             const insuranceRows: Array<Record<string, string>> = parsed.map((ins) => {
-              const partnerCode = carToPartner.get(ins.car_number) ?? '';
+              // 1차: 차량번호 매칭 → 2차: 피보험자 사업자번호 매칭
+              let partnerCode = carToPartner.get(ins.car_number) ?? '';
+              if (!partnerCode && ins.insured_biz_no) {
+                const normBiz = ins.insured_biz_no.replace(/\D/g, '');
+                partnerCode = bizToPartner.get(normBiz) ?? '';
+              }
               if (partnerCode) matchedCount++;
               const row: Record<string, string> = {
                 partner_code: partnerCode,
+                insured_name: ins.insured_name,
+                insured_biz_no: ins.insured_biz_no,
                 car_number: ins.car_number,
                 insurance_company: ins.insurance_company,
                 policy_no: ins.policy_no,

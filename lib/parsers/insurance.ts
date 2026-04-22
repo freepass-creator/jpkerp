@@ -40,6 +40,8 @@ export interface InsuranceParsed {
   deductible: number;     // 물적사고할증금액 or 물적할증특약
   coverage: string;       // 담보 요약
   car_value: number;      // 차량가액(만원→원)
+  insured_name: string;   // 피보험자명
+  insured_biz_no: string; // 피보험자 사업자등록번호
   doc_type: 'insurance' | 'mutual_aid';  // 보험증권 vs 공제
   installments: InstallmentEntry[];      // 분납 스케줄
   installment_method: string;            // 분납방법 (예: "6회 분납", "일시납" 등)
@@ -313,13 +315,23 @@ export function parseInsurance(text: string, _lines?: string[]): InsuranceParsed
     car_number: '', car_name: '', year: null, cc: null, seats: null,
     insurance_company: '', policy_no: '', start_date: '', end_date: '',
     premium: 0, paid: 0, age_limit: '', driver_range: '',
-    deductible: 0, coverage: '', car_value: 0, doc_type: docType,
+    deductible: 0, coverage: '', car_value: 0,
+    insured_name: '', insured_biz_no: '',
+    doc_type: docType,
     installments: [], installment_method: '',
     auto_debit_bank: '', auto_debit_account: '',
   };
 
   // ── 차량번호 ──
   d.car_number = extractCarNumber(text);
+
+  // ── 피보험자명 + 사업자번호 ──
+  // "피보험자 스위치플랜(주) / 158-81-*****" 또는 "피보험자 홍길동 / 123-45-67890"
+  const insuredM = text.match(/피\s*보\s*험\s*자\s+([^\n/]+?)\s*\/\s*([\d*\-]+)/);
+  if (insuredM) {
+    d.insured_name = insuredM[1].trim();
+    d.insured_biz_no = insuredM[2].trim();
+  }
 
   // ── 차명 ──
   // 손보: "차명 스팅어 3.3 터보 정원 5 명"
