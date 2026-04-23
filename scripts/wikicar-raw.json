@@ -1,0 +1,640 @@
+{
+  "source": "wikicar.co.kr",
+  "fetched_at": "2026-04-23T05:25:07.382Z",
+  "makers": [
+    {
+      "maker": "현대",
+      "path": "/hyundai",
+      "models": [
+        {
+          "path": "/i30_a",
+          "name": "i30",
+          "generations": [
+            {
+              "path": "/i30_pd",
+              "name": "i30 신형(3세대)"
+            },
+            {
+              "path": "/the_new_i30",
+              "name": "더뉴i30"
+            },
+            {
+              "path": "/i30cw",
+              "name": "i30cw"
+            },
+            {
+              "path": "/i30",
+              "name": "i30"
+            }
+          ]
+        },
+        {
+          "path": "/i40_a",
+          "name": "i40",
+          "generations": [
+            {
+              "path": "/new_i40",
+              "name": "더뉴i40"
+            },
+            {
+              "path": "/i40",
+              "name": "i40"
+            }
+          ]
+        },
+        {
+          "path": "/verna_a",
+          "name": "베르나",
+          "generations": [
+            {
+              "path": "/verna_transform",
+              "name": "베르나 트렌스폼"
+            },
+            {
+              "path": "/verna_new",
+              "name": "베르나신형"
+            },
+            {
+              "path": "/new_verna",
+              "name": "뉴베르나"
+            }
+          ]
+        },
+        {
+          "path": "/veloster_a",
+          "name": "벨로스터",
+          "generations": [
+            {
+              "path": "/veloster_js",
+              "name": "신형 벨로스터"
+            },
+            {
+              "path": "/veloster_n",
+              "name": "벨로스터 N"
+            },
+            {
+              "path": "/new_veloster",
+              "name": "더뉴벨로스터"
+            },
+            {
+              "path": "/veloster_pyl",
+              "name": "벨로스터"
+            }
+          ]
+        },
+        {
+          "path": "/grand_starex_a",
+          "name": "스타렉스",
+          "generations": [
+            {
+              "path": "/thenew_starex",
+              "name": "더뉴그랜드스타렉스"
+            },
+            {
+              "path": "/grand_starex",
+              "name": "그랜드스타렉스"
+            },
+            {
+              "path": "/new_starex_jb",
+              "name": "뉴스타렉스점보"
+            },
+            {
+              "path": "/new_starex",
+              "name": "뉴스타렉스"
+            }
+          ]
+        },
+        {
+          "path": "/ioniq_a",
+          "name": "아이오닉",
+          "generations": [
+            {
+              "path": "/ioniq_electric",
+              "name": "아이오닉 일렉트릭"
+            },
+            {
+              "path": "/ioniq_hb",
+              "name": "아이오닉 하이브리드"
+            },
+            {
+              "path": "/ioniq_phev",
+              "name": "아이오닉 플러그인"
+            }
+          ]
+        },
+        {
+          "path": "/equus_a",
+          "name": "에쿠스",
+          "generations": [
+            {
+              "path": "/equus_vi",
+              "name": "신형에쿠스"
+            },
+            {
+              "path": "/equus_1",
+              "name": "에쿠스(1세대)"
+            }
+          ]
+        },
+        {
+          "path": "/click_a",
+          "name": "클릭",
+          "generations": [
+            {
+              "path": "/new_click",
+              "name": "뉴클릭"
+            },
+            {
+              "path": "/click",
+              "name": "클릭"
+            }
+          ]
+        },
+        {
+          "path": "/tuscani_a",
+          "name": "투스카니",
+          "generations": [
+            {
+              "path": "/new_tuscani",
+              "name": "신형투스카니"
+            },
+            {
+              "path": "/tuscani",
+              "name": "투스카니"
+            }
+          ]
+        },
+        {
+          "path": "/porter_a",
+          "name": "포터",
+          "generations": [
+            {
+              "path": "/porter",
+              "name": "포터"
+            },
+            {
+              "path": "/porest",
+              "name": "포레스트"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "maker": "기아",
+      "path": "/kia",
+      "models": [
+        {
+          "path": "/ev6",
+          "name": "EV6",
+          "generations": []
+        },
+        {
+          "path": "/k_k3",
+          "name": "K3",
+          "generations": [
+            {
+              "path": "/allnew_k3",
+              "name": "올뉴 K3"
+            },
+            {
+              "path": "/k3_gt",
+              "name": "K3 GT"
+            },
+            {
+              "path": "/k3_koup",
+              "name": "K3 쿱"
+            },
+            {
+              "path": "/the_new_k3",
+              "name": "더뉴K3"
+            },
+            {
+              "path": "/k3",
+              "name": "K3"
+            }
+          ]
+        },
+        {
+          "path": "/k7_a",
+          "name": "K7",
+          "generations": [
+            {
+              "path": "/k7",
+              "name": "K7"
+            },
+            {
+              "path": "/k7_hybrid",
+              "name": "K7 하이브리드"
+            }
+          ]
+        },
+        {
+          "path": "/niro_a",
+          "name": "니로",
+          "generations": [
+            {
+              "path": "/niro_hev",
+              "name": "니로"
+            },
+            {
+              "path": "/niro_ev",
+              "name": "니로 EV"
+            },
+            {
+              "path": "/niro_phev",
+              "name": "니로 플러그인"
+            }
+          ]
+        },
+        {
+          "path": "/pride_a",
+          "name": "뉴프라이드",
+          "generations": [
+            {
+              "path": "/new_pride",
+              "name": "더뉴 프라이드"
+            },
+            {
+              "path": "/pride_ub",
+              "name": "올뉴프라이드"
+            },
+            {
+              "path": "/pride_jb",
+              "name": "뉴프라이드"
+            }
+          ]
+        },
+        {
+          "path": "/lotze_a",
+          "name": "로체",
+          "generations": [
+            {
+              "path": "/lotze_inno",
+              "name": "로체 이노베이션"
+            },
+            {
+              "path": "/lotze_advance",
+              "name": "로체 어드밴스"
+            },
+            {
+              "path": "/lotze_mg",
+              "name": "로체"
+            }
+          ]
+        },
+        {
+          "path": "/morning_a",
+          "name": "모닝",
+          "generations": [
+            {
+              "path": "/morning_ja",
+              "name": "모닝 3세대"
+            },
+            {
+              "path": "/allnew_morning",
+              "name": "올뉴모닝"
+            },
+            {
+              "path": "/new_morning",
+              "name": "뉴모닝"
+            },
+            {
+              "path": "/morning_sa",
+              "name": "모닝"
+            }
+          ]
+        },
+        {
+          "path": "/soul_a",
+          "name": "쏘울",
+          "generations": [
+            {
+              "path": "/soul",
+              "name": "쏘울"
+            },
+            {
+              "path": "/soul_ev",
+              "name": "쏘울EV"
+            }
+          ]
+        },
+        {
+          "path": "/opirus_a",
+          "name": "오피러스",
+          "generations": [
+            {
+              "path": "/opirus_premium",
+              "name": "오피러스 프리미엄"
+            },
+            {
+              "path": "/new_opirus",
+              "name": "뉴오피러스"
+            }
+          ]
+        },
+        {
+          "path": "/carens_a",
+          "name": "카렌스",
+          "generations": [
+            {
+              "path": "/carens_rp",
+              "name": "올뉴카렌스"
+            },
+            {
+              "path": "/new_carens",
+              "name": "뉴카렌스"
+            },
+            {
+              "path": "/carens_2",
+              "name": "카렌스2"
+            }
+          ]
+        },
+        {
+          "path": "/forte_a",
+          "name": "포르테",
+          "generations": [
+            {
+              "path": "/forte_xk",
+              "name": "포르테쿱"
+            },
+            {
+              "path": "/forte_td",
+              "name": "포르테"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "maker": "르노",
+      "path": "/sm",
+      "models": [
+        {
+          "path": "/sm3_a",
+          "name": "SM3",
+          "generations": [
+            {
+              "path": "/sm3_l38",
+              "name": "뉴SM3"
+            },
+            {
+              "path": "/sm3_ze",
+              "name": "SM3 ZE"
+            },
+            {
+              "path": "/sm3_n17",
+              "name": "SM3"
+            }
+          ]
+        },
+        {
+          "path": "/sm5_a",
+          "name": "SM5",
+          "generations": [
+            {
+              "path": "/sm5_l43",
+              "name": "신형SM5"
+            },
+            {
+              "path": "/sm5_ex1",
+              "name": "뉴SM5"
+            },
+            {
+              "path": "/sm5_kpq",
+              "name": "SM5"
+            }
+          ]
+        },
+        {
+          "path": "/sm7_a",
+          "name": "SM7",
+          "generations": [
+            {
+              "path": "/sm7_l47",
+              "name": "올뉴SM7"
+            },
+            {
+              "path": "/sm7_ex2",
+              "name": "SM7"
+            }
+          ]
+        },
+        {
+          "path": "/qm5_a",
+          "name": "QM5",
+          "generations": [
+            {
+              "path": "/qm5_neo",
+              "name": "QM5 네오"
+            },
+            {
+              "path": "/new_qm5",
+              "name": "뉴QM5"
+            },
+            {
+              "path": "/qm5_1",
+              "name": "QM5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "maker": "쉐보레",
+      "path": "/gm",
+      "models": [
+        {
+          "path": "/lacetti_a",
+          "name": "라세티",
+          "generations": [
+            {
+              "path": "/lacetti_premiere",
+              "name": "라세티 프리미어"
+            },
+            {
+              "path": "/lacetti_1",
+              "name": "라세티"
+            }
+          ]
+        },
+        {
+          "path": "/matiz_a",
+          "name": "마티즈",
+          "generations": [
+            {
+              "path": "/matiz_creative",
+              "name": "마티즈 크리에이티브"
+            },
+            {
+              "path": "/allnew_matiz",
+              "name": "올뉴마티즈"
+            }
+          ]
+        },
+        {
+          "path": "/volt_a",
+          "name": "볼트",
+          "generations": [
+            {
+              "path": "/bolt_ev",
+              "name": "볼트 EV"
+            },
+            {
+              "path": "/volt_phev",
+              "name": "볼트 PHEV"
+            }
+          ]
+        },
+        {
+          "path": "/spark_a",
+          "name": "스파크",
+          "generations": [
+            {
+              "path": "/spark",
+              "name": "스파크"
+            },
+            {
+              "path": "/spark_ev",
+              "name": "스파크 EV"
+            }
+          ]
+        },
+        {
+          "path": "/cruze_a",
+          "name": "크루즈",
+          "generations": [
+            {
+              "path": "/new_cruze",
+              "name": "올뉴 크루즈"
+            },
+            {
+              "path": "/cruze",
+              "name": "크루즈"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "maker": "KGM",
+      "path": "/ssy",
+      "models": [
+        {
+          "path": "/rexton_a",
+          "name": "렉스턴",
+          "generations": [
+            {
+              "path": "/rexton_g4",
+              "name": "렉스턴"
+            },
+            {
+              "path": "/rexton_w",
+              "name": "렉스턴W"
+            },
+            {
+              "path": "/s_rexton",
+              "name": "슈퍼렉스턴"
+            },
+            {
+              "path": "/rexton_2",
+              "name": "렉스턴2"
+            },
+            {
+              "path": "/new_rexton",
+              "name": "뉴렉스턴"
+            }
+          ]
+        },
+        {
+          "path": "/rexton_sports_a",
+          "name": "렉스턴 스포츠",
+          "generations": [
+            {
+              "path": "/rexton_sports",
+              "name": "렉스턴 스포츠"
+            },
+            {
+              "path": "/rexton_sports_khan",
+              "name": "렉스턴 스포츠칸"
+            }
+          ]
+        },
+        {
+          "path": "/chairman_a",
+          "name": "체어맨",
+          "generations": [
+            {
+              "path": "/new_chairman_w",
+              "name": "뉴체어맨W"
+            },
+            {
+              "path": "/chairman_w",
+              "name": "체어맨W"
+            },
+            {
+              "path": "/chairman_c",
+              "name": "체어맨H 뉴클래식"
+            },
+            {
+              "path": "/chairman_h",
+              "name": "체어맨H"
+            },
+            {
+              "path": "/new_chairman",
+              "name": "뉴체어맨"
+            }
+          ]
+        },
+        {
+          "path": "/kyron_a",
+          "name": "카이런",
+          "generations": [
+            {
+              "path": "/new_kyron",
+              "name": "뉴카이런"
+            },
+            {
+              "path": "/kyron",
+              "name": "카이런"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "maker": "제네시스",
+      "path": "/genesis_",
+      "models": [
+        {
+          "path": "/genesis_g90",
+          "name": "G90",
+          "generations": []
+        },
+        {
+          "path": "/genesis_a",
+          "name": "제네시스(구형)",
+          "generations": [
+            {
+              "path": "/genesis_coupe",
+              "name": "제네시스쿠페"
+            },
+            {
+              "path": "/genesis_dh",
+              "name": "뉴제네시스 (2세대)"
+            },
+            {
+              "path": "/genesis_prada",
+              "name": "제네시스 프라다"
+            },
+            {
+              "path": "/genesis_bh",
+              "name": "제네시스 (1세대)"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

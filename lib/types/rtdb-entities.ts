@@ -101,27 +101,70 @@ export type RtdbBilling = RtdbBase & {
   status?: string;
 };
 
+/**
+ * 차종마스터 — 엔카/KAMA 표준 분류 체계 기반.
+ *
+ * 매칭 우선순위 (등록증 → 마스터):
+ *   1. type_number_pattern (형식번호) — 가장 정확
+ *   2. car_name + 생산기간 (제작연월이 production_start~end 범위)
+ *   3. maker + model + engine_type
+ *   4. maker + car_name 퍼지 매칭
+ */
 export type RtdbCarModel = RtdbBase & {
-  maker?: string;
-  model?: string;
-  sub?: string;          // 세부모델 (트림 포함)
-  code?: string;         // 내부 코드
+  // ── 최상위 분류 ──
+  origin?: CarOrigin;               // 국산 / 수입
+
+  // ── 브랜드 ──
+  maker?: string;                    // "현대", "기아", "벤츠", "테슬라"
+
+  // ── 차급 (엔카/KAMA 기준) ──
+  body_type?: '승용' | '승합' | '화물' | '특수';
+  size_class?: string;               // "경차" | "소형" | "준중형" | "중형" | "준대형" | "대형"
+                                     // "스포츠카" | "소형 SUV" | "중형 SUV" | "대형 SUV"
+                                     // "소형 MPV" | "대형 MPV" | "소형 트럭" | "대형 트럭" | "전기차"
+
+  // ── 모델 계층 ──
+  model?: string;                    // "아반떼", "Model 3", "G80" (그룹)
+  sub?: string;                      // "아반떼 CN7", "모델 3 롱레인지" (세부)
+  trim?: string;                     // "프리미엄", "익스클루시브" (선택, 트림)
+
+  // ── ⭐ 등록증 매칭 키 (핵심) ──
+  car_name?: string;                 // 등록증 ④ 차명과 정확히 일치 (예: "포터II 내장")
+  type_number_pattern?: string;      // 형식번호(⑤) 패턴 (예: "CN7*", "JA51BA*")
+
+  // ── 생산 기간 ──
+  production_start?: string;         // "YYYY-MM" (예: "2020-03")
+  production_end?: string;           // "YYYY-MM" | "현재"
+
+  // 하위호환용 (연식 단위 기존 데이터)
   year_start?: string | number;
-  year_end?: string | number;   // "현재" or 숫자
-  category?: string;     // 세단/SUV/해치백/트럭 등 (크기+차체)
-  origin?: CarOrigin;
-  powertrain?: Powertrain;
-  fuel_type?: string;    // 세부 연료 (가솔린·디젤·LPG·전기·수소)
-  // 스펙 (자산 등록 시 드랍다운 소스)
-  transmission?: string;        // 자동/수동/CVT/DCT/8단 자동 등
-  seats?: number;               // 승차정원 (2/4/5/7/9/11/15/25)
+  year_end?: string | number;
+
+  // ── 스펙 ──
+  fuel_type?: string;                // "가솔린" | "디젤" | "LPG" | "하이브리드" | "전기" | "수소"
+  engine_type?: string;              // 원동기형식 (예: "G4FL", "D4HB")
+  displacement?: number;             // cc (전기차는 undefined)
+  seats?: number;                    // 승차정원
   drive_type?: '전륜' | '후륜' | '4륜' | 'AWD';
-  displacement?: number;        // 배기량 (cc)
-  // EV 전용
-  battery_kwh?: number;         // 배터리 용량 (kWh)
-  ev_range?: number;            // 1회 충전 주행거리 (km)
+  transmission?: string;             // "6단 자동", "8단 DCT", "CVT"
+  battery_kwh?: number;              // EV 배터리 용량
+  ev_range?: number;                 // EV 1회 충전 거리 (km)
+
+  // 하위호환 — 기존 필드
+  category?: string;                 // 크기+차체 (새 size_class로 통합 예정)
+  powertrain?: Powertrain;
+  code?: string;                     // 내부 코드 (deprecated, type_number_pattern로 대체)
+
+  // ── 메타 ──
+  source?: string;                   // 출처 (예: "encar", "wikicar", "공공데이터", "manual")
   status?: string;
+  archived?: boolean;                // 생산종료 15년 초과 — UI 기본 숨김 (자산 보유시 노출)
+  maker_eng?: string;                // 영문 제조사명 ("Hyundai")
+  maker_code?: string;               // 엔카 제조사 코드 ("001")
+  popularity?: number;               // 엔카 세대별 매물 수 — 인기순 정렬 기준 (자산 0대일 때 활용)
+  model_popularity?: number;         // 엔카 모델그룹(모델명) 총 매물 수
   created_at?: number;
+  updated_at?: number;
 };
 
 export type RtdbGpsDevice = RtdbBase & {
