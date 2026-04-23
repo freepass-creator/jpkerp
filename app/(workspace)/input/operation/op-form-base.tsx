@@ -15,6 +15,7 @@ import { PhotoUploader, type PhotoUploaderHandle } from '@/components/form/photo
 import { useOpContext } from './op-context-store';
 import { computeContractEnd, computeTotalDue, daysBetween, shortDate, today } from '@/lib/date-utils';
 import { useFormSave } from '@/lib/hooks/useFormSave';
+import { StatusBadge } from '@/components/shared/status-badge';
 import type { RtdbBilling, RtdbEvent } from '@/lib/types/rtdb-entities';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -252,9 +253,7 @@ export function OpFormBase({
             </span>
           </>
         )}
-        <span className={`jpk-pill tone-${vehicleStateTone}`} style={{ marginLeft: 'auto' }}>
-          {vehicleStateLabel}
-        </span>
+        <StatusBadge tone={vehicleStateTone} style={{ marginLeft: 'auto' }}>{vehicleStateLabel}</StatusBadge>
       </div>
 
       {/* 2행: 계약자 · 연락처 · 미납금액(있으면) · 계약기간 · 계약상태 */}
@@ -292,9 +291,7 @@ export function OpFormBase({
             </>
           )}
           {paymentStateLabel && (
-            <span className={`jpk-pill tone-${paymentStateTone}`} style={{ marginLeft: 'auto' }}>
-              {paymentStateLabel}
-            </span>
+            <StatusBadge tone={paymentStateTone} style={{ marginLeft: 'auto' }}>{paymentStateLabel}</StatusBadge>
           )}
         </div>
       ) : (

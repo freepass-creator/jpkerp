@@ -14,6 +14,7 @@ import { useRecentCars } from '@/lib/hooks/useRecentCars';
 import { useAssetByCar, useContractByCar } from '@/lib/hooks/useLookups';
 import { saveEvent } from '@/lib/firebase/events';
 import { resizeImage } from '@/lib/image-resize';
+import { StatusBadge, toneForContractStatus } from '@/components/shared/status-badge';
 
 const CATS = [
   { k: 'delivery', label: '출고',   icon: 'ph-truck',             tint: 'var(--c-success)' },
@@ -74,11 +75,7 @@ export default function MobileUpload() {
 
   // 계약상태 pill
   const statusLabel = matchedContract?.contract_status ?? (matchedAsset ? '휴차' : '—');
-  const statusTone: 'success' | 'warn' | 'danger' | 'neutral' =
-    statusLabel === '계약진행' ? 'success'
-    : statusLabel === '계약해지' ? 'danger'
-    : statusLabel === '휴차' ? 'warn'
-    : 'neutral';
+  const statusTone = toneForContractStatus(statusLabel);
 
   const modelLine = matchedAsset
     ? [matchedAsset.manufacturer, matchedAsset.detail_model ?? matchedAsset.car_model, matchedAsset.car_year].filter(Boolean).join(' ')
@@ -289,9 +286,7 @@ export default function MobileUpload() {
           <>
             <div className="m-up-hdr-row">
               <span className="m-up-hdr-num">{matchedAsset.car_number}</span>
-              <span className={`jpk-pill tone-${statusTone}`} style={{ marginLeft: 'auto' }}>
-                {statusLabel}
-              </span>
+              <StatusBadge tone={statusTone} style={{ marginLeft: 'auto' }}>{statusLabel}</StatusBadge>
             </div>
             <dl className="m-up-hdr-rows">
               {matchedAsset.partner_code && (
@@ -310,7 +305,7 @@ export default function MobileUpload() {
           <>
             <div className="m-up-hdr-row">
               <span className="m-up-hdr-num">{cn}</span>
-              <span className="jpk-pill tone-warn" style={{ marginLeft: 'auto' }}>미등록</span>
+              <StatusBadge tone="warn" style={{ marginLeft: 'auto' }}>미등록</StatusBadge>
             </div>
             <div className="m-up-hdr-meta">업로드 후 관리자가 자산 등록합니다</div>
           </>
