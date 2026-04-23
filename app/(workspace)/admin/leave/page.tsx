@@ -2,12 +2,12 @@
 
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import { fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
 
 const cols: ColDef[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+  rowNumColumn(),
   typedColumn('text',   { headerName: '신청자', field: 'name', width: 90, cellStyle: { fontWeight: '600' } }),
   typedColumn('select', { headerName: '휴가구분', field: 'leave_type', width: 95 }),
   typedColumn('date',   { headerName: '시작일', field: 'start_date', width: 100, valueFormatter: (p) => fmtDate(p.value as string) }),

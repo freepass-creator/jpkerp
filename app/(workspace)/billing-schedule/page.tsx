@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Workspace } from '@/components/shared/panel';
 import { GridPanel } from '@/components/shared/grid-panel';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { computeTotalDue, today } from '@/lib/date-utils';
 import { fmt } from '@/lib/utils';
@@ -105,7 +105,7 @@ export default function BillingSchedulePage() {
   }, [billings.data, selected]);
 
   const cols = useMemo<ColDef<ScheduleRow>[]>(() => [
-    typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 40, pinned: 'left', cellStyle: { color: 'var(--c-text-muted)' } }),
+    rowNumColumn({ width: 40, pinned: 'left' }),
     typedColumn('select', { headerName: '상태', field: 'contract_status', width: 70, pinned: 'left' }),
     typedColumn('select', { headerName: '회사코드', field: 'partner_code', width: 80, pinned: 'left' }),
     typedColumn('text', { headerName: '차량번호', field: 'car_number', width: 90, pinned: 'left', cellStyle: { fontWeight: 600 } }),

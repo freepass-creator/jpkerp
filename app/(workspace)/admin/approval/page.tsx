@@ -2,13 +2,13 @@
 
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn, MONO_CELL_STYLE } from '@/lib/grid/typed-column';
 import { fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
 
 const cols: ColDef[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
-  typedColumn('text',   { headerName: '결재번호', field: 'approval_no', width: 140, cellStyle: { fontFamily: 'var(--font-mono)', fontSize: 11 } }),
+  rowNumColumn(),
+  typedColumn('text',   { headerName: '결재번호', field: 'approval_no', width: 140, cellStyle: MONO_CELL_STYLE }),
   typedColumn('select', { headerName: '구분', field: 'approval_type', width: 110 }),
   typedColumn('text',   { headerName: '제목', field: 'title', flex: 1, minWidth: 220, cellStyle: { fontWeight: '600' } }),
   typedColumn('text',   { headerName: '기안자', field: 'drafter', width: 90 }),

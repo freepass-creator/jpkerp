@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn, MONO_CELL_STYLE_BOLD } from '@/lib/grid/typed-column';
 import type { ColDef } from 'ag-grid-community';
 
 const cols: ColDef[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
-  typedColumn('text',   { headerName: '회사코드', field: 'partner_code', width: 100, cellStyle: { fontWeight: '600', fontFamily: 'var(--font-mono)', fontSize: 11 } }),
+  rowNumColumn(),
+  typedColumn('text',   { headerName: '회사코드', field: 'partner_code', width: 100, cellStyle: MONO_CELL_STYLE_BOLD }),
   typedColumn('text',   { headerName: '회원사명', field: 'partner_name', width: 160 }),
   typedColumn('text',   { headerName: '대표자', field: 'ceo', width: 80 }),
   typedColumn('text',   { headerName: '사업자번호', field: 'biz_no', width: 120 }),

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn, MONO_CELL_STYLE } from '@/lib/grid/typed-column';
 import { computeContractEnd, today, daysBetween, normalizeDate } from '@/lib/date-utils';
 import type { RtdbContract } from '@/lib/types/rtdb-entities';
 import { fmtDate } from '@/lib/utils';
@@ -59,7 +59,7 @@ export function ReturnScheduleClient() {
 
   const cols = useMemo<ColDef<ReturnRow>[]>(
     () => [
-      typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+      rowNumColumn(),
       typedColumn('date',   { headerName: '반납 예정일', field: 'end_date', width: 110, valueFormatter: (p) => fmtDate(p.value as string), sort: 'asc' }),
       typedColumn('number', {
         headerName: 'D-day',
@@ -81,7 +81,7 @@ export function ReturnScheduleClient() {
       typedColumn('text',   { headerName: '연락처', field: 'contractor_phone', width: 115 }),
       typedColumn('number', { headerName: '계약기간', field: 'rent_months', width: 80, valueFormatter: (p) => (p.value ? `${p.value}개월` : '-') }),
       typedColumn('date',   { headerName: '시작일', field: 'start_date', width: 100, valueFormatter: (p) => fmtDate(p.value as string) }),
-      typedColumn('text',   { headerName: '계약코드', field: 'contract_code', width: 130, cellStyle: { fontFamily: 'var(--font-mono)', fontSize: 11 } }),
+      typedColumn('text',   { headerName: '계약코드', field: 'contract_code', width: 130, cellStyle: MONO_CELL_STYLE }),
     ],
     [],
   );

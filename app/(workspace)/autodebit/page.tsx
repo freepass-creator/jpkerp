@@ -2,17 +2,17 @@
 
 import { Panel, Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn, MONO_CELL_STYLE } from '@/lib/grid/typed-column';
 import { fmt, fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
 
 const cols: ColDef[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+  rowNumColumn(),
   typedColumn('text',   { headerName: '차량번호', field: 'car_number', width: 100, cellStyle: { fontWeight: '600' } }),
   typedColumn('text',   { headerName: '계약자', field: 'contractor_name', width: 90 }),
   typedColumn('text',   { headerName: '예금주', field: 'account_holder', width: 90 }),
   typedColumn('select', { headerName: '은행', field: 'bank_name', width: 85 }),
-  typedColumn('text',   { headerName: '계좌번호', field: 'account_no', width: 150, cellStyle: { fontFamily: 'var(--font-mono)', fontSize: 11 } }),
+  typedColumn('text',   { headerName: '계좌번호', field: 'account_no', width: 150, cellStyle: MONO_CELL_STYLE }),
   typedColumn('select', { headerName: '이체일', field: 'debit_day', width: 70 }),
   typedColumn('number', { headerName: '이체액', field: 'debit_amount', width: 110, valueFormatter: (p) => (p.value ? fmt(Number(p.value)) : '-') }),
   typedColumn('date',   { headerName: '시작일', field: 'start_date', width: 100, valueFormatter: (p) => fmtDate(p.value as string) }),

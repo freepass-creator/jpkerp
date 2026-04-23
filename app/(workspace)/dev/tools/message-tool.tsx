@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, MONO_CELL_STYLE } from '@/lib/grid/typed-column';
 import type { RtdbEvent } from '@/lib/types/rtdb-entities';
 import type { ColDef } from 'ag-grid-community';
 import { fmt, fmtDate } from '@/lib/utils';
@@ -51,7 +51,7 @@ export function MessageTool({ channel }: { channel: 'alimtalk' | 'sms' }) {
     typedColumn('date', { headerName: '일자', field: 'date', width: 100, valueFormatter: (p) => fmtDate(p.value as string) }),
     typedColumn('select', { headerName: '채널', field: 'channel', width: 90 }),
     typedColumn('text', { headerName: '차량번호', field: 'car_number', width: 100, cellStyle: { fontWeight: '600' } }),
-    typedColumn('text', { headerName: '회원사', field: 'partner_code', width: 80, cellStyle: { fontFamily: 'monospace', fontSize: 11 } }),
+    typedColumn('text', { headerName: '회원사', field: 'partner_code', width: 80, cellStyle: MONO_CELL_STYLE }),
     typedColumn('text', { headerName: '수신자', field: 'customer_name', width: 100 }),
     typedColumn('text', { headerName: '연락처', field: 'customer_phone', width: 120 }),
     typedColumn('text', { headerName: '제목', field: 'title', flex: 1, minWidth: 160 }),

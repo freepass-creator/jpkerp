@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type Ref, type RefObject } from '
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
 import { JpkSetFilter } from '@/lib/grid/set-filter';
+import { rowNumColumn } from '@/lib/grid/typed-column';
 import { normalizeDate, computeContractEnd, today, daysBetween } from '@/lib/date-utils';
 import type { RtdbAsset, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmtDate } from '@/lib/utils';
@@ -132,7 +133,7 @@ export function PendingClient({ gridRef: externalRef, onCountChange, filter: ext
   const columnDefs = useMemo<ColDef<PendingRow>[]>(
     () =>
       [
-        { headerName: '#', valueGetter: (p: { node: { rowIndex: number | null } | null }) => (p.node?.rowIndex ?? 0) + 1, width: 45, filter: false, sortable: false, cellStyle: { color: 'var(--c-text-muted)' } },
+        rowNumColumn<PendingRow>(),
         {
           headerName: '업무구분',
           field: 'cat',

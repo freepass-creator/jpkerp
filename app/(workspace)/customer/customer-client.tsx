@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, type Ref, type RefObject } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import { fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
 
@@ -53,7 +53,7 @@ export function CustomerClient({ gridRef: externalRef, onCountChange }: Props = 
 
   const cols = useMemo<ColDef[]>(
     () => [
-      typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+      rowNumColumn(),
       typedColumn('select', { headerName: '회원사', field: 'partner_code', width: 75 }),
       typedColumn('text',   { headerName: '이름', field: 'name', width: 90, cellStyle: { fontWeight: '600' } }),
       typedColumn('text',   { headerName: '연락처', field: 'phone', width: 120 }),

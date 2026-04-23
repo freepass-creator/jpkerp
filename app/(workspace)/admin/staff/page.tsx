@@ -2,7 +2,7 @@
 
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import type { ColDef } from 'ag-grid-community';
 
 const ROLE_META: Record<string, { label: string; color: string }> = {
@@ -13,7 +13,7 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
 };
 
 const cols: ColDef[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+  rowNumColumn(),
   typedColumn('text',   { headerName: '이름', field: 'name', width: 100, cellStyle: { fontWeight: '600' } }),
   typedColumn('text',   { headerName: '이메일', field: 'email', width: 180 }),
   typedColumn('text',   { headerName: '연락처', field: 'phone', width: 120 }),

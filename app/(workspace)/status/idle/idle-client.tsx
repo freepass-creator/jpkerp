@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, type Ref, type RefObject } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
 import { JpkSetFilter } from '@/lib/grid/set-filter';
+import { rowNumColumn } from '@/lib/grid/typed-column';
 import { normalizeDate, computeContractEnd, today, daysBetween } from '@/lib/date-utils';
 import { EVENT_META } from '@/lib/event-meta';
 import type { RtdbAsset, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
@@ -121,7 +122,7 @@ export function IdleClient({ gridRef: externalRef, onCountChange }: Props = {}) 
   const columnDefs = useMemo<ColDef<IdleRow>[]>(
     () =>
       [
-        { headerName: '#', valueGetter: (p: { node: { rowIndex: number | null } | null }) => (p.node?.rowIndex ?? 0) + 1, width: 50, filter: false, sortable: false, cellStyle: { color: 'var(--c-text-muted)' } },
+        rowNumColumn<IdleRow>({ width: 50 }),
         { headerName: '회사코드', field: 'partner_code', width: 85, filter: JpkSetFilter },
         { headerName: '차량번호', field: 'car_number', width: 100, cellStyle: { fontWeight: '600' } },
         { headerName: '세부모델', field: 'detail_model', flex: 1, minWidth: 140 },

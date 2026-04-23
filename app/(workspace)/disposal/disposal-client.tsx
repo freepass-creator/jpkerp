@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, type Ref, type RefObject } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import type { RtdbAsset } from '@/lib/types/rtdb-entities';
 import { fmt, fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
@@ -39,7 +39,7 @@ export function DisposalClient({ gridRef: externalRef, onCountChange }: Props = 
 
   const cols = useMemo<ColDef[]>(
     () => [
-      typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+      rowNumColumn(),
       typedColumn('select', { headerName: '회원사', field: 'partner_code', width: 85 }),
       typedColumn('text',   { headerName: '차량번호', field: 'car_number', width: 100, cellStyle: { fontWeight: '600' } }),
       typedColumn('text',   { headerName: '모델', field: 'car_model', width: 140 }),

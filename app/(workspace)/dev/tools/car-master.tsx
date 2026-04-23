@@ -6,7 +6,7 @@ import { ref, push, set, serverTimestamp, update } from 'firebase/database';
 import { getRtdb } from '@/lib/firebase/rtdb';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import { ToolActions, ToolDetail } from '../tool-actions-context';
 import { KOREAN_CAR_MODELS, inferFuel, inferOrigin, inferPowertrain, subWithYear } from '@/lib/data/car-models-seed';
 import type { RtdbAsset, RtdbCarModel } from '@/lib/types/rtdb-entities';
@@ -598,7 +598,7 @@ export function CarMasterTool() {
   };
 
   const cols = useMemo<ColDef<Row>[]>(() => [
-    typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+    rowNumColumn<Row>(),
     typedColumn('select', { headerName: '제조사', field: 'maker', width: 90, cellStyle: { fontWeight: '600' } }),
     typedColumn('text',   { headerName: '모델', field: 'model', width: 110 }),
     typedColumn('text',   { headerName: '세부모델', field: 'sub', flex: 1, minWidth: 200 }),

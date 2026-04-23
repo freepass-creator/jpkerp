@@ -3,6 +3,7 @@
 import { useRef, useState, type Ref } from 'react';
 import { toast } from 'sonner';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
+import { rowNumColumn } from '@/lib/grid/typed-column';
 import { parseCsv } from '@/lib/csv';
 import * as BankShinhan from '@/lib/parsers/bank-shinhan';
 import * as CardShinhan from '@/lib/parsers/card-shinhan';
@@ -91,7 +92,7 @@ export function FundClient() {
   })();
 
   const cols: ColDef<Row>[] = tab === 'card' ? [
-    { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 50, filter: false, sortable: false, cellStyle: { color: 'var(--c-text-muted)' } },
+    rowNumColumn<Row>({ width: 50 }),
     { headerName: '일자', field: 'date', width: 90, valueFormatter: (p) => fmtDate(p.value as string) },
     { headerName: '가맹점', field: 'counterparty', flex: 1, minWidth: 180 },
     { headerName: '금액', field: 'amount', width: 110, valueFormatter: (p) => fmt(Number(p.value)), cellClass: 'col-right' },
@@ -99,7 +100,7 @@ export function FundClient() {
     { headerName: '승인번호', field: 'approval_no', width: 110 },
     { headerName: '결제예정일', field: 'pay_date', width: 100, valueFormatter: (p) => fmtDate(p.value as string) },
   ] : [
-    { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 50, filter: false, sortable: false, cellStyle: { color: 'var(--c-text-muted)' } },
+    rowNumColumn<Row>({ width: 50 }),
     { headerName: '일자', field: 'date', width: 90, valueFormatter: (p) => fmtDate(p.value as string) },
     {
       headerName: '방향',

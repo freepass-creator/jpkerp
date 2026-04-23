@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import { fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
 
@@ -35,7 +35,7 @@ const STATE_COLORS: Record<string, string> = {
 };
 
 const cols: ColDef<TaskRow>[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+  rowNumColumn<TaskRow>(),
   typedColumn('text',   { headerName: '제목', field: 'title', flex: 1, minWidth: 220, cellStyle: { fontWeight: '600' } }),
   typedColumn('text',   { headerName: '담당자', field: 'assignee_name', width: 100 }),
   typedColumn('text',   { headerName: '관련 차량', field: 'car_number', width: 100 }),

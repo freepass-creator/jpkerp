@@ -6,7 +6,7 @@ import { ref, push, set, serverTimestamp } from 'firebase/database';
 import { getRtdb } from '@/lib/firebase/rtdb';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn, MONO_CELL_STYLE } from '@/lib/grid/typed-column';
 import { CarNumberPicker } from '@/components/form/car-number-picker';
 import { ToolActions } from '../tool-actions-context';
 import type { RtdbBilling, RtdbContract } from '@/lib/types/rtdb-entities';
@@ -108,10 +108,10 @@ export function OverdueTool() {
   }, [billings.data, contracts.data]);
 
   const cols = useMemo<ColDef<OverdueRow>[]>(() => [
-    typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
-    typedColumn('text', { headerName: '계약코드', field: 'contract_code', width: 130, cellStyle: { fontFamily: 'monospace', fontSize: 11 } }),
+    rowNumColumn(),
+    typedColumn('text', { headerName: '계약코드', field: 'contract_code', width: 130, cellStyle: MONO_CELL_STYLE }),
     typedColumn('text', { headerName: '차량번호', field: 'car_number', width: 100, cellStyle: { fontWeight: '600' } }),
-    typedColumn('text', { headerName: '회원사', field: 'partner_code', width: 80, cellStyle: { fontFamily: 'monospace', fontSize: 11 } }),
+    typedColumn('text', { headerName: '회원사', field: 'partner_code', width: 80, cellStyle: MONO_CELL_STYLE }),
     typedColumn('text', { headerName: '계약자', field: 'contractor_name', width: 100 }),
     typedColumn('date', { headerName: '납부일', field: 'due_date', width: 100, valueFormatter: (p) => fmtDate(p.value as string) }),
     typedColumn('number', { headerName: '청구액', field: 'due_amount', width: 100, valueFormatter: (p) => fmt(Number(p.value)) }),

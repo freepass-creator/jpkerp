@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, type Ref, type RefObject } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn, MONO_CELL_STYLE } from '@/lib/grid/typed-column';
 import { computeContractEnd, normalizeDate } from '@/lib/date-utils';
 import type { RtdbContract } from '@/lib/types/rtdb-entities';
 import { fmt, fmtDate } from '@/lib/utils';
@@ -37,9 +37,9 @@ export function ContractClient({ gridRef: externalRef, onCountChange, onRowClick
 
   const cols = useMemo<ColDef<ContractRow>[]>(
     () => [
-      typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+      rowNumColumn(),
       typedColumn('select', { headerName: '회원사', field: 'partner_code', width: 75 }),
-      typedColumn('text',   { headerName: '계약코드', field: 'contract_code', width: 125, cellStyle: { fontFamily: 'var(--font-mono)', fontSize: 11 } }),
+      typedColumn('text',   { headerName: '계약코드', field: 'contract_code', width: 125, cellStyle: MONO_CELL_STYLE }),
       typedColumn('text',   { headerName: '차량번호', field: 'car_number', width: 100, cellStyle: { fontWeight: '600' } }),
       typedColumn('text',   { headerName: '계약자', field: 'contractor_name', width: 90 }),
       typedColumn('text',   { headerName: '연락처', field: 'contractor_phone', width: 115 }),

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import { EVENT_META, metaFor } from '@/lib/event-meta';
 import type { RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt, fmtDate } from '@/lib/utils';
@@ -56,7 +56,7 @@ export function OperationHistoryClient({ lockedTypes, onRowClick }: Props) {
 
   const cols = useMemo<ColDef<RtdbEvent>[]>(
     () => [
-      typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+      rowNumColumn(),
       typedColumn('date',   { headerName: '일자', field: 'date', width: 100, valueFormatter: (p) => fmtDate(p.value as string), sort: 'desc' }),
       typedColumn('select', {
         headerName: '유형',

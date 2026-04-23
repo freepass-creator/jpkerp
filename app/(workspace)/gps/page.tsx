@@ -3,18 +3,18 @@
 import Link from 'next/link';
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn, MONO_CELL_STYLE } from '@/lib/grid/typed-column';
 import { fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
 import type { RtdbGpsDevice } from '@/lib/types/rtdb-entities';
 
 const cols: ColDef<RtdbGpsDevice>[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+  rowNumColumn<RtdbGpsDevice>(),
   typedColumn('text',   { headerName: '차량번호', field: 'car_number', width: 100, cellStyle: { fontWeight: '600' } }),
-  typedColumn('text',   { headerName: '회원사', field: 'partner_code', width: 85, cellStyle: { fontFamily: 'monospace', fontSize: 11 } }),
+  typedColumn('text',   { headerName: '회원사', field: 'partner_code', width: 85, cellStyle: MONO_CELL_STYLE }),
   typedColumn('select', { headerName: '상태', field: 'gps_status', width: 80 }),
   typedColumn('select', { headerName: '제조사', field: 'gps_company', width: 110 }),
-  typedColumn('text',   { headerName: '시리얼번호', field: 'gps_serial', width: 160, cellStyle: { fontFamily: 'monospace', fontSize: 11 } }),
+  typedColumn('text',   { headerName: '시리얼번호', field: 'gps_serial', width: 160, cellStyle: MONO_CELL_STYLE }),
   typedColumn('date',   { headerName: '장착일', field: 'gps_install_date', width: 100, valueFormatter: (p) => fmtDate(p.value as string) }),
   typedColumn('date',   { headerName: '해제일', field: 'gps_uninstall_date', width: 100, valueFormatter: (p) => fmtDate(p.value as string) }),
   typedColumn('text',   { headerName: '장착 위치', field: 'gps_location', width: 130 }),

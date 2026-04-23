@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import { fmtDate } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
 import type { RtdbCustomer } from './customer-client';
 import { CustomerEditDialog } from './customer-edit-dialog';
 
 const cols: ColDef<RtdbCustomer>[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+  rowNumColumn<RtdbCustomer>(),
   typedColumn('text',   { headerName: '이름', field: 'name', width: 90 }),
   typedColumn('text',   { headerName: '연락처', field: 'phone', width: 115 }),
   typedColumn('text',   { headerName: '생년월일', field: 'birth', width: 100 }),

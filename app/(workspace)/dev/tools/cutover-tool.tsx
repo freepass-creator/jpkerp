@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn, MONO_CELL_STYLE } from '@/lib/grid/typed-column';
 import type { RtdbBilling, RtdbEvent, RtdbContract } from '@/lib/types/rtdb-entities';
 import type { ColDef } from 'ag-grid-community';
 import { fmt } from '@/lib/utils';
@@ -72,10 +72,10 @@ export function CutoverTool() {
   }, [billings.data, contracts.data, events.data]);
 
   const cols = useMemo<ColDef<CutoverRow>[]>(() => [
-    typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
-    typedColumn('text', { headerName: '계약코드', field: 'contract_code', width: 130, cellStyle: { fontFamily: 'monospace', fontSize: 11 } }),
+    rowNumColumn(),
+    typedColumn('text', { headerName: '계약코드', field: 'contract_code', width: 130, cellStyle: MONO_CELL_STYLE }),
     typedColumn('text', { headerName: '차량번호', field: 'car_number', width: 100, cellStyle: { fontWeight: '600' } }),
-    typedColumn('text', { headerName: '회원사', field: 'partner_code', width: 80, cellStyle: { fontFamily: 'monospace', fontSize: 11 } }),
+    typedColumn('text', { headerName: '회원사', field: 'partner_code', width: 80, cellStyle: MONO_CELL_STYLE }),
     typedColumn('number', { headerName: '회차', field: 'billing_count', width: 60, valueFormatter: (p) => `${p.value}` }),
     typedColumn('number', { headerName: '청구 합계', field: 'billing_due', width: 110, valueFormatter: (p) => fmt(Number(p.value)) }),
     typedColumn('number', { headerName: '수납 합계', field: 'billing_paid', width: 110, valueFormatter: (p) => fmt(Number(p.value)) }),

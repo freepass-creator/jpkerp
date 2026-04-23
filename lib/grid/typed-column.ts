@@ -33,3 +33,31 @@ export function typedColumn<T>(type: ColType, def: LooseColDef<T>): ColDef<T> {
 
   return base;
 }
+
+/**
+ * 행번호(#) 컬럼 — 거의 모든 그리드 첫 컬럼으로 사용.
+ * @param opts.width 기본 45
+ * @param opts.pinned 'left' 고정 여부
+ */
+export function rowNumColumn<T = unknown>(opts?: { width?: number; pinned?: 'left' | 'right' }): ColDef<T> {
+  return typedColumn<T>('action', {
+    headerName: '#',
+    valueGetter: (p: { node: { rowIndex: number | null } | null }) => (p.node?.rowIndex ?? 0) + 1,
+    width: opts?.width ?? 45,
+    ...(opts?.pinned ? { pinned: opts.pinned } : {}),
+    cellStyle: { color: 'var(--c-text-muted)' },
+  });
+}
+
+/** 코드/계좌번호/증권번호 등 고정폭 글꼴 필요한 셀에 쓰는 공통 스타일 (11px). */
+export const MONO_CELL_STYLE: CellStyle = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: 11,
+};
+
+/** MONO_CELL_STYLE + 굵게 (회사코드 등 강조 코드용). */
+export const MONO_CELL_STYLE_BOLD: CellStyle = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: 11,
+  fontWeight: '600',
+};

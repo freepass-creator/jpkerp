@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type Ref, type RefObject } from '
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
 import { JpkSetFilter } from '@/lib/grid/set-filter';
+import { rowNumColumn } from '@/lib/grid/typed-column';
 import { normalizeDate, computeContractEnd, today, daysBetween } from '@/lib/date-utils';
 import type { RtdbAsset, RtdbContract } from '@/lib/types/rtdb-entities';
 import { fmtDate } from '@/lib/utils';
@@ -73,7 +74,7 @@ export function ExpiringClient({ gridRef: externalRef, onCountChange }: Props = 
   const columnDefs = useMemo<ColDef<ExpiringRow>[]>(
     () =>
       [
-        { headerName: '#', valueGetter: (p: { node: { rowIndex: number | null } | null }) => (p.node?.rowIndex ?? 0) + 1, width: 45, filter: false, sortable: false, cellStyle: { color: 'var(--c-text-muted)' } },
+        rowNumColumn<ExpiringRow>(),
         { headerName: '회사코드', field: 'partner_code', width: 80, filter: JpkSetFilter },
         { headerName: '계약자', field: 'contractor_name', width: 85 },
         { headerName: '연락처', field: 'contractor_phone', width: 110 },

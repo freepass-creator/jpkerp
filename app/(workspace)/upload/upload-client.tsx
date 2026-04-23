@@ -3,7 +3,7 @@
 import { useMemo, useState, useRef, useCallback } from 'react';
 import { Workspace } from '@/components/shared/panel';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import { toast } from 'sonner';
 import { ref as rtdbRef, push, set, update, get, query, orderByChild, equalTo } from 'firebase/database';
 import { getRtdb } from '@/lib/firebase/rtdb';
@@ -593,7 +593,7 @@ export function UploadClient() {
     if (!spec) return [];
     const UPSERT_SUPPORTED = spec.key === 'asset' || spec.key === 'insurance' || spec.key === 'member';
     return [
-      typedColumn<Record<string, unknown>>('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+      rowNumColumn<Record<string, unknown>>(),
       // 신규/보완수정/변경없음 상태 컬럼 (지원 타입만)
       ...(UPSERT_SUPPORTED ? [typedColumn<Record<string, unknown>>('text', {
         headerName: '상태',

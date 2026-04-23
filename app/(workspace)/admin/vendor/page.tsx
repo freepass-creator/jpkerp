@@ -2,11 +2,11 @@
 
 import { Workspace } from '@/components/shared/panel';
 import { SimpleRtdbGrid } from '@/components/shared/simple-rtdb-grid';
-import { typedColumn } from '@/lib/grid/typed-column';
+import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
 import type { ColDef } from 'ag-grid-community';
 
 const cols: ColDef[] = [
-  typedColumn('action', { headerName: '#', valueGetter: (p) => (p.node?.rowIndex ?? 0) + 1, width: 45, cellStyle: { color: 'var(--c-text-muted)' } }),
+  rowNumColumn(),
   typedColumn('text',   { headerName: '거래처명', field: 'vendor_name', width: 140, cellStyle: { fontWeight: '600' } }),
   typedColumn('select', { headerName: '업종', field: 'vendor_type', width: 90 }),
   typedColumn('text',   { headerName: '담당자', field: 'contact_name', width: 90 }),
