@@ -439,8 +439,11 @@ export function UploadClient() {
           const seenCars = new Set<string>();
           for (const p of regPages) {
             const reg = parseVehicleReg(p, p.split('\n'));
-            if (!reg.car_number || seenCars.has(reg.car_number)) continue;
-            seenCars.add(reg.car_number);
+            // 차량번호 없어도 VIN이나 차명이 있으면 row 생성 (사용자가 미리보기에서 확인/수정)
+            const hasAny = reg.car_number || reg.vin || reg.car_name || reg.type_number;
+            if (!hasAny) continue;
+            if (reg.car_number && seenCars.has(reg.car_number)) continue;
+            if (reg.car_number) seenCars.add(reg.car_number);
 
             // 제조사/모델 분리 (차명 = "현대 아반떼 1.6" → maker + model)
             // "차대번호" 같은 잘못된 값은 버림

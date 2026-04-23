@@ -64,9 +64,19 @@ export function parseVehicleReg(text: string, _lines?: string[]): VehicleRegPars
   };
 
   // ── 차량번호 ──
-  // 한글 1자 양쪽으로 숫자가 반드시 있어야 유효. OCR이 공백/엔터를 끼워 넣어도 대응.
+  // 1차: 한글 1자 포함 (ex. 12가3456, 123하4567)
   const carNumM = text.match(/(\d{2,3})\s*([가-힣])\s*(\d{4})/);
   if (carNumM) d.car_number = `${carNumM[1]}${carNumM[2]}${carNumM[3]}`;
+  // 2차: 라벨 기반 폴백 — "자동차등록번호" 뒤의 숫자/한글 토큰
+  if (!d.car_number) {
+    const lbl = text.match(/자동차등록번호[\s:：]*([0-9가-힣\s]{4,15})/);
+    if (lbl) {
+      const cleaned = lbl[1].replace(/\s/g, '');
+      // 숫자-한글-숫자 구조인지 최종 검증
+      const m = cleaned.match(/^(\d{2,3})([가-힣])(\d{4})$/);
+      if (m) d.car_number = cleaned;
+    }
+  }
 
   // ── VIN (17자리, I/O/Q 제외) ──
   // 라벨 근처 우선, 없으면 전체 텍스트에서 17자 연속
