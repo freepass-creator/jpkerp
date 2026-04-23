@@ -17,7 +17,13 @@ import {
   USAGE_TYPES, ASSET_STATUS_OPTS, type FuelType,
 } from '@/lib/data/vehicle-constants';
 
-interface PartnerRec extends Record<string, unknown> { _key?: string; partner_code?: string; partner_name?: string }
+interface PartnerRec extends Record<string, unknown> {
+  _key?: string;
+  partner_code?: string;
+  partner_name?: string;
+  biz_no?: string;
+  corp_no?: string;
+}
 
 interface CarModelRec extends Record<string, unknown> {
   _key?: string;
@@ -53,6 +59,7 @@ export function AssetCreateForm() {
   // 제조사 스펙 (차종마스터 단계별 선택)
   const vehicleMasters = useRtdbCollection<CarModelRec>('vehicle_master');
   const allAssets = useRtdbCollection<RtdbAsset>('assets');
+  const partners = useRtdbCollection<PartnerRec>('partners');
   const [manufacturer, setManufacturer] = useState('');
   const [carModel, setCarModel] = useState('');
   const [detailModel, setDetailModel] = useState('');
@@ -267,9 +274,45 @@ export function AssetCreateForm() {
       if (finalSub) setDetailModel(finalSub);
       if (masterHit) applySpec(masterHit);
 
+      // 회원사 자동 매칭 — 소유자 법인등록번호 → 회사명 순으로 기존 partners 검색
+      // (이미 사용자가 회사코드를 입력한 경우는 건드리지 않음)
+      let matchedPartnerCode = '';
+      if (!partnerCode) {
+        const normalizeCorpName = (s: string) => String(s)
+          .replace(/\s+/g, '')
+          .replace(/주식회사|유한회사|\(주\)|\(유\)|㈜|㈕|주\)|유\)/g, '')
+          .replace(/[().,\-_]/g, '')
+          .toLowerCase();
+        const activePartners = partners.data.filter(
+          (p) => (p as { status?: string }).status !== 'deleted' && p.partner_code,
+        );
+        // 1차: owner_biz_no(법인등록번호 또는 사업자번호) 숫자만 추출해서 9자리 이상 매칭
+        const ownerBizDigits = (reg.owner_biz_no ?? '').replace(/\D/g, '');
+        if (ownerBizDigits.length >= 9) {
+          const hit = activePartners.find((p) => {
+            const cn = (p.corp_no ?? '').replace(/\D/g, '');
+            const bn = (p.biz_no ?? '').replace(/\D/g, '');
+            return (cn && cn === ownerBizDigits) || (bn && bn === ownerBizDigits);
+          });
+          if (hit?.partner_code) matchedPartnerCode = hit.partner_code;
+        }
+        // 2차: 회사명 정규화 매칭 (owner_biz_no 불일치/부재 대비)
+        if (!matchedPartnerCode && reg.owner_name) {
+          const key = normalizeCorpName(reg.owner_name);
+          if (key) {
+            const hit = activePartners.find(
+              (p) => p.partner_name && normalizeCorpName(p.partner_name) === key,
+            );
+            if (hit?.partner_code) matchedPartnerCode = hit.partner_code;
+          }
+        }
+        if (matchedPartnerCode) setPartnerCode(matchedPartnerCode);
+      }
+
       const filled = [
         reg.car_number && '차량번호',
         reg.vin && '차대번호',
+        matchedPartnerCode && '회사코드',
         matchedMfr && '제조사',
         matchedModel && '모델',
         finalSub && '세부모델',
@@ -287,7 +330,7 @@ export function AssetCreateForm() {
     } finally {
       setOcrBusy(false);
     }
-  }, [vehicleMasters.data, applySpec]);
+  }, [vehicleMasters.data, partners.data, partnerCode, applySpec]);
 
   return (
     <InputFormShell
