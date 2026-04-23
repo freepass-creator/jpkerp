@@ -55,11 +55,12 @@ export default function MobileUpload() {
   const match = cn ? { cn, asset: matchedAsset, contract: matchedContract } : null;
   const hasCar = !!match;
 
-  // 차량번호 자동 감지 — 첫 파일(이미지/PDF) Gemini OCR → 후보로 저장, 사용자 확인 후 반영
+  // 차량번호 자동 감지 — 매 호출마다 이전 후보 클리어 후 새 OCR
   const detectPlate = useCallback(async (file: File) => {
     const isImage = file.type.startsWith('image/');
     const isPdf = file.type === 'application/pdf';
     if (!isImage && !isPdf) return;
+    setDetected(null); // 이전 감지 결과 즉시 제거
     setDetecting(true);
     try {
       const fd = new FormData();
@@ -82,23 +83,24 @@ export default function MobileUpload() {
   const onPick = useCallback((files: FileList | null, pickedKind: Kind = 'delivery') => {
     if (!files || files.length === 0) return;
     const arr = Array.from(files);
+    let ocrCandidate: File | null = null;
     setItems((prev) => {
       const remaining = MAX_FILES - prev.length;
       if (remaining <= 0) { toast.error(`최대 ${MAX_FILES}장까지`); return prev; }
       const add = arr.slice(0, remaining).map((file) => ({ file, url: URL.createObjectURL(file) }));
       if (arr.length > remaining) toast.warning(`${remaining}장만 추가됨 (최대 ${MAX_FILES})`);
-      // 첫 등장시 kind 기본값 세팅 + OCR 감지 (차량 미입력일 때만)
-      if (prev.length === 0) {
-        if (!kind) setKind(pickedKind);
-        if (!carNumber) {
-          const ocrTarget = add.find((i) =>
-            i.file.type.startsWith('image/') || i.file.type === 'application/pdf'
-          );
-          if (ocrTarget) detectPlate(ocrTarget.file);
-        }
+      // 첫 등장시 kind 기본값
+      if (prev.length === 0 && !kind) setKind(pickedKind);
+      // 차량 미확정 상태면 방금 추가된 이미지/PDF로 OCR 재시도
+      if (!carNumber) {
+        ocrCandidate = add.find((i) =>
+          i.file.type.startsWith('image/') || i.file.type === 'application/pdf'
+        )?.file ?? null;
       }
       return [...prev, ...add];
     });
+    // setItems 밖에서 OCR 트리거 (상태 업데이트 중 side-effect 회피)
+    if (ocrCandidate) detectPlate(ocrCandidate);
   }, [carNumber, kind, detectPlate]);
 
   const removeItem = useCallback((idx: number) => {
