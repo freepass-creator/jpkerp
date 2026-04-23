@@ -1378,10 +1378,10 @@ export function UploadClient() {
             </button>
           </div>
         </div>
-        <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="panel-body flex flex-col gap-4">
           {/* ① 데이터 종류 */}
           <div>
-            <label className="form-label" style={{ display: 'block', marginBottom: 6 }}>① 데이터 종류</label>
+            <label className="form-label block mb-1.5">① 데이터 종류</label>
             <select
               className="select"
               value={typeKey}
@@ -1400,7 +1400,7 @@ export function UploadClient() {
               </optgroup>
             </select>
             {typeKey === 'auto' && detectedKey && (
-              <div className="form-hint" style={{ marginTop: 6 }}>
+              <div className="form-hint mt-1.5">
                 ✓ 감지됨: <b>{SCHEMAS.find((s) => s.key === detectedKey)?.label}</b>
               </div>
             )}
@@ -1409,11 +1409,11 @@ export function UploadClient() {
           {/* ② 스키마 안내 — 2줄 테이블 (헤더 + 샘플) */}
           {spec && (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+              <div className="flex items-center mb-1.5">
                 <label className="form-label">
                   ② 스키마 <span className="text-text-muted">({spec.schema.length}개 · 빨강=필수)</span>
                 </label>
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+                <div className="ml-auto flex gap-1">
                   <button type="button" className="btn btn-2xs btn-outline" onClick={copyHeaders}>
                     <i className="ph ph-copy" /> 헤더 복사
                   </button>
@@ -1422,21 +1422,14 @@ export function UploadClient() {
                   </button>
                 </div>
               </div>
-              <div style={{ border: '1px solid var(--c-border)', borderRadius: 2, overflow: 'auto', maxWidth: '100%' }}>
-                <table className="text-2xs" style={{ borderCollapse: 'collapse', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+              <div className="border border-border rounded-[2px] overflow-auto max-w-full">
+                <table className="text-2xs border-collapse whitespace-nowrap font-mono">
                   <thead>
-                    <tr style={{ background: 'var(--c-bg-sub)' }}>
+                    <tr className="bg-bg-sub">
                       {spec.schema.map((f) => (
                         <th
                           key={f.col}
-                          style={{
-                            padding: '4px 8px',
-                            borderRight: '1px solid var(--c-border)',
-                            borderBottom: '1px solid var(--c-border)',
-                            fontWeight: 600,
-                            color: f.required ? 'var(--c-danger)' : 'var(--c-text-sub)',
-                            textAlign: 'left',
-                          }}
+                          className={`px-2 py-1 border-r border-b border-border font-bold text-left ${f.required ? 'text-danger' : 'text-text-sub'}`}
                         >
                           {f.label}{f.required && '*'}
                         </th>
@@ -1448,11 +1441,7 @@ export function UploadClient() {
                       {spec.schema.map((f) => (
                         <td
                           key={f.col}
-                          style={{
-                            padding: '4px 8px',
-                            borderRight: '1px solid var(--c-border)',
-                            color: 'var(--c-text-muted)',
-                          }}
+                          className="px-2 py-1 border-r border-border text-text-muted"
                         >
                           {SAMPLE_MAP[spec.key]?.[f.col] ?? '-'}
                         </td>
@@ -1466,9 +1455,9 @@ export function UploadClient() {
 
           {/* ③ 링크 불러오기 */}
           <div>
-            <label className="form-label" style={{ display: 'block', marginBottom: 6 }}>③ 링크 불러오기</label>
+            <label className="form-label block mb-1.5">③ 링크 불러오기</label>
             <div className="form-row">
-              <div style={{ flex: 1 }}>
+              <div className="flex-1">
                 <input
                   type="url"
                   className="input text-xs"
@@ -1480,22 +1469,21 @@ export function UploadClient() {
               </div>
               <button
                 type="button"
-                className="btn btn-sm btn-outline"
+                className="btn btn-sm btn-outline flex-shrink-0"
                 onClick={handleLink}
                 disabled={linkBusy || !linkUrl.trim()}
-                style={{ flexShrink: 0 }}
               >
                 {linkBusy ? <><i className="ph ph-spinner spin" /> 불러오는 중</> : <><i className="ph ph-link" /> 불러오기</>}
               </button>
             </div>
-            <div className="text-2xs text-text-muted" style={{ marginTop: 4 }}>
+            <div className="text-2xs text-text-muted mt-1">
               Google Sheets 공유 링크 · Google Drive 파일 링크 · CSV URL
             </div>
           </div>
 
           {/* ④ 파일 불러오기 */}
           <div>
-            <label className="form-label" style={{ display: 'block', marginBottom: 6 }}>④ 파일 불러오기</label>
+            <label className="form-label block mb-1.5">④ 파일 불러오기</label>
             <label
               className="jpk-uploader-drop"
               onDragEnter={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -1607,7 +1595,7 @@ export function UploadClient() {
               />
               <i className="ph ph-upload-simple text-[18px]" />
               <div>
-                <div className="text-base" style={{ fontWeight: 600 }}>
+                <div className="text-base font-bold">
                   {fileName || '파일 불러오기 (여러 개 가능)'}
                 </div>
                 <div className="text-text-muted text-2xs">
@@ -1619,29 +1607,25 @@ export function UploadClient() {
 
           {/* OCR 진행 */}
           {ocrBusy && (
-            <div
-              className="text-xs text-primary" style={{ padding: 10, background: 'var(--c-primary-bg)', border: '1px solid var(--c-primary)', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 6 }}
-            >
+            <div className="text-xs text-primary bg-primary-bg border border-primary rounded-[2px] p-2.5 flex items-center gap-1.5">
               <i className="ph ph-spinner spin" /> {ocrProgress}
             </div>
           )}
 
           {/* ④ 감지 결과 */}
           {rawRows.length > 0 && !ocrBusy && (
-            <div
-              className="text-xs text-success" style={{ padding: 10, background: 'var(--c-success-bg)', border: '1px solid var(--c-success)', borderRadius: 2 }}
-            >
+            <div className="text-xs text-success bg-success-bg border border-success rounded-[2px] p-2.5">
               ✓ <b>{rawRows.length}</b>행 파싱 완료 {spec && ` · ${spec.label}로 매핑`}
             </div>
           )}
 
           {/* OCR 원문 */}
           {ocrRawText && !ocrBusy && (
-            <details style={{ marginTop: 4 }}>
-              <summary className="text-xs text-text-muted" style={{ cursor: 'pointer', padding: '4px 0' }}>
+            <details className="mt-1">
+              <summary className="text-xs text-text-muted cursor-pointer py-1">
                 OCR 원문 보기
               </summary>
-              <pre className="text-2xs" style={{ background: 'var(--c-bg-sub)', padding: 8, borderRadius: 2, maxHeight: 160, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginTop: 4 }}>
+              <pre className="text-2xs bg-bg-sub p-2 rounded-[2px] max-h-40 overflow-auto whitespace-pre-wrap break-all mt-1">
                 {ocrRawText}
               </pre>
             </details>
@@ -1682,13 +1666,10 @@ export function UploadClient() {
             </button>
           </div>
         </div>
-        <div className="panel-body no-pad" style={{ overflow: 'hidden' }}>
+        <div className="panel-body no-pad overflow-hidden">
           {mappedRows.length === 0 ? (
-            <div
-              className="flex flex-col items-center justify-center gap-2 text-text-muted"
-              style={{ padding: 40, height: '100%' }}
-            >
-              <i className="ph ph-table" style={{ fontSize: 32 }} />
+            <div className="flex flex-col items-center justify-center gap-2 text-text-muted p-10 h-full">
+              <i className="ph ph-table text-[32px]" />
               <div className="text-base">좌측에서 파일을 불러오면 여기에 미리보기가 표시됩니다</div>
             </div>
           ) : (
