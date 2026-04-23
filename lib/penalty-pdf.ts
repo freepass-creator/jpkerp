@@ -117,7 +117,7 @@ async function buildPenaltyPdf(item: PenaltyWorkItem): Promise<Blob> {
     ['임차인 연락처', contract?.contractor_phone || '—'],
     ['차량번호', item.car_number || '—'],
     ['차종', [asset?.manufacturer, asset?.detail_model ?? asset?.car_model].filter(Boolean).join(' ') || '—'],
-    ['회원사코드', contract?.partner_code || asset?.partner_code || '—'],
+    ['회사코드', contract?.partner_code || asset?.partner_code || '—'],
     ['계약기간', `${shortDate(contract?.start_date)} ~ ${shortDate(contract?.end_date)}`],
     ['계약유형', contract?.product_type || '장기렌트'],
   ];
