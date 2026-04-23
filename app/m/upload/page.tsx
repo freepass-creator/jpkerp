@@ -11,6 +11,7 @@ import { useSaveStore } from '@/lib/hooks/useSaveStatus';
 import { sanitizeCarNumber } from '@/lib/format-input';
 import { useRecentCars } from '@/lib/hooks/useRecentCars';
 import { useAssetByCar, useContractByCar } from '@/lib/hooks/useLookups';
+import { resizeImages } from '@/lib/image-resize';
 
 interface PreviewItem {
   file: File;
@@ -127,7 +128,9 @@ export default function MobileUpload() {
     store.begin('업로드 중');
     try {
       const basePath = cn ? `mobile_uploads/${cn}` : 'mobile_uploads/_no_car';
-      const urls = await uploadFiles(basePath, items.map((i) => i.file));
+      // 이미지만 리사이징 (2048px·JPEG 0.85) — 비이미지는 원본 유지
+      const prepared = await resizeImages(items.map((i) => i.file));
+      const urls = await uploadFiles(basePath, prepared);
 
       const db = getRtdb();
       const ref = push(rtdbRef(db, 'mobile_uploads'));
