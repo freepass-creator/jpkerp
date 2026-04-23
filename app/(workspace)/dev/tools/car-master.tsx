@@ -70,6 +70,7 @@ export function CarMasterTool() {
   const [mode, setMode] = useState<Mode>('idle');
   const [form, setForm] = useState(EMPTY_FORM);
   const [busy, setBusy] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const rows = useMemo<Row[]>(() => {
     const countByKey = new Map<string, number>();
@@ -80,12 +81,19 @@ export function CarMasterTool() {
     }
     return models.data
       .filter((m) => m.status !== 'deleted')
+      // 15년 초과 단종 (archived) 기본 숨김 — 토글로만 노출
+      .filter((m) => showArchived || !m.archived)
       .map((m) => ({
         ...(m as RtdbCarModel & { _key: string }),
         asset_count: countByKey.get([m.maker, m.model, m.sub].filter(Boolean).join('|')) ?? 0,
       }))
       .sort((a, b) => b.asset_count - a.asset_count);
-  }, [models.data, assets.data]);
+  }, [models.data, assets.data, showArchived]);
+
+  const archivedCount = useMemo(
+    () => models.data.filter((m) => m.status !== 'deleted' && m.archived).length,
+    [models.data],
+  );
 
   const selected = useMemo(() => rows.find((r) => r._key === selectedKey) ?? null, [rows, selectedKey]);
 
@@ -595,37 +603,23 @@ export function CarMasterTool() {
     typedColumn('text',   { headerName: '모델', field: 'model', width: 110 }),
     typedColumn('text',   { headerName: '세부모델', field: 'sub', flex: 1, minWidth: 200 }),
     typedColumn('select', {
-      headerName: '구분', field: 'origin', width: 60,
+      headerName: '제조국', field: 'origin', width: 70,
       cellStyle: (p: { value: unknown }) => {
         if (p.value === '수입') return { color: 'var(--c-primary)', fontWeight: '600' } as const;
         return { color: p.value === '국산' ? 'var(--c-text-sub)' : 'var(--c-text-muted)', fontWeight: '400' } as const;
       },
     }),
-    typedColumn('select', {
-      headerName: '동력', field: 'powertrain', width: 70,
-      cellStyle: (p: { value: unknown }) => {
-        const v = String(p.value ?? '');
-        if (v === '전기') return { color: 'var(--c-success)', fontWeight: '600' };
-        if (v === '수소') return { color: 'var(--c-primary)', fontWeight: '600' };
-        if (v === '하이브리드') return { color: 'var(--c-warn)', fontWeight: '400' };
-        return { color: 'var(--c-text-muted)', fontWeight: '400' };
-      },
+    typedColumn('select', { headerName: '차종구분', field: 'category', width: 110 }),
+    typedColumn('text', {
+      headerName: '생산시작', field: 'production_start', width: 90,
+      cellStyle: { color: 'var(--c-text-sub)' },
     }),
-    typedColumn('number', {
-      headerName: '승차', field: 'seats', width: 60,
-      valueFormatter: (p) => p.value ? `${p.value}인` : '',
+    typedColumn('text', {
+      headerName: '생산종료', field: 'production_end', width: 90,
+      cellStyle: (p: { value: unknown }) => p.value === '현재'
+        ? { color: 'var(--c-success)', fontWeight: '600' }
+        : { color: 'var(--c-text-sub)' },
     }),
-    typedColumn('number', {
-      headerName: '배기량', field: 'displacement', width: 80,
-      valueFormatter: (p) => p.value ? `${Number(p.value).toLocaleString()}cc` : '',
-    }),
-    typedColumn('number', {
-      headerName: '배터리', field: 'battery_kwh', width: 75,
-      valueFormatter: (p) => p.value ? `${p.value}kWh` : '',
-      cellStyle: { color: 'var(--c-success)' },
-    }),
-    typedColumn('select', { headerName: '분류', field: 'category', width: 110 }),
-    typedColumn('select', { headerName: '연료', field: 'fuel_type', width: 80 }),
     typedColumn('number', {
       headerName: '보유', field: 'asset_count', width: 70,
       valueFormatter: (p) => fmt(Number(p.value)),
@@ -673,6 +667,15 @@ export function CarMasterTool() {
         )}
         {mode === 'idle' && (
           <>
+            <button
+              type="button"
+              className={`btn btn-sm ${showArchived ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setShowArchived((v) => !v)}
+              title="15년 초과 단종 모델 포함/제외 (자산 보유시엔 무조건 노출)"
+            >
+              <i className={`ph ${showArchived ? 'ph-eye' : 'ph-eye-slash'}`} />
+              {showArchived ? '전체 보기' : `단종 숨김 (${archivedCount})`}
+            </button>
             <button type="button" className="btn btn-sm btn-outline text-danger" onClick={deleteAll} disabled={busy} title="vehicle_master 전체 soft-delete (개발용)">
               <i className={`ph ${busy ? 'ph-spinner spin' : 'ph-trash'}`} />전체 삭제
             </button>

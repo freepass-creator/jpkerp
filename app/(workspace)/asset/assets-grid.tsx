@@ -14,6 +14,8 @@ type Asset = {
   manufacturer?: string;
   car_model?: string;
   detail_model?: string;
+  trim?: string;
+  options?: string;
   ext_color?: string;
   int_color?: string;
   drive_type?: string;
@@ -54,6 +56,8 @@ export function AssetsGrid({ gridRef: externalRef, onCountChange }: AssetsGridPr
     typedColumn('select', { headerName: '제조사', field: 'manufacturer', width: 80 }),
     typedColumn('select', { headerName: '모델', field: 'car_model', width: 100 }),
     typedColumn('text', { headerName: '세부모델', field: 'detail_model', width: 160 }),
+    typedColumn('text', { headerName: '세부트림', field: 'trim', width: 100 }),
+    typedColumn('text', { headerName: '선택옵션', field: 'options', width: 120 }),
     typedColumn('select', { headerName: '외장색', field: 'ext_color', width: 70 }),
     typedColumn('select', { headerName: '내장색', field: 'int_color', width: 70 }),
     typedColumn('select', { headerName: '구동', field: 'drive_type', width: 60 }),
@@ -105,7 +109,7 @@ export function AssetsGrid({ gridRef: externalRef, onCountChange }: AssetsGridPr
         columnDefs={columnDefs}
         rowData={assets.data}
         getRowId={(d) => d._key ?? d.car_number ?? ''}
-        storageKey="jpk.grid.assets"
+        storageKey="jpk.grid.assets.v2"
         contextMenu={() => [
           { label: 'CSV 내보내기', icon: 'ph-download-simple', onClick: () => gridRef.current?.exportCsv('자산목록') },
           { label: '필터 초기화', icon: 'ph-funnel-x', onClick: () => gridRef.current?.resetFilters() },
