@@ -369,10 +369,10 @@ export default function MobileUpload() {
       {/* 하단 고정 dock — 초기화 · 업로드 (탭바 바로 위) */}
       {hasFiles && (
         <div className="m-up-dock">
-          <button type="button" className="m-up-reset" onClick={reset} disabled={busy}>
+          <button type="button" className="m-btn is-lg" onClick={reset} disabled={busy}>
             <i className="ph ph-arrow-counter-clockwise" />초기화
           </button>
-          <button type="button" className="m-up-submit" onClick={submit} disabled={!canUpload}>
+          <button type="button" className="m-btn is-lg is-primary" onClick={submit} disabled={!canUpload}>
             <i className={`ph ${busy ? 'ph-spinner spin' : 'ph-cloud-arrow-up'}`} />
             {busy
               ? '업로드 중'

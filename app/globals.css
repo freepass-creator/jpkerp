@@ -1244,9 +1244,24 @@ a:focus-visible,
   font-size: 13px; font-weight: 500;
   letter-spacing: -0.02em;
   cursor: pointer;
+  font-family: inherit;
 }
-.m-btn.is-primary { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }
+/* 크기 모디파이어 */
+.m-btn.is-lg {
+  height: 48px;
+  font-size: 14px;
+  font-weight: 700;
+}
+/* 색상 모디파이어 */
+.m-btn.is-primary {
+  background: var(--c-primary);
+  color: #fff;
+  border-color: var(--c-primary);
+}
+.m-btn.is-primary:active { background: var(--c-primary-h); }
+.m-btn:active { background: var(--c-bg-hover); }
 .m-btn:disabled { opacity: 0.5; cursor: default; }
+.m-btn > i.ph { font-size: 16px; }
 
 /* 업로드 페이지 하단 dock — 차량번호 검색 (tabbar 위에 고정) */
 .m-upload-dock {
@@ -1484,27 +1499,6 @@ a:focus-visible,
   grid-template-columns: 1fr 2fr;
   gap: 6px;
 }
-.m-up-reset, .m-up-submit {
-  height: 48px;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  border-radius: var(--r-sm);
-  font-size: 14px; font-weight: 700;
-  letter-spacing: -0.02em;
-  font-family: inherit; cursor: pointer;
-}
-.m-up-reset {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  color: var(--c-text-sub);
-}
-.m-up-reset:active { background: var(--c-bg-hover); }
-.m-up-reset:disabled { opacity: 0.5; cursor: default; }
-.m-up-submit {
-  background: var(--c-primary); color: #fff; border: none;
-}
-.m-up-submit:active { background: var(--c-primary-h); }
-.m-up-submit:disabled { opacity: 0.5; cursor: default; }
-.m-up-reset > i.ph, .m-up-submit > i.ph { font-size: 16px; }
 
 
 /* 액션시트 */
