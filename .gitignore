@@ -16,6 +16,9 @@ functions/node_modules
 .firebase
 scripts/serviceAccount.json
 
+# scripts — 크롤 로그
+scripts/*.log
+
 # editor / os
 .DS_Store
 .vscode/settings.json

@@ -7,7 +7,6 @@ import { JpkSetFilter } from '@/lib/grid/set-filter';
 import { normalizeDate, computeContractEnd, today, daysBetween, computeTotalDue } from '@/lib/date-utils';
 import type { RtdbAsset, RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt } from '@/lib/utils';
-import { KpiCard } from '@/components/shared/kpi-card';
 import type { ColDef } from 'ag-grid-community';
 
 type Loan = { _key?: string; car_number?: string; vin?: string; loan_company?: string; loan_principal?: number; loan_balance?: number; loan_end_date?: string; status?: string; [k: string]: unknown };
@@ -226,17 +225,6 @@ export function OperationReportClient({ gridRef: externalRef, onCountChange }: O
       });
   }, [assets.data, contracts.data, billings.data, events.data, loans.data, insurances.data]);
 
-  const totals = useMemo(() => {
-    const sum = (k: keyof OpRow) => rows.reduce((s, r) => s + Number(r[k] || 0), 0);
-    return {
-      revenue: sum('total_revenue'),
-      cost: sum('total_cost'),
-      profit: sum('profit'),
-      unpaid: sum('unpaid_amount'),
-      loan_balance: sum('loan_balance'),
-    };
-  }, [rows]);
-
   const money = (color?: string): Partial<ColDef<OpRow>> => ({
     filter: false,
     cellStyle: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: color ?? 'var(--c-text)' },
@@ -334,13 +322,6 @@ export function OperationReportClient({ gridRef: externalRef, onCountChange }: O
 
   return (
     <div className="flex flex-col" style={{ height: '100%' }}>
-      <div className="grid grid-cols-5 gap-3 p-4 border-b border-border">
-        <KpiCard label="총 매출액" value={`${fmt(totals.revenue)}원`} tone="success" />
-        <KpiCard label="총 운영비" value={`${fmt(totals.cost)}원`} tone="danger" />
-        <KpiCard label="순익" value={`${totals.profit >= 0 ? '+' : ''}${fmt(totals.profit)}원`} tone={totals.profit >= 0 ? 'primary' : 'danger'} />
-        <KpiCard label="미수금" value={`${fmt(totals.unpaid)}원`} tone="warn" />
-        <KpiCard label="할부 잔액" value={`${fmt(totals.loan_balance)}원`} />
-      </div>
       <div className="flex-1 min-h-0">
         <JpkGrid<OpRow>
           ref={gridRef as Ref<JpkGridApi<OpRow>>}
