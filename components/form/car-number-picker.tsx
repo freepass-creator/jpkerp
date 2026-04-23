@@ -23,6 +23,8 @@ interface Props {
   filter?: (asset: RtdbAsset) => boolean;
   /** 드롭다운을 위로 띄움 (하단 dock용) */
   dropUp?: boolean;
+  /** 빈 입력·포커스 상태에서도 전체 목록 노출 (모바일 브라우징용) */
+  showAllOnEmpty?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export function CarNumberPicker({
   showCreate = true,
   filter,
   dropUp = false,
+  showAllOnEmpty = false,
 }: Props) {
   const { data: assets } = useRtdbCollection<RtdbAsset>('assets');
   const { data: contracts } = useRtdbCollection<RtdbContract>('contracts');
@@ -65,13 +68,19 @@ export function CarNumberPicker({
 
   const filtered = useMemo(() => {
     const q = String(value ?? '').trim().toLowerCase();
-    // 빈 입력엔 드롭다운 안 띄움 (타이핑 시작할 때만 자동완성)
-    if (!q) return [];
     const base = assets.filter((a) => {
       if ((a as { status?: string }).status === 'deleted') return false;
       if (filter && !filter(a)) return false;
       return true;
     });
+    // 빈 입력: showAllOnEmpty=true 이면 전체 목록, 아니면 숨김
+    if (!q) {
+      if (!showAllOnEmpty) return [];
+      return base
+        .slice()
+        .sort((a, b) => String(a.car_number ?? '').localeCompare(String(b.car_number ?? '')))
+        .slice(0, limit);
+    }
     // 정확 일치면 드롭다운 숨김 (이미 선택됨)
     const exact = base.some((a) => String(a.car_number ?? '').toLowerCase() === q);
     if (exact) return [];
@@ -83,7 +92,7 @@ export function CarNumberPicker({
         return cn.includes(q) || mk.includes(q) || md.includes(q);
       })
       .slice(0, limit);
-  }, [assets, value, filter, limit]);
+  }, [assets, value, filter, limit, showAllOnEmpty]);
 
   useEffect(() => { setHoverIdx(0); }, [value]);
 
@@ -141,7 +150,7 @@ export function CarNumberPicker({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onBlur={() => setTimeout(() => setOpen(false), 300)}
         onKeyDown={handleKey}
         placeholder={placeholder}
         required={required}
@@ -172,10 +181,10 @@ export function CarNumberPicker({
             return (
               <div
                 key={a._key ?? i}
-                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
                 onMouseEnter={() => setHoverIdx(i)}
                 onClick={() => select(a)}
-                className="text-base" style={{ padding: '6px 10px', display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, cursor: 'pointer', background: i === hoverIdx ? 'var(--c-bg-hover)' : 'transparent', borderBottom: '1px solid var(--c-border)', alignItems: 'center' }}
+                className="text-base" style={{ padding: '10px 10px', display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, cursor: 'pointer', background: i === hoverIdx ? 'var(--c-bg-hover)' : 'transparent', borderBottom: '1px solid var(--c-border)', alignItems: 'center', minHeight: 44 }}
               >
                 <span className="text-text" style={{ fontWeight: 600 }}>
                   {renderMarked(String(a.car_number ?? ''))}

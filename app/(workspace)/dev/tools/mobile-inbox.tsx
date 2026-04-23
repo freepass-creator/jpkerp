@@ -6,21 +6,42 @@ import { ref, update, serverTimestamp } from 'firebase/database';
 import { getRtdb } from '@/lib/firebase/rtdb';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { fmtDate } from '@/lib/utils';
+import { saveEvent } from '@/lib/firebase/events';
+import { isActiveContractStatus } from '@/lib/data/contract-status';
+import { useAuth } from '@/lib/auth/context';
+import type { RtdbContract } from '@/lib/types/rtdb-entities';
 import { ToolActions } from '../tool-actions-context';
+
+// kind → events 컬렉션 type 매핑. 'other'는 이벤트 없이 보관.
+const KIND_TO_EVENT_TYPE: Record<string, string> = {
+  delivery: 'delivery',
+  return: 'return',
+  product: 'product_register',
+};
+const KIND_TO_EVENT_TITLE: Record<string, string> = {
+  delivery: '출고 사진 업로드 (모바일)',
+  return: '반납 사진 업로드 (모바일)',
+  product: '상품화 사진 업로드 (모바일)',
+};
 
 // 업로드 유형 라벨·아이콘 — /m/upload 의 KINDS 와 1:1 매핑
 const KIND_META: Record<string, { label: string; icon: string; color: string }> = {
+  delivery: { label: '출고',   icon: 'ph-truck',             color: 'var(--c-success)' },
+  return:   { label: '반납',   icon: 'ph-arrow-u-down-left', color: 'var(--c-info)' },
+  product:  { label: '상품화', icon: 'ph-sparkle',           color: 'var(--c-primary)' },
+  other:    { label: '업로드', icon: 'ph-paperclip',         color: 'var(--c-text-sub)' },
+  // 구 버전 kind (하위 호환)
   vehicle_reg:  { label: '자동차등록증', icon: 'ph-car',                 color: 'var(--c-primary)' },
   business_reg: { label: '사업자등록증', icon: 'ph-buildings',           color: 'var(--c-info)' },
   insurance:    { label: '보험증권',     icon: 'ph-shield-check',        color: 'var(--c-success)' },
   penalty:      { label: '과태료',       icon: 'ph-warning',             color: 'var(--c-warn)' },
   license:      { label: '면허증',       icon: 'ph-identification-card', color: 'var(--c-text-sub)' },
-  other:        { label: '기타',         icon: 'ph-paperclip',           color: 'var(--c-text-muted)' },
 };
 
 interface MobileUpload extends Record<string, unknown> {
   _key?: string;
   car_number?: string;
+  partner_code?: string;
   kind?: string;
   file_urls?: string[];
   file_count?: number;
@@ -34,7 +55,9 @@ interface MobileUpload extends Record<string, unknown> {
 type Filter = 'pending' | 'imported' | 'rejected' | 'all';
 
 export function MobileInboxTool() {
+  const { user } = useAuth();
   const uploads = useRtdbCollection<MobileUpload>('mobile_uploads');
+  const contracts = useRtdbCollection<RtdbContract>('contracts');
   const [filter, setFilter] = useState<Filter>('pending');
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
@@ -45,14 +68,67 @@ export function MobileInboxTool() {
       .sort((a, b) => Number(b.created_at ?? 0) - Number(a.created_at ?? 0));
   }, [uploads.data, filter]);
 
-  const setStatus = async (_key: string, status: 'imported' | 'rejected' | 'pending') => {
+  /** 반영 — 업로드에 대응되는 events 자동 생성 + 상태 imported */
+  const approve = async (upload: MobileUpload) => {
+    if (!upload._key) return;
+    setBusyKey(upload._key);
+    try {
+      const eventType = KIND_TO_EVENT_TYPE[upload.kind ?? ''];
+      let eventKey: string | undefined;
+
+      // delivery/return/product — 정식 event 생성
+      if (eventType && upload.car_number) {
+        const activeContract = contracts.data.find(
+          (c) => c.car_number === upload.car_number
+            && (c as { status?: string }).status !== 'deleted'
+            && isActiveContractStatus(c.contract_status)
+            && c.contractor_name?.trim(),
+        );
+        const dateStr = upload.created_at
+          ? new Date(Number(upload.created_at)).toISOString().slice(0, 10)
+          : new Date().toISOString().slice(0, 10);
+
+        eventKey = await saveEvent({
+          type: eventType,
+          date: dateStr,
+          car_number: upload.car_number,
+          partner_code: upload.partner_code ?? activeContract?.partner_code,
+          contract_code: activeContract?.contract_code,
+          customer_name: activeContract?.contractor_name,
+          customer_phone: activeContract?.contractor_phone,
+          title: KIND_TO_EVENT_TITLE[upload.kind ?? ''] ?? '모바일 업로드',
+          memo: upload.memo,
+          photo_urls: upload.file_urls ?? [],
+          handler_uid: user?.uid,
+          handler: user?.displayName ?? user?.email ?? undefined,
+          source: 'mobile_inbox',
+          mobile_upload_key: upload._key,
+        });
+      }
+
+      await update(ref(getRtdb(), `mobile_uploads/${upload._key}`), {
+        status: 'imported',
+        reviewed_at: serverTimestamp(),
+        reviewer_uid: user?.uid ?? null,
+        event_key: eventKey ?? null,
+      });
+
+      toast.success(eventKey ? `반영 완료 · 이벤트 생성` : '반영 완료 (업로드 보관만)');
+    } catch (err) {
+      toast.error(`반영 실패: ${(err as Error).message}`);
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const setStatus = async (_key: string, status: 'rejected' | 'pending') => {
     setBusyKey(_key);
     try {
       await update(ref(getRtdb(), `mobile_uploads/${_key}`), {
         status,
         reviewed_at: serverTimestamp(),
       });
-      toast.success(status === 'imported' ? '반영 완료' : status === 'rejected' ? '반려 완료' : '대기로 되돌림');
+      toast.success(status === 'rejected' ? '반려 완료' : '대기로 되돌림');
     } catch (err) {
       toast.error(`상태 변경 실패: ${(err as Error).message}`);
     } finally {
@@ -198,7 +274,7 @@ export function MobileInboxTool() {
                         <button
                           type="button"
                           className="btn is-primary"
-                          onClick={() => setStatus(u._key!, 'imported')}
+                          onClick={() => approve(u)}
                           disabled={isBusy}
                         >
                           <i className={`ph ${isBusy ? 'ph-spinner spin' : 'ph-check'}`} /> 반영 완료

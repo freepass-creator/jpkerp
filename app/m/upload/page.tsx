@@ -9,10 +9,8 @@ import { CarNumberPicker } from '@/components/form/car-number-picker';
 import { useAuth } from '@/lib/auth/context';
 import { useSaveStore } from '@/lib/hooks/useSaveStatus';
 import { sanitizeCarNumber } from '@/lib/format-input';
-import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { useRecentCars } from '@/lib/hooks/useRecentCars';
-import { isActiveContractStatus } from '@/lib/data/contract-status';
-import type { RtdbAsset, RtdbContract } from '@/lib/types/rtdb-entities';
+import { useAssetByCar, useContractByCar } from '@/lib/hooks/useLookups';
 
 interface PreviewItem {
   file: File;
@@ -21,45 +19,37 @@ interface PreviewItem {
 
 const MAX_FILES = 10;
 
-// 업로드 카테고리 — v1의 4종(상품화·출고·반납·파일) + 문서 2종
+// 현장 업로드 카테고리 — 출고·반납·상품화·업로드 4종
 const KINDS = [
-  { k: 'vehicle_reg',  label: '자동차등록증',   icon: 'ph-car',                 tint: 'var(--c-primary)' },
-  { k: 'business_reg', label: '사업자등록증',   icon: 'ph-buildings',           tint: 'var(--c-info)' },
-  { k: 'insurance',    label: '보험증권',       icon: 'ph-shield-check',        tint: 'var(--c-success)' },
-  { k: 'penalty',      label: '과태료·범칙금', icon: 'ph-warning',             tint: 'var(--c-warn)' },
-  { k: 'license',      label: '면허증',         icon: 'ph-identification-card', tint: 'var(--c-text-sub)' },
-  { k: 'other',        label: '기타',           icon: 'ph-paperclip',           tint: 'var(--c-text-muted)' },
+  { k: 'delivery', label: '출고',   icon: 'ph-truck',             tint: 'var(--c-success)' },
+  { k: 'return',   label: '반납',   icon: 'ph-arrow-u-down-left', tint: 'var(--c-info)' },
+  { k: 'product',  label: '상품화', icon: 'ph-sparkle',           tint: 'var(--c-primary)' },
+  { k: 'other',    label: '업로드', icon: 'ph-paperclip',         tint: 'var(--c-text-sub)' },
 ] as const;
 type Kind = typeof KINDS[number]['k'];
 
 export default function MobileUpload() {
   const { user } = useAuth();
   const [carNumber, setCarNumber] = useState('');
-  const [kind, setKind] = useState<Kind>('vehicle_reg');
+  const [kind, setKind] = useState<Kind>('delivery');
   const [items, setItems] = useState<PreviewItem[]>([]);
-  const [memo, setMemo] = useState('');
   const [busy, setBusy] = useState(false);
 
   const recent = useRecentCars();
-  const assets = useRtdbCollection<RtdbAsset>('assets');
-  const contracts = useRtdbCollection<RtdbContract>('contracts');
+  const cn = useMemo(() => sanitizeCarNumber(carNumber), [carNumber]);
+  const matchedAsset = useAssetByCar(cn);
+  const matchedContract = useContractByCar(cn, { activeOnly: true, requireContractor: true });
 
-  const match = useMemo(() => {
-    const cn = sanitizeCarNumber(carNumber);
-    if (!cn) return null;
-    const asset = assets.data.find((a) => a.car_number === cn && a.status !== 'deleted') ?? null;
-    const contract = asset
-      ? contracts.data.find(
-          (c) => c.car_number === cn
-            && (c as { status?: string }).status !== 'deleted'
-            && isActiveContractStatus(c.contract_status)
-            && c.contractor_name?.trim(),
-        ) ?? null
-      : null;
-    return { cn, asset, contract };
-  }, [carNumber, assets.data, contracts.data]);
+  // 계약 상태 pill — 실제 contract_status 노출, 없으면 휴차
+  const statusLabel = matchedContract?.contract_status ?? (matchedAsset ? '휴차' : '—');
+  const statusTone: 'success' | 'warn' | 'danger' | 'neutral' =
+    statusLabel === '계약진행' ? 'success'
+    : statusLabel === '계약해지' ? 'danger'
+    : statusLabel === '휴차' ? 'warn'
+    : 'neutral';
 
-  const hasCar = !!match?.cn;
+  const match = cn ? { cn, asset: matchedAsset, contract: matchedContract } : null;
+  const hasCar = !!match;
 
   const onPick = useCallback((files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -83,39 +73,39 @@ export default function MobileUpload() {
   const reset = useCallback(() => {
     items.forEach((i) => URL.revokeObjectURL(i.url));
     setItems([]);
-    setMemo('');
     setCarNumber('');
-    setKind('vehicle_reg');
+    setKind('delivery');
   }, [items]);
 
   const submit = useCallback(async () => {
     const cn = sanitizeCarNumber(carNumber);
-    if (!cn) { toast.error('차량번호를 입력하세요'); return; }
+    // 출고·반납·상품화는 차량번호 필수. '업로드(other)'는 차량 없이 가능
+    const requiresCar = kind !== 'other';
+    if (requiresCar && !cn) { toast.error('차량번호를 선택하세요'); return; }
     if (items.length === 0) { toast.error('사진을 1장 이상 선택하세요'); return; }
 
     setBusy(true);
     const store = useSaveStore.getState();
     store.begin('업로드 중');
     try {
-      const basePath = `mobile_uploads/${cn}`;
+      const basePath = cn ? `mobile_uploads/${cn}` : 'mobile_uploads/_no_car';
       const urls = await uploadFiles(basePath, items.map((i) => i.file));
 
       const db = getRtdb();
       const ref = push(rtdbRef(db, 'mobile_uploads'));
       await set(ref, {
-        car_number: cn,
+        car_number: cn || null,
         partner_code: match?.asset?.partner_code ?? null,
         kind,
         file_urls: urls,
         file_count: urls.length,
-        memo: memo || null,
         uploader_uid: user?.uid ?? null,
         uploader_name: user?.displayName ?? user?.email ?? null,
         device: 'mobile',
         status: 'pending',
         created_at: serverTimestamp(),
       });
-      recent.push(cn);
+      if (cn) recent.push(cn);
       store.success('업로드 완료');
       toast.success(`${urls.length}장 업로드 완료`);
       reset();
@@ -125,231 +115,153 @@ export default function MobileUpload() {
     } finally {
       setBusy(false);
     }
-  }, [carNumber, items, kind, memo, user, match, recent, reset]);
+  }, [carNumber, items, kind, user, match, recent, reset]);
 
   return (
     <>
-      {/* ── 메인 영역 (하단 dock + tabbar 높이만큼 padding) ── */}
-      <div style={{ paddingBottom: 80 /* dock: 64 + margin */ }}>
-        {/* ① 현재 차량 정보 카드 */}
-        <div className="m-card" style={{ padding: 12, marginBottom: 12 }}>
-          {hasCar ? (
-            match.asset ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.02em' }}>
-                    {match.asset.car_number}
-                  </span>
-                  {match.asset.partner_code && (
-                    <span className="text-text-sub text-sm">{match.asset.partner_code}</span>
-                  )}
-                  <span
-                    className="text-2xs"
-                    style={{
-                      marginLeft: 'auto',
-                      padding: '2px 8px', borderRadius: 999,
-                      background: 'var(--c-success-bg)', color: 'var(--c-success)',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <i className="ph ph-check-circle" style={{ marginRight: 2 }} />확인됨
-                  </span>
+      {/* 메인 영역 — 하단 dock(차량검색)+submit+tabbar 높이 확보 */}
+      <div className="m-up-scroll">
+        {/* ① 차량 카드 — 항상 상단 표시 */}
+        {!hasCar ? (
+          <div className="m-up-empty">
+            <i className="ph ph-car" />
+            <div className="m-up-empty-text">
+              아래에서 <b>차량번호</b>를 선택하세요
+            </div>
+          </div>
+        ) : !matchedAsset ? (
+          <div className="m-up-car m-up-car--warn">
+            <i className="ph-fill ph-warning-circle" style={{ fontSize: 20, color: 'var(--c-warn)' }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="m-up-car-num">{match!.cn}</div>
+              <div className="text-xs text-warn">등록되지 않은 차량 · 업로드 후 관리자 등록</div>
+            </div>
+          </div>
+        ) : matchedAsset ? (
+          <div className="m-up-car">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="m-up-car-head">
+                <span className="m-up-car-num">{matchedAsset.car_number}</span>
+                <span className={`jpk-pill tone-${statusTone}`}>{statusLabel}</span>
+              </div>
+              <dl className="m-up-car-rows">
+                {matchedAsset.partner_code && (
+                  <div><dt>회원사</dt><dd>{matchedAsset.partner_code}</dd></div>
+                )}
+                <div>
+                  <dt>세부모델</dt>
+                  <dd>
+                    {[matchedAsset.manufacturer, matchedAsset.detail_model ?? matchedAsset.car_model, matchedAsset.car_year]
+                      .filter(Boolean).join(' ') || '—'}
+                  </dd>
                 </div>
-                <div className="text-sm text-text-sub" style={{ marginTop: 4 }}>
-                  {[match.asset.manufacturer, match.asset.detail_model ?? match.asset.car_model, match.asset.car_year]
-                    .filter(Boolean).join(' ') || '(제조사 정보 없음)'}
-                </div>
-                {match.contract ? (
-                  <div className="text-xs text-text-muted" style={{ marginTop: 6 }}>
-                    <i className="ph ph-user" style={{ marginRight: 4 }} />
-                    {match.contract.contractor_name}
-                    {match.contract.contractor_phone && ` · ${match.contract.contractor_phone}`}
-                  </div>
-                ) : (
-                  <div className="text-xs text-warn" style={{ marginTop: 6 }}>
-                    <i className="ph ph-info" style={{ marginRight: 4 }} />활성 계약 없음
+                {matchedContract?.contractor_name && (
+                  <div>
+                    <dt>계약자</dt>
+                    <dd>{matchedContract.contractor_name}</dd>
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="text-sm text-warn">
-                <i className="ph ph-warning" style={{ marginRight: 4 }} />
-                등록되지 않은 차량 ({match.cn})
-                <div className="text-2xs text-text-muted" style={{ marginTop: 4, fontWeight: 400 }}>
-                  업로드해두면 관리자가 신규 자산으로 등록합니다.
-                </div>
-              </div>
-            )
-          ) : (
-            <div className="text-sm text-text-muted" style={{ textAlign: 'center', padding: '16px 0' }}>
-              <i className="ph ph-car" style={{ fontSize: 28, display: 'block', marginBottom: 6, opacity: 0.4 }} />
-              아래에서 <b>차량번호</b>를 먼저 선택하세요
+              </dl>
             </div>
-          )}
+          </div>
+        ) : null}
+
+        {/* ② 업로드 유형 */}
+        <div className="m-up-kinds">
+          {KINDS.map(({ k, label, icon, tint }) => {
+            const selected = kind === k;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                className={`m-up-kind ${selected ? 'is-selected' : ''}`}
+                style={{ ['--kind-tint' as string]: tint }}
+              >
+                <span className="m-up-kind-icon">
+                  <i className={`ph-fill ${icon}`} />
+                </span>
+                <span className="m-up-kind-label">{label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* ② 문서 유형 — 차량 선택 후 노출 */}
-        {hasCar && (
-          <>
-            <div className="m-section-title">문서 유형</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginBottom: 16 }}>
-              {KINDS.map(({ k, label, icon, tint }) => {
-                const selected = kind === k;
-                return (
-                  <button
-                    key={k}
-                    type="button"
-                    className={`m-btn ${selected ? 'is-primary' : ''}`}
-                    onClick={() => setKind(k)}
-                    style={{
-                      padding: '10px 6px',
-                      flexDirection: 'column', gap: 2, height: 'auto',
-                      ...(selected ? {} : { color: tint, borderColor: 'var(--c-border)' }),
-                    }}
-                  >
-                    <i className={`ph ${icon}`} style={{ fontSize: 18 }} />
-                    <span className="text-xs">{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* ③ 사진/파일 */}
-            <div className="m-section-title">
-              사진·파일
-              {items.length > 0 && <span className="text-text-muted"> ({items.length}/{MAX_FILES})</span>}
-            </div>
-
-            {items.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 8 }}>
-                {items.map((it, idx) => (
-                  <div key={idx} style={{ position: 'relative', aspectRatio: '1 / 1', background: 'var(--c-bg-sub)', borderRadius: 2, overflow: 'hidden' }}>
-                    {it.file.type.startsWith('image/') ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', flexDirection: 'column', gap: 4 }}>
-                        <i className="ph ph-file-pdf" style={{ fontSize: 28 }} />
-                        <div className="text-2xs text-text-muted" style={{ padding: '0 4px', textAlign: 'center', wordBreak: 'break-all' }}>
-                          {it.file.name}
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeItem(idx)}
-                      style={{
-                        position: 'absolute', top: 4, right: 4,
-                        width: 24, height: 24, borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.6)', color: '#fff',
-                        border: 'none', cursor: 'pointer', padding: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}
-                    >
-                      <i className="ph ph-x" style={{ fontSize: 12 }} />
-                    </button>
+        {/* ③ 사진 */}
+        {items.length > 0 && (
+          <div className="m-up-thumbs">
+            {items.map((it, idx) => (
+              <div key={idx} className="m-up-thumb">
+                {it.file.type.startsWith('image/') ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={it.url} alt="" />
+                ) : (
+                  <div className="m-up-thumb-file">
+                    <i className="ph ph-file-pdf" />
+                    <div className="m-up-thumb-name">{it.file.name}</div>
                   </div>
-                ))}
+                )}
+                <button type="button" onClick={() => removeItem(idx)} className="m-up-thumb-del" aria-label="삭제">
+                  <i className="ph ph-x" />
+                </button>
               </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 16 }}>
-              <label className="m-btn" style={{ cursor: 'pointer' }}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  hidden
-                  onChange={(e) => { onPick(e.target.files); e.target.value = ''; }}
-                />
-                <i className="ph ph-camera" />카메라
-              </label>
-              <label className="m-btn" style={{ cursor: 'pointer' }}>
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  multiple
-                  hidden
-                  onChange={(e) => { onPick(e.target.files); e.target.value = ''; }}
-                />
-                <i className="ph ph-images" />갤러리
-              </label>
-            </div>
-
-            {/* ④ 메모 (선택, 접힘) */}
-            <details style={{ marginBottom: 12 }}>
-              <summary
-                className="text-xs text-text-muted"
-                style={{ padding: '10px 12px', background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 4, cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
-              >
-                <i className="ph ph-note" />메모 (선택)
-                <i className="ph ph-caret-down" style={{ marginLeft: 'auto' }} />
-              </summary>
-              <input
-                className="m-input"
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
-                placeholder="특이사항·전달할 내용"
-                style={{ marginTop: 6 }}
-              />
-            </details>
-
-            {/* 저장 */}
-            <button
-              type="button"
-              className="m-btn is-primary"
-              onClick={submit}
-              disabled={busy || items.length === 0}
-              style={{ width: '100%' }}
-            >
-              <i className={`ph ${busy ? 'ph-spinner spin' : 'ph-cloud-arrow-up'}`} />
-              {busy ? '업로드 중' : items.length === 0 ? '사진·파일 먼저 선택' : `${items.length}장 업로드`}
-            </button>
-
-            <div className="text-2xs text-text-muted" style={{ marginTop: 12, lineHeight: 1.5, textAlign: 'center' }}>
-              임시 저장소에 들어간 뒤 관리자 검토 후 정식 DB로 이동
-            </div>
-          </>
+            ))}
+          </div>
         )}
+
+        <label className="m-up-picker">
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            multiple
+            hidden
+            onChange={(e) => { onPick(e.target.files); e.target.value = ''; }}
+          />
+          <i className="ph ph-images" />
+          <span>{items.length === 0 ? '사진·파일 선택' : `${items.length}장 선택됨 · 추가`}</span>
+          {items.length > 0 && <span className="m-up-picker-count">{items.length}/{MAX_FILES}</span>}
+        </label>
       </div>
 
-      {/* ── 하단 dock (tabbar 위) — 차량번호 검색 + 최근 차량 ── */}
-      <div className="m-upload-dock">
-        <div style={{ marginBottom: recent.list.length > 0 ? 6 : 0 }}>
-          <CarNumberPicker
-            value={carNumber}
-            onChange={setCarNumber}
-            placeholder="🔍 차량번호·제조사·모델 검색"
-            showCreate={false}
-            dropUp
-          />
-        </div>
+      {/* ── 하단 dock — 업로드 + 차량번호 검색 통합 ── */}
+      <div className="m-up-dock">
+        {(hasCar || kind === 'other') && (
+          <button
+            type="button"
+            onClick={submit}
+            disabled={busy || items.length === 0}
+            className="m-up-submit-btn"
+          >
+            <i className={`ph ${busy ? 'ph-spinner spin' : 'ph-cloud-arrow-up'}`} />
+            {busy ? '업로드 중' : items.length === 0 ? '사진을 선택하세요' : `${items.length}장 업로드`}
+          </button>
+        )}
         {recent.list.length > 0 && (
-          <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 2 }}>
+          <div className="m-up-dock-recent">
+            <span className="text-2xs text-text-muted">최근</span>
             {recent.list.slice(0, 8).map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setCarNumber(c)}
-                className="text-xs"
-                style={{
-                  flexShrink: 0,
-                  padding: '4px 10px',
-                  borderRadius: 999,
-                  border: '1px solid var(--c-border)',
-                  background: carNumber === c ? 'var(--c-primary-bg)' : 'var(--c-surface)',
-                  color: carNumber === c ? 'var(--c-primary)' : 'var(--c-text-sub)',
-                  fontWeight: carNumber === c ? 600 : 400,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '-0.02em',
-                }}
+                className={`m-up-chip ${carNumber === c ? 'is-active' : ''}`}
               >
                 {c}
               </button>
             ))}
           </div>
         )}
+        <div className="m-picker m-up-dock-search">
+          <CarNumberPicker
+            value={carNumber}
+            onChange={setCarNumber}
+            placeholder="차량번호·회원사·모델 검색"
+            showCreate={false}
+            dropUp
+            showAllOnEmpty
+            limit={50}
+          />
+        </div>
       </div>
     </>
   );

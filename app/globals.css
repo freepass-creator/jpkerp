@@ -1175,7 +1175,7 @@ a:focus-visible,
   margin: 0 auto;
   background: var(--c-bg);
 }
-.m-main { flex: 1; overflow-y: auto; padding: 16px 14px 80px; }
+.m-main { flex: 1; overflow-y: auto; padding: 8px 8px 80px; display: flex; flex-direction: column; }
 .m-tabbar {
   position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
   width: 100%; max-width: 480px; height: 60px;
@@ -1200,19 +1200,19 @@ a:focus-visible,
 .m-subtitle { font-size: 12px; color: var(--c-text-sub); margin-bottom: 16px; }
 .m-section-title {
   font-size: 11px; color: var(--c-text-muted); font-weight: 500;
-  margin: 16px 0 8px; letter-spacing: -0.02em;
+  margin: 8px 0 4px; letter-spacing: -0.02em;
 }
 .m-card {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 4px; padding: 14px;
+  border-radius: var(--r-sm); padding: 10px;
 }
 .m-list-item {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 14px;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 4px; margin-bottom: 6px;
+  border-radius: var(--r-sm); margin-bottom: 6px;
   cursor: pointer; text-decoration: none; color: inherit;
   transition: background var(--t-fast);
 }
@@ -1228,7 +1228,7 @@ a:focus-visible,
   width: 100%; height: 44px; padding: 0 14px;
   font-size: 14px;
   border: 1px solid var(--c-border);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--c-surface);
   letter-spacing: -0.02em;
   font-family: inherit;
@@ -1237,7 +1237,7 @@ a:focus-visible,
 .m-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   height: 44px; padding: 0 16px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--c-border);
   background: var(--c-surface);
   color: var(--c-text);
@@ -1256,7 +1256,7 @@ a:focus-visible,
   bottom: 60px; /* tabbar 높이 */
   width: 100%;
   max-width: 480px;
-  padding: 8px 14px;
+  padding: 8px 8px;
   background: var(--c-surface);
   border-top: 1px solid var(--c-border);
   z-index: 9;
@@ -1267,15 +1267,256 @@ a:focus-visible,
   padding: 0 12px;
   font-size: 14px;
   border: 1px solid var(--c-border);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   background: var(--c-bg-sub);
   letter-spacing: -0.02em;
   font-family: inherit;
+}
+
+/* CarNumberPicker 모바일 래퍼 — 내부 input 44px 터치영역 */
+.m-picker > div > input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 15px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  letter-spacing: -0.02em;
+  font-family: inherit;
+  color: var(--c-text);
+}
+.m-picker > div > input:focus {
+  outline: none;
+  border-color: var(--c-primary);
+}
+.m-picker > div > input::placeholder {
+  color: var(--c-text-muted);
 }
 .m-upload-dock input:focus {
   outline: none;
   border-color: var(--c-primary);
   background: var(--c-surface);
+}
+
+/* ─── 모바일 업로드 페이지 전용 (심플·ERP 규격·2px 라운드) ─── */
+.m-up-scroll {
+  padding-bottom: 72px; /* dock top edge clearance — m-main(pb:8)+본값 = dock까지 딱 */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: calc(100vh - 60px - 220px); /* tabbar + dock 공간 제외, 기본 차림 */
+}
+
+/* 차량 정보 슬롯 — 빈 상태 / 채워진 상태 모두 동일 높이 (버튼 레이아웃 고정) */
+.m-up-empty,
+.m-up-car {
+  min-height: 124px;
+  padding: 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  display: flex;
+  flex-shrink: 0;
+}
+/* 빈 상태 — 가운데 정렬된 안내 */
+.m-up-empty {
+  align-items: center; justify-content: center;
+  gap: 10px;
+  border-style: dashed;
+  border-color: var(--c-border-strong);
+}
+.m-up-empty > i.ph { font-size: 24px; color: var(--c-text-muted); }
+.m-up-empty-text { font-size: 13px; color: var(--c-text-sub); }
+.m-up-empty-text b { color: var(--c-text); font-weight: 700; }
+
+/* 채워진 차량 카드 */
+.m-up-car {
+  align-items: flex-start; gap: 12px;
+}
+.m-up-car--warn { border-color: var(--c-warn); background: var(--c-warn-bg); }
+.m-up-car-head { display: flex; align-items: center; gap: 8px; }
+.m-up-car-num {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.03em; color: var(--c-text);
+  line-height: 1.15;
+}
+.m-up-car-rows {
+  margin: 8px 0 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.m-up-car-rows > div {
+  display: flex; align-items: baseline; gap: 10px;
+  font-size: 13px;
+}
+.m-up-car-rows dt {
+  width: 52px; flex-shrink: 0;
+  color: var(--c-text-muted); font-weight: 500; font-size: 11px;
+}
+.m-up-car-rows dd {
+  margin: 0; color: var(--c-text); font-weight: 600;
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* 업로드 유형 4칸 — 2x2 그리드로 화면 크게 차지 */
+.m-up-kinds {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+}
+.m-up-kind {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px;
+  min-height: 120px;
+  padding: 16px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.02em;
+  transition: border-color .12s, background .12s;
+}
+.m-up-kind-icon {
+  width: 56px; height: 56px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--kind-tint) 12%, transparent);
+  color: var(--kind-tint);
+  border-radius: var(--r-sm);
+  transition: background .12s, color .12s;
+}
+.m-up-kind-icon > i.ph-fill { font-size: 30px; }
+.m-up-kind-label {
+  font-size: 15px; font-weight: 700; color: var(--c-text-sub);
+}
+.m-up-kind.is-selected {
+  border-color: var(--kind-tint);
+  background: color-mix(in srgb, var(--kind-tint) 6%, var(--c-surface));
+}
+.m-up-kind.is-selected .m-up-kind-icon {
+  background: var(--kind-tint);
+  color: #fff;
+}
+.m-up-kind.is-selected .m-up-kind-label {
+  color: var(--kind-tint);
+  font-weight: 700;
+}
+
+/* 사진 썸네일 그리드 */
+.m-up-thumbs {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.m-up-thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--c-bg-sub);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.m-up-thumb > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.m-up-thumb-file {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 4px; padding: 6px;
+}
+.m-up-thumb-file > i.ph { font-size: 28px; color: var(--c-text-muted); }
+.m-up-thumb-name {
+  font-size: 10px; color: var(--c-text-muted);
+  text-align: center; word-break: break-all;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.m-up-thumb-del {
+  position: absolute; top: 4px; right: 4px;
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55); color: #fff;
+  border: none; border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.m-up-thumb-del > i.ph { font-size: 12px; }
+
+/* 사진 선택 버튼 */
+.m-up-picker {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 14px;
+  background: var(--c-surface);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-sm);
+  color: var(--c-text-sub);
+  cursor: pointer;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.m-up-picker:hover, .m-up-picker:active { border-color: var(--c-primary); color: var(--c-primary); }
+.m-up-picker > i.ph { font-size: 18px; }
+.m-up-picker-count {
+  margin-left: auto;
+  font-size: 10px; font-weight: 500; color: var(--c-text-muted);
+}
+
+/* 하단 dock — 업로드 버튼 + 차량검색 통합 (tabbar 위 고정) */
+.m-up-dock {
+  position: fixed;
+  left: 50%; transform: translateX(-50%);
+  bottom: 60px; /* tabbar 높이 */
+  width: 100%; max-width: 480px;
+  padding: 8px;
+  background: var(--c-surface);
+  border-top: 1px solid var(--c-border);
+  z-index: 9;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.m-up-submit-btn {
+  width: 100%; height: 48px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--c-primary); color: #fff;
+  border: none; border-radius: var(--r-sm);
+  font-size: 14px; font-weight: 700;
+  letter-spacing: -0.02em;
+  font-family: inherit;
+  cursor: pointer;
+}
+.m-up-submit-btn:active { background: var(--c-primary-h); }
+.m-up-submit-btn:disabled { opacity: 0.5; cursor: default; }
+.m-up-submit-btn > i.ph { font-size: 18px; }
+
+.m-up-dock-search > div > input {
+  height: 40px;
+  background: var(--c-bg-sub);
+}
+
+.m-up-dock-recent {
+  display: flex; gap: 4px; align-items: center;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.m-up-dock-recent::-webkit-scrollbar { display: none; }
+.m-up-dock-recent > span { flex-shrink: 0; padding: 0 4px; }
+
+.m-up-chip {
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-sub);
+  font-size: 11px; font-weight: 500;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.m-up-chip.is-active {
+  border-color: var(--c-primary);
+  background: var(--c-primary-bg);
+  color: var(--c-primary);
+  font-weight: 700;
 }
 
 /* ═══════════════════════════════════════════════════════════════
