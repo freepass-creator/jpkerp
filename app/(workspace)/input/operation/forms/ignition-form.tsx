@@ -132,16 +132,16 @@ export function IgnitionForm() {
   const lockedCount = rows.filter((r) => r.contract.action_status === '시동제어').length;
 
   return (
-    <div style={{ overflow: 'auto', height: '100%' }}>
+    <div className="overflow-auto h-full">
       {/* 추가 버튼 */}
-      <div style={{ padding: '8px 6px', borderBottom: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span className="text-xs text-text-sub" style={{ fontWeight: 500 }}>
+      <div className="flex items-center gap-2 px-1.5 py-2 border-b border-border">
+        <span className="text-xs text-text-sub font-medium">
           총 {rows.length}대 · 제어중 {lockedCount}대
         </span>
-        <span style={{ flex: 1 }} />
+        <span className="flex-1" />
         {showAdd ? (
           <>
-            <div style={{ width: 120 }}>
+            <div className="w-[120px]">
               <CarNumberPicker
                 value={addCarNumber}
                 onChange={(v) => setAddCarNumber(v)}
@@ -150,10 +150,9 @@ export function IgnitionForm() {
               />
             </div>
             <select
-              className="text-xs"
+              className="text-xs border border-border rounded-[2px] px-1.5 py-1 bg-surface font-[inherit]"
               value={addReason}
               onChange={(e) => setAddReason(e.target.value)}
-              style={{ border: '1px solid var(--c-border)', borderRadius: 2, padding: '4px 6px', background: 'var(--c-surface)', fontFamily: 'inherit' }}
             >
               {REASONS.filter((r) => r !== '미납').map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -186,24 +185,24 @@ export function IgnitionForm() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="text-text-muted text-xs" style={{ padding: '40px 0', textAlign: 'center' }}>
+        <div className="text-text-muted text-xs text-center py-10">
           시동제어 대상 차량이 없습니다
         </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead style={{ position: 'sticky', top: 0, background: 'var(--c-bg-sub)' }}>
-            <tr className="text-xs text-text-sub" style={{ borderBottom: '1px solid var(--c-border)' }}>
-              <th style={{ padding: '6px', textAlign: 'center', fontWeight: 500, width: 32 }}>#</th>
-              <th style={{ padding: '6px', textAlign: 'left', fontWeight: 500 }}>차량번호</th>
-              <th style={{ padding: '6px', textAlign: 'left', fontWeight: 500 }}>회사</th>
-              <th style={{ padding: '6px', textAlign: 'left', fontWeight: 500 }}>세부모델</th>
-              <th style={{ padding: '6px', textAlign: 'right', fontWeight: 500 }}>미납금액</th>
-              <th style={{ padding: '6px', textAlign: 'center', fontWeight: 500 }}>결제</th>
-              <th style={{ padding: '6px', textAlign: 'right', fontWeight: 500 }}>연체</th>
-              <th style={{ padding: '6px', textAlign: 'left', fontWeight: 500 }}>제어사유</th>
-              <th style={{ padding: '6px', textAlign: 'center', fontWeight: 500 }}>제어일</th>
-              <th style={{ padding: '6px', textAlign: 'center', fontWeight: 500 }}>상태</th>
-              <th style={{ padding: '6px', textAlign: 'center', fontWeight: 500, width: 36 }}></th>
+        <table className="w-full border-collapse">
+          <thead className="sticky top-0 bg-bg-sub">
+            <tr className="text-xs text-text-sub border-b border-border">
+              <th className="p-1.5 text-center font-medium w-8">#</th>
+              <th className="p-1.5 text-left font-medium">차량번호</th>
+              <th className="p-1.5 text-left font-medium">회사</th>
+              <th className="p-1.5 text-left font-medium">세부모델</th>
+              <th className="p-1.5 text-right font-medium">미납금액</th>
+              <th className="p-1.5 text-center font-medium">결제</th>
+              <th className="p-1.5 text-right font-medium">연체</th>
+              <th className="p-1.5 text-left font-medium">제어사유</th>
+              <th className="p-1.5 text-center font-medium">제어일</th>
+              <th className="p-1.5 text-center font-medium">상태</th>
+              <th className="p-1.5 text-center font-medium w-9"></th>
             </tr>
           </thead>
           <tbody>
@@ -211,65 +210,59 @@ export function IgnitionForm() {
               const isLocked = r.contract.action_status === '시동제어';
               const isBusy = busyKey === r.contract._key;
               const key = r.contract._key!;
+              const isSelected = selectedCarNumber === r.contract.car_number;
               return (
                 <tr
                   key={key}
                   onClick={() => { setSelectedCarNumber(r.contract.car_number!); setCarNumber(r.contract.car_number!); }}
-                  style={{ borderBottom: '1px solid var(--c-border)', cursor: 'pointer', background: selectedCarNumber === r.contract.car_number ? 'var(--c-bg-active)' : undefined }}
+                  className={`border-b border-border cursor-pointer ${isSelected ? 'bg-bg-active' : ''}`}
                 >
-                  <td className="text-xs text-text-muted" style={{ padding: '6px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="text-xs text-text-muted p-1.5 text-center tabular-nums">
                     {idx + 1}
                   </td>
-                  <td className="text-xs" style={{ padding: '6px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="text-xs p-1.5 font-bold tabular-nums">
                     {r.contract.car_number}
                   </td>
-                  <td className="text-xs text-text-sub" style={{ padding: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td className="text-xs text-text-sub p-1.5 truncate">
                     {r.contract.partner_code ?? '—'}
                   </td>
-                  <td className="text-xs text-text-sub" style={{ padding: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td className="text-xs text-text-sub p-1.5 truncate">
                     {r.asset?.detail_model ?? r.asset?.car_model ?? '—'}
                   </td>
-                  <td className="text-xs" style={{ padding: '6px', textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: r.unpaidAmount > 0 ? 'var(--c-danger)' : 'var(--c-text-muted)' }}>
+                  <td className={`text-xs p-1.5 text-right font-bold tabular-nums ${r.unpaidAmount > 0 ? 'text-danger' : 'text-text-muted'}`}>
                     {r.unpaidAmount > 0 ? fmt(r.unpaidAmount) : '—'}
                   </td>
-                  <td className="text-xs text-text-sub" style={{ padding: '6px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="text-xs text-text-sub p-1.5 text-center tabular-nums">
                     {r.contract.auto_debit_day ? `${r.contract.auto_debit_day}일` : '—'}
                   </td>
-                  <td className="text-xs" style={{ padding: '6px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: r.maxOverdueDays > 30 ? 'var(--c-danger)' : r.maxOverdueDays > 0 ? 'var(--c-warn)' : 'var(--c-text-muted)' }}>
+                  <td className={`text-xs p-1.5 text-right tabular-nums ${r.maxOverdueDays > 30 ? 'text-danger' : r.maxOverdueDays > 0 ? 'text-warn' : 'text-text-muted'}`}>
                     {r.maxOverdueDays > 0 ? `${r.maxOverdueDays}일` : '—'}
                   </td>
-                  <td className="text-xs" style={{ padding: '6px' }}>
+                  <td className="text-xs p-1.5">
                     {isLocked ? (
                       <span className="text-text-sub">{r.lastIgnitionReason || '미납'}</span>
                     ) : (
                       <select
-                        className="text-xs"
+                        className="text-xs border border-border rounded-[2px] px-1 py-0.5 bg-surface font-[inherit] text-text-sub"
                         value={reasonMap[key] ?? '미납'}
                         onChange={(e) => setReasonMap((m) => ({ ...m, [key]: e.target.value }))}
-                        style={{ border: '1px solid var(--c-border)', borderRadius: 2, padding: '2px 4px', background: 'var(--c-surface)', fontFamily: 'inherit', color: 'var(--c-text-sub)' }}
                       >
                         {REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
                     )}
                   </td>
-                  <td className="text-xs text-text-sub" style={{ padding: '6px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                  <td className="text-xs text-text-sub p-1.5 text-center tabular-nums">
                     {r.lastIgnitionDate ? r.lastIgnitionDate.slice(5) : '—'}
                   </td>
-                  <td style={{ padding: '6px', textAlign: 'center' }}>
-                    <i className={`ph ${isLocked ? 'ph-lock' : 'ph-lock-open'}`} style={{ fontSize: 14, color: isLocked ? 'var(--c-danger)' : 'var(--c-text-muted)' }} />
+                  <td className="p-1.5 text-center">
+                    <i className={`ph ${isLocked ? 'ph-lock text-danger' : 'ph-lock-open text-text-muted'} text-[14px]`} />
                   </td>
-                  <td style={{ padding: '6px', textAlign: 'center' }}>
+                  <td className="p-1.5 text-center">
                     <button
                       type="button"
                       disabled={isBusy}
                       onClick={() => toggle(r)}
-                      className="btn btn-sm"
-                      style={{
-                        padding: '0 8px',
-                        height: 22,
-                        color: isLocked ? 'var(--c-success)' : 'var(--c-danger)',
-                        opacity: isBusy ? 0.4 : 1,
-                      }}
+                      className={`btn btn-sm h-[22px] px-2 ${isLocked ? 'text-success' : 'text-danger'} ${isBusy ? 'opacity-40' : ''}`}
                     >
                       {isBusy ? <i className="ph ph-spinner spin" /> : isLocked ? '해제' : '제어'}
                     </button>
