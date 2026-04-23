@@ -292,17 +292,40 @@ export function normalizeAsset(
     if (data[col]) data[col] = String(data[col]).replace(/,/g, '').trim();
   }
 
-  // 7. 스펙 자동 채움 (마스터에서)
-  if (data.manufacturer && data.car_model && data.detail_model) {
-    const entry = activeMasters.find((m) => m.maker === data.manufacturer && m.model === data.car_model && m.sub === data.detail_model);
-    if (entry) {
-      if (!data.fuel_type && entry.fuel_type) { data.fuel_type = entry.fuel_type; corrections.fuel_type = ''; }
-      if (!data.origin && entry.origin) { data.origin = entry.origin; corrections.origin = ''; }
-      if (!data.powertrain && entry.powertrain) { data.powertrain = entry.powertrain; corrections.powertrain = ''; }
-      if (!data.displacement && entry.displacement) { data.displacement = entry.displacement; corrections.displacement = ''; }
-      if (!data.seats && entry.seats) { data.seats = entry.seats; corrections.seats = ''; }
-      if (!data.battery_kwh && entry.battery_kwh) { data.battery_kwh = entry.battery_kwh; corrections.battery_kwh = ''; }
+  // 7. 스펙 자동 채움 (마스터에서) — 세부트림/옵션 제외하고 공통 스펙만
+  // 7-1. 세부모델까지 매칭되는 경우 정확한 스펙 사용
+  let specEntry = (data.manufacturer && data.car_model && data.detail_model)
+    ? activeMasters.find((m) => m.maker === data.manufacturer && m.model === data.car_model && m.sub === data.detail_model)
+    : null;
+
+  // 7-2. 세부모델 없거나 못 찾으면 제조사+모델만으로 첫 항목 사용 (연식 우선 매칭)
+  if (!specEntry && data.manufacturer && data.car_model) {
+    const yy = extractYY(data);
+    const candidates = activeMasters.filter((m) => m.maker === data.manufacturer && m.model === data.car_model);
+    if (candidates.length > 0) {
+      if (yy !== null) {
+        specEntry = candidates.find((m) => {
+          const ys = Number(m.year_start);
+          const ye = m.year_end === '현재' || !m.year_end ? 99 : Number(m.year_end);
+          return !isNaN(ys) && ys <= yy && yy <= ye;
+        }) ?? candidates[0];
+      } else {
+        specEntry = candidates[0];
+      }
     }
+  }
+
+  if (specEntry) {
+    // 트림/옵션 제외하고 공통 스펙만 자동 채움
+    if (!data.fuel_type && specEntry.fuel_type) { data.fuel_type = specEntry.fuel_type; corrections.fuel_type = ''; }
+    if (!data.origin && specEntry.origin) { data.origin = specEntry.origin; corrections.origin = ''; }
+    if (!data.powertrain && specEntry.powertrain) { data.powertrain = specEntry.powertrain; corrections.powertrain = ''; }
+    if (!data.displacement && specEntry.displacement) { data.displacement = specEntry.displacement; corrections.displacement = ''; }
+    if (!data.seats && specEntry.seats) { data.seats = specEntry.seats; corrections.seats = ''; }
+    if (!data.battery_kwh && specEntry.battery_kwh) { data.battery_kwh = specEntry.battery_kwh; corrections.battery_kwh = ''; }
+    if (!data.category && specEntry.category) { data.category = specEntry.category; corrections.category = ''; }
+    if (!data.transmission && specEntry.transmission) { data.transmission = specEntry.transmission; corrections.transmission = ''; }
+    if (!data.drive_type && specEntry.drive_type) { data.drive_type = specEntry.drive_type; corrections.drive_type = ''; }
   }
 
   return { data, messages, corrections };

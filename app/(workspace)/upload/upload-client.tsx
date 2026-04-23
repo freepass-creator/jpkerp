@@ -10,6 +10,7 @@ import { getRtdb } from '@/lib/firebase/rtdb';
 import { parseCsvObjects } from '@/lib/csv';
 import { ocrFile, extractCarNumber, extractAmount, extractDate } from '@/lib/ocr';
 import { detectInsurance, parseInsurance, type InsuranceParsed } from '@/lib/parsers/insurance';
+import { detectVehicleReg, parseVehicleReg } from '@/lib/parsers/vehicle-reg';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { normalizeAsset } from '@/lib/asset-normalize';
 import type { RtdbCarModel, RtdbAsset } from '@/lib/types/rtdb-entities';
@@ -37,7 +38,7 @@ const SCHEMAS: TypeSpec[] = [
   {
     key: 'asset', label: '자산 (차량)', path: 'assets', groupLabel: '기본 마스터',
     schema: [
-      { col: 'partner_code', label: '회원사코드', required: true },
+      { col: 'partner_code', label: '회원사코드' },
       { col: 'car_number', label: '차량번호', required: true },
       { col: 'vin', label: '차대번호' },
       { col: 'manufacturer', label: '제조사' },
@@ -45,6 +46,16 @@ const SCHEMAS: TypeSpec[] = [
       { col: 'detail_model', label: '세부모델' },
       { col: 'car_year', label: '연식', num: true },
       { col: 'fuel_type', label: '연료' },
+      { col: 'displacement', label: '배기량', num: true },
+      { col: 'seats', label: '승차정원', num: true },
+      { col: 'category', label: '차종' },
+      { col: 'transmission', label: '변속기' },
+      { col: 'drive_type', label: '구동방식' },
+      { col: 'usage_type', label: '용도' },
+      { col: 'type_number', label: '형식번호' },
+      { col: 'engine_type', label: '원동기형식' },
+      { col: 'gross_weight_kg', label: '총중량', num: true },
+      { col: 'curb_weight_kg', label: '차량자중', num: true },
       { col: 'ext_color', label: '외장색' },
       { col: 'first_registration_date', label: '최초등록일' },
     ],
@@ -190,6 +201,64 @@ const SCHEMAS: TypeSpec[] = [
     ],
   },
 ];
+
+// 타입별 샘플 값 (스키마 헤더 아래 1줄 미리보기용)
+const SAMPLE_MAP: Record<string, Record<string, string>> = {
+  asset: {
+    partner_code: 'PT00001', car_number: '12가3456', vin: 'KMHD14LE1AA123456',
+    manufacturer: '현대', car_model: '아반떼', detail_model: 'CN7 스마트',
+    car_year: '2023', fuel_type: '가솔린', displacement: '1598', seats: '5',
+    category: '준중형', transmission: '자동', drive_type: '전륜',
+    usage_type: '렌터카', type_number: 'NKC90D', engine_type: 'G4FL',
+    gross_weight_kg: '1820', curb_weight_kg: '1280',
+    ext_color: '흰색', first_registration_date: '2023-03-15',
+  },
+  contract: {
+    partner_code: 'PT00001', contract_code: '(자동생성)', car_number: '12가3456',
+    contractor_name: '홍길동', contractor_phone: '010-1234-5678',
+    start_date: '2026-01-01', end_date: '2027-12-31',
+    rent_months: '24', rent_amount: '450000', deposit_amount: '1000000',
+  },
+  customer: {
+    partner_code: 'PT00001', name: '홍길동', phone: '010-1234-5678',
+    birth: '1985-06-20', address: '서울시 강남구 ...', license_no: '11-22-334455-66',
+  },
+  member: {
+    partner_name: '스위치플랜', ceo: '박영현',
+    biz_no: '158-81-03213', corp_no: '110111-8596368',
+    phone: '031-555-1234', contact_name: '담당자',
+  },
+  vendor: {
+    vendor_name: '○○정비공장', vendor_type: '정비',
+    contact_name: '김정비', contact_phone: '010-...',
+  },
+  insurance: {
+    partner_code: 'PT00001', car_number: '12가3456', car_name: '아반떼',
+    insurance_company: '삼성화재', policy_no: '2-2026-1234567',
+    start_date: '2026-03-14', end_date: '2027-03-14',
+    premium: '1388610', paid: '1002090',
+    age_limit: '만21세', driver_range: '누구나',
+  },
+  loan: {
+    car_number: '12가3456', loan_bank: '○○캐피탈', loan_amount: '20000000',
+    loan_start_date: '2024-01-01', monthly_payment: '450000', loan_end_date: '2027-12-31',
+  },
+  gps: {
+    car_number: '12가3456', gps_serial: 'GPS-12345',
+    install_date: '2026-01-01',
+  },
+  autodebit: {
+    car_number: '12가3456', bank: '신한은행', account_no: '110-...',
+    debit_day: '25',
+  },
+  bank_tx: {
+    date: '2026-04-22', direction: 'in', amount: '500000',
+    content: '홍길동-렌트료', balance: '5000000',
+  },
+  card_tx: {
+    date: '2026-04-22', amount: '150000', vendor: '현대카드', approval: '12345',
+  },
+};
 
 // 헤더 매핑 — 스키마 라벨과 비슷한 헤더를 col로 매핑
 function mapHeaders(rows: Array<Record<string, string>>, schema: SchemaField[]): Array<Record<string, unknown>> {
@@ -362,6 +431,50 @@ export function UploadClient() {
         // 페이지 구분자로 분리 — 각 페이지를 독립 행으로
         const pages = result.text.split(/---\s*페이지 구분\s*---/).map((t) => t.trim()).filter(Boolean);
         // 이미지(1페이지)면 pages가 1개
+
+        // ── 자동차등록증 감지: 등록증이면 자산 row 생성 + vehicle_master 매칭 ──
+        const regPages = pages.filter((p) => detectVehicleReg(p));
+        if (regPages.length > 0) {
+          const assetRows: Array<Record<string, string>> = [];
+          const seenCars = new Set<string>();
+          for (const p of regPages) {
+            const reg = parseVehicleReg(p, p.split('\n'));
+            if (!reg.car_number || seenCars.has(reg.car_number)) continue;
+            seenCars.add(reg.car_number);
+
+            // 제조사/모델 분리 (차명 = "현대 아반떼 1.6" → maker + model)
+            let manufacturer = '';
+            let carModel = reg.car_name ?? '';
+            const nameTokens = carModel.split(/\s+/);
+            if (nameTokens.length > 1) {
+              manufacturer = nameTokens[0];
+              carModel = nameTokens.slice(1).join(' ');
+            }
+
+            assetRows.push({
+              car_number: reg.car_number,
+              vin: reg.vin,
+              manufacturer,
+              car_model: carModel,
+              car_year: String(reg.car_year ?? ''),
+              fuel_type: reg.fuel_type,
+              displacement: String(reg.displacement ?? ''),
+              seats: String(reg.seats ?? ''),
+              usage_type: reg.usage_type,
+              first_registration_date: reg.first_registration_date,
+              type_number: reg.type_number,
+              engine_type: reg.engine_type,
+              gross_weight_kg: String(reg.gross_weight_kg ?? ''),
+              curb_weight_kg: String(reg.curb_weight_kg ?? ''),
+            });
+          }
+          if (assetRows.length > 0) {
+            setRawRows(assetRows);
+            setDetectedKey('asset');
+            toast.success(`자동차등록증 OCR 완료 · ${assetRows.length}대 추출 — 제조사 스펙 자동 매칭됩니다`);
+            return;
+          }
+        }
 
         // ── 보험증권 감지: 3페이지 이상 보험증권이면 전용 파서 ──
         const insurancePages = pages.filter((p) => detectInsurance(p));
@@ -680,30 +793,60 @@ export function UploadClient() {
             )}
           </div>
 
-          {/* ② 스키마 안내 */}
+          {/* ② 스키마 안내 — 2줄 테이블 (헤더 + 샘플) */}
           {spec && (
             <div>
-              <label className="form-label" style={{ display: 'block', marginBottom: 6 }}>
-                ② 스키마 항목 <span className="text-text-muted">({spec.schema.length}개)</span>
-              </label>
-              <div
-                className="text-xs" style={{ background: 'var(--c-bg-sub)', border: '1px solid var(--c-border)', borderRadius: 2, padding: 10, maxHeight: 140, overflowY: 'auto', lineHeight: 1.7 }}
-              >
-                {spec.schema.map((f) => (
-                  <span key={f.col} style={{ marginRight: 8 }}>
-                    <span style={{ color: f.required ? 'var(--c-danger)' : 'var(--c-text-sub)' }}>
-                      {f.label}{f.required && '*'}
-                    </span>
-                  </span>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                <label className="form-label">
+                  ② 스키마 <span className="text-text-muted">({spec.schema.length}개 · 빨강=필수)</span>
+                </label>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+                  <button type="button" className="btn btn-2xs btn-outline" onClick={copyHeaders}>
+                    <i className="ph ph-copy" /> 헤더 복사
+                  </button>
+                  <button type="button" className="btn btn-2xs btn-outline" onClick={downloadSample}>
+                    <i className="ph ph-download-simple" /> 샘플
+                  </button>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', marginTop: 6 }}>
-                <button type="button" className="btn btn-sm btn-outline" onClick={copyHeaders}>
-                  <i className="ph ph-copy" /> 헤더 복사
-                </button>
-                <button type="button" className="btn btn-sm btn-outline" onClick={downloadSample}>
-                  <i className="ph ph-download-simple" /> 샘플 다운
-                </button>
+              <div style={{ border: '1px solid var(--c-border)', borderRadius: 2, overflow: 'auto', maxWidth: '100%' }}>
+                <table className="text-2xs" style={{ borderCollapse: 'collapse', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--c-bg-sub)' }}>
+                      {spec.schema.map((f) => (
+                        <th
+                          key={f.col}
+                          style={{
+                            padding: '4px 8px',
+                            borderRight: '1px solid var(--c-border)',
+                            borderBottom: '1px solid var(--c-border)',
+                            fontWeight: 600,
+                            color: f.required ? 'var(--c-danger)' : 'var(--c-text-sub)',
+                            textAlign: 'left',
+                          }}
+                        >
+                          {f.label}{f.required && '*'}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {spec.schema.map((f) => (
+                        <td
+                          key={f.col}
+                          style={{
+                            padding: '4px 8px',
+                            borderRight: '1px solid var(--c-border)',
+                            color: 'var(--c-text-muted)',
+                          }}
+                        >
+                          {SAMPLE_MAP[spec.key]?.[f.col] ?? '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
