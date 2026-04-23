@@ -96,6 +96,8 @@ const SCHEMAS: TypeSpec[] = [
       { col: 'rent_months', label: '기간(개월)', num: true },
       { col: 'rent_amount', label: '월 대여료', num: true },
       { col: 'deposit_amount', label: '보증금', num: true },
+      { col: 'auto_debit_day', label: '자동이체일', num: true },
+      { col: 'current_unpaid', label: '현재 미수', num: true },
     ],
   },
   {
@@ -1273,6 +1275,7 @@ export function UploadClient() {
       let unchangedCount = 0;
       let totalFieldChanges = 0;
       let derivedBillings = 0;
+      let derivedCutover = 0;
       let skippedMissing = 0;
       let skippedMaster = 0;
 
@@ -1330,6 +1333,12 @@ export function UploadClient() {
           if (codeSpec && !cleanRow[codeSpec.field]) {
             cleanRow[codeSpec.field] = await codeSpec.gen();
           }
+          // 계약의 current_unpaid는 billings 파생용 — 계약 레코드에는 저장 안 함
+          let initialUnpaid = 0;
+          if (spec.key === 'contract') {
+            initialUnpaid = Number(cleanRow.current_unpaid) || 0;
+            delete cleanRow.current_unpaid;
+          }
           const payload = { ...cleanRow, created_at: Date.now(), status: 'active' };
           const r = push(base);
           await set(r, payload);
@@ -1338,8 +1347,12 @@ export function UploadClient() {
           // 계약 업로드 시 billings 자동 파생
           if (spec.key === 'contract' && r.key) {
             try {
-              const dr = await deriveBillingsFromContract({ ...payload, _key: r.key } as RtdbContract);
+              const dr = await deriveBillingsFromContract(
+                { ...payload, _key: r.key } as RtdbContract,
+                { initialUnpaid },
+              );
               derivedBillings += dr.created;
+              derivedCutover += dr.cutoverPaid ?? 0;
             } catch { /* 파생 실패는 전체 저장 중단 안 함 */ }
           }
         }
@@ -1353,6 +1366,7 @@ export function UploadClient() {
       if (skippedMaster > 0) parts.push(`⏭️ 스킵 ${skippedMaster}건(마스터 미등록)`);
       if (skippedMissing > 0) parts.push(`필수누락 ${skippedMissing}건`);
       if (derivedBillings > 0) parts.push(`수납스케줄 ${derivedBillings}건 자동생성`);
+      if (derivedCutover > 0) parts.push(`과거 회차 ${derivedCutover}건 선납처리`);
       toast.success(parts.join(' · ') || '변경사항 없음');
       // reset() 호출 안 함 — 사용자가 결과를 확인할 수 있도록 미리보기 유지
       // 새로 업로드하거나 '초기화' 버튼으로 수동 리셋
