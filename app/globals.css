@@ -3,90 +3,117 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
-   tokens — 기존 jpkerp 디자인 토큰 이식 그대로
+   tokens — JPK ERP v3 디자인 시스템 (prototype.html 기준)
+   본문 11px / tag 10px · sharp(0px) · 네이비 액센트 단일
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  --c-bg:          #ffffff;
-  --c-bg-sub:      #fbfbfa;
-  --c-bg-hover:    #f1f1ef;
-  --c-bg-active:   #e8e8e5;
-  --c-surface:     #ffffff;
+  --c-bg:           #f8f9fa;
+  --c-bg-sub:       #f1f3f5;
+  --c-bg-hover:     #e9ecef;
+  --c-bg-active:    #dee2e6;
+  --c-surface:      #ffffff;
+  --c-border-soft:  #edeef0;
+  --c-border:       #d5d8dc;
+  --c-border-strong:#adb5bd;
 
-  --c-border:        #e3e2de;
-  --c-border-strong: #d3d1cb;
+  --c-text:         #111111;
+  --c-text-sub:     #495057;
+  --c-text-muted:   #868e96;
+  --c-text-inv:     #ffffff;
 
-  --c-text:        #37352f;
-  --c-text-sub:    #6b6b6b;
-  --c-text-muted:  #9b9a97;
+  --c-accent:       #1B2A4A;
+  --c-accent-hover: #0F1B35;
+  --c-accent-soft:  #E6EEF8;
 
-  /* teamjpk CI — 검정·남색·회색 */
-  --c-primary:        #1e293b;   /* slate-900 풍 dark navy */
-  --c-primary-h:      #0f172a;   /* 더 진한 navy */
-  --c-primary-bg:     #e8ecf1;   /* navy tint */
-  --c-primary-border: #c8d0db;
+  --c-ok:           #0d9488;
+  --c-ok-bg:        #f0fdfa;
+  --c-warn:         #d97706;
+  --c-warn-bg:      #fffbeb;
+  --c-err:          #dc2626;
+  --c-err-bg:       #fef2f2;
+  --c-info:         #2563eb;
+  --c-info-bg:      #eff6ff;
+  --c-emerald:      #059669;
+  --c-emerald-bg:   #d1fae5;
 
-  --c-success:     #0f7b0f;
-  --c-success-bg:  #dbeddb;
-  --c-warn:        #d9730d;
-  --c-warn-bg:     #fdecc8;
-  --c-danger:      #e03e3e;
-  --c-danger-bg:   #fbe4e4;
-  --c-info:        #2383e2;
-  --c-info-bg:     #e8f0fe;
+  /* v2 호환 alias — 기존 컴포넌트가 참조하는 이름 유지 */
+  --c-primary:        var(--c-accent);
+  --c-primary-h:      var(--c-accent-hover);
+  --c-primary-bg:     var(--c-accent-soft);
+  --c-primary-border: var(--c-accent);
+  --c-success:        var(--c-ok);
+  --c-success-bg:     var(--c-ok-bg);
+  --c-danger:         var(--c-err);
+  --c-danger-bg:      var(--c-err-bg);
 
-  --font-sans:   'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-mono:   'JetBrains Mono', ui-monospace, monospace;
-  --font-size-xs: 11px;
-  --font-size-sm: 11px;
-  --font-size:    12px;
-  --font-size-md: 12px;
-  --font-size-lg: 12px;
-  --font-size-xl: 13px;
-  --fw:           400;
-  --fw-medium:    500;
-  --fw-bold:      600;
-  --fw-heavy:     700;
+  --font:           -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', '맑은 고딕', system-ui, Arial, sans-serif;
+  --font-sans:      var(--font);
+  --font-mono:      'JetBrains Mono', ui-monospace, monospace;
+  --fs:             11px;
+  --fs-tag:         10px;
+  --fw:             400;
+  --fw-medium:      400;
+  --fw-bold:        600;
+  --fw-heavy:       700;
+  --lh:             1.45;
 
-  --sp-1: 4px;
-  --sp-2: 6px;
-  --sp-3: 8px;
-  --sp-4: 12px;
-  --sp-5: 16px;
-  --sp-6: 24px;
-  --sp-8: 32px;
+  /* v2 호환 alias */
+  --font-size-xs:   var(--fs-tag);
+  --font-size-sm:   var(--fs);
+  --font-size:      var(--fs);
+  --font-size-md:   var(--fs);
+  --font-size-lg:   var(--fs);
+  --font-size-xl:   12px;
 
-  --ctrl-h:        32px;
-  --ctrl-r:        2px;
-  --ctrl-px:       6px;
-  --ctrl-border:   var(--c-border-strong);
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 6px;
+  --sp-4: 8px;
+  --sp-5: 12px;
+  --sp-6: 16px;
+  --sp-8: 24px;
+
+  --ctrl-h-sm:     22px;
+  --ctrl-h:        26px;
+  --ctrl-h-lg:     30px;
+  --ctrl-r:        0px;
+  --ctrl-px:       8px;
+  --ctrl-border:   var(--c-border);
   --ctrl-border-w: 1px;
-  --ctrl-font:     var(--font-size-xs);
+  --ctrl-font:     var(--fs);
 
-  --icon-sm:       14px;
-  --icon-md:       16px;
-  --icon-lg:       20px;
-  --ctrl-icon:     var(--icon-sm);
+  --icon-sm:       12px;
+  --icon:          14px;
+  --icon-md:       14px;
+  --icon-lg:       16px;
+  --icon-xl:       18px;
+  --ctrl-icon:     var(--icon);
 
-  --panel-head-h:   52px;
-  --panel-head-px:  16px;
-  --panel-body-pad: 20px;
+  --topbar-h:      36px;
+  --sb-w:          172px;
+
+  --panel-head-h:   30px;
+  --panel-head-px:  8px;
+  --panel-body-pad: 12px;
   --panel-r:        0;
-  --r-xs:           2px;
-  --r-sm:           2px;
-  --r-md:           2px;
-  --r-lg:           2px;
+  --r-xs:           0;
+  --r-sm:           0;
+  --r-md:           0;
+  --r-lg:           0;
 
-  --grid-row-h:    28px;
-  --grid-head-h:   30px;
+  --grid-row-h:    26px;
+  --grid-head-h:   28px;
   --grid-cell-px:  6px;
 
-  --sidebar-w:     240px;
-  --sidebar-bg:    #fbfbfa;
+  --sidebar-w:     var(--sb-w);
+  --sidebar-bg:    var(--c-surface);
 
   --z-overlay: 1000;
   --z-toast:   2000;
   --z-modal:   3000;
 
+  --dur:      120ms;
+  --ease:     cubic-bezier(.4, 0, .2, 1);
   --t-fast:   100ms;
   --t-normal: 200ms;
 }
@@ -2504,3 +2531,232 @@ i.ph {
   .auth-message { font-size: 13px; }
   .auth-copyright { text-align: center; padding: 0 24px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   v3 App Shell — prototype.html 기준 (.app · .sidebar · .topbar · .main)
+   v2 .shell/.sidebar/.topbar/.main 를 덮어씀 — 마지막 선언이 우선
+   ═══════════════════════════════════════════════════════════════ */
+.app {
+  display: grid;
+  grid-template-columns: var(--sb-w) 1fr;
+  grid-template-rows: var(--topbar-h) 1fr;
+  height: 100vh;
+}
+
+/* ── 상단바 (메인 위만, 사이드바 옆) ── */
+.app > .topbar {
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-4);
+  gap: var(--sp-3);
+  z-index: 10;
+  height: var(--topbar-h);
+  position: static;
+}
+.app > .topbar .search {
+  flex: 1;
+  max-width: 480px;
+  position: relative;
+}
+.app > .topbar .search input {
+  width: 100%;
+  padding-left: 28px;
+  background: var(--c-bg);
+  height: var(--ctrl-h);
+  border: 1px solid var(--c-border);
+  border-radius: var(--ctrl-r);
+}
+.app > .topbar .search input:focus { background: var(--c-surface); border-color: var(--c-accent); }
+.app > .topbar .search::before {
+  content: '';
+  position: absolute;
+  left: 8px; top: 50%;
+  width: 12px; height: 12px;
+  transform: translateY(-50%);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23868e96' stroke-width='2'><circle cx='11' cy='11' r='7'/><line x1='16.5' y1='16.5' x2='21' y2='21'/></svg>");
+  pointer-events: none;
+}
+.app > .topbar .actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.app > .topbar .icon-btn {
+  width: var(--ctrl-h); height: var(--ctrl-h);
+  padding: 0;
+  display: grid; place-items: center;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  cursor: pointer;
+  border-radius: var(--ctrl-r);
+}
+.app > .topbar .icon-btn:hover { background: var(--c-bg-hover); }
+.app > .topbar .user-drop {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--ctrl-h);
+  padding: 0 8px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  border-radius: var(--ctrl-r);
+  cursor: pointer;
+}
+.app > .topbar .user-drop:hover { background: var(--c-bg-hover); }
+
+/* ── 사이드바 (전체 높이 — 상단바 위까지) ── */
+.app > .sidebar {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  background: var(--c-surface);
+  border-right: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: var(--sb-w);
+  min-width: 0;
+  max-width: none;
+}
+
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--topbar-h);
+  padding: 0 var(--sp-3);
+  border-bottom: 1px solid var(--c-border);
+  color: var(--c-accent);
+  flex-shrink: 0;
+}
+.sb-brand::before {
+  content: '';
+  display: inline-block;
+  width: 12px; height: 12px;
+  background: var(--c-accent);
+  flex-shrink: 0;
+}
+.sb-brand .name { color: var(--c-accent); font-weight: var(--fw); }
+
+.sb-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-1);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: 5px 8px;
+  margin: 0;
+  color: var(--c-text-sub);
+  border-radius: 0;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  height: 26px;
+  text-decoration: none;
+  font-size: var(--fs);
+  font-weight: var(--fw);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.sb-item:hover {
+  background: var(--c-bg-hover);
+  color: var(--c-text);
+}
+.sb-item.is-active {
+  background: var(--c-accent);
+  color: var(--c-text-inv);
+}
+.sb-item.is-active:hover {
+  background: var(--c-accent-hover);
+}
+.sb-item .ico {
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--icon-lg);
+}
+.sb-item .label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.sb-count {
+  display: inline-block;
+  min-width: 18px;
+  height: 14px;
+  padding: 0 5px;
+  font-size: var(--fs-tag);
+  line-height: 14px;
+  text-align: center;
+  background: var(--c-err);
+  color: var(--c-text-inv);
+  border-radius: 0;
+  letter-spacing: 0;
+  font-weight: var(--fw);
+}
+.sb-count.subtle {
+  background: var(--c-bg-sub);
+  color: var(--c-text-sub);
+}
+.sb-item.is-active .sb-count {
+  background: var(--c-text-inv);
+  color: var(--c-err);
+}
+.sb-item.is-active .sb-count.subtle {
+  background: var(--c-text-inv);
+  color: var(--c-accent);
+}
+
+.sb-divider {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--c-border);
+  flex-shrink: 0;
+}
+
+.sb-foot {
+  border-top: 1px solid var(--c-border);
+  padding: var(--sp-2) var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+}
+.sb-foot .name { color: var(--c-text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-foot .logout {
+  color: var(--c-text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--fs);
+  font-family: inherit;
+}
+.sb-foot .logout:hover { color: var(--c-text-sub); }
+
+/* ── 메인 ── */
+.app > .main {
+  grid-column: 2;
+  grid-row: 2;
+  overflow-y: auto;
+  padding: var(--sp-3) var(--sp-4) var(--sp-5);
+  height: auto;
+  display: block;
+  background: var(--c-bg);
+}
+

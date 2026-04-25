@@ -1,49 +1,56 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { UserMenu } from './user-menu';
-import { ThemeToggle } from './theme-toggle';
-import { NotificationBell } from './notification-bell';
-import { SaveStatusIndicator } from './save-status-indicator';
-import { MENU, type MenuGroup } from '@/lib/menu';
-
 /**
- * 경로 → 브레드크럼 라벨 (메뉴에서 매칭)
+ * Topbar — JPK ERP v3 (prototype.html .topbar 구조)
+ * - 36px 높이, 흰 배경, 1px 하단 보더
+ * - 사이드바 옆 grid column 2 row 1
+ * - 통합검색 · 우측 알림 · 사용자 드롭다운
  */
-function breadcrumb(pathname: string): string[] {
-  for (const entry of MENU) {
-    if ('href' in entry && entry.href === pathname) return [entry.label];
-    if ('group' in entry) {
-      const g = entry as MenuGroup;
-      for (const c of g.children) {
-        // 서브그룹 자체가 링크인 경우 (개발 등)
-        if ('subgroup' in c && c.href === pathname) return [g.group, c.subgroup];
-        if ('href' in c && 'label' in c && c.href === pathname) return [g.group, c.label];
-      }
-    }
-  }
-  return [];
-}
+
+import { useCallback, useState } from 'react';
+import { useAuth } from '@/lib/auth/context';
 
 export function Topbar() {
-  const pathname = usePathname();
-  const crumbs = breadcrumb(pathname);
+  const { user, signOut } = useAuth();
+  const [query, setQuery] = useState('');
+
+  const onSearchKey = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      // Phase 1 — 검색 디스패치는 Phase 2 통합검색에서 구현
+      // 일단 Cmd/Ctrl+K 팔레트 토글로 임시 매핑
+      const ev = new KeyboardEvent('keydown', { key: 'k', metaKey: true });
+      window.dispatchEvent(ev);
+    }
+  }, []);
+
+  const displayName = user?.displayName || user?.email?.split('@')[0] || '사용자';
 
   return (
     <header className="topbar">
-      <div style={{ flex: 1, minWidth: 0 }} />
-      <div className="topbar-center">
-        {crumbs.length > 0 && (
-          <span className="text-text-sub">
-            {crumbs.join(' > ')}
-          </span>
-        )}
+      <div className="search">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onSearchKey}
+          placeholder="차량번호 · 계약자 · 계약코드 통합검색"
+        />
       </div>
-      <div className="topbar-actions">
-        <SaveStatusIndicator />
-        <ThemeToggle />
-        <NotificationBell />
-        <UserMenu />
+      <div className="actions">
+        <button type="button" className="icon-btn" aria-label="알림">
+          <i className="ph ph-bell" />
+        </button>
+        <button
+          type="button"
+          className="user-drop"
+          onClick={() => {
+            void signOut();
+          }}
+          title="클릭 시 로그아웃"
+        >
+          <span>{displayName}</span>
+          <i className="ph ph-caret-down" />
+        </button>
       </div>
     </header>
   );

@@ -5,6 +5,13 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { RouteGuard } from '@/components/layout/route-guard';
 import { MenuCountsSync } from '@/components/layout/menu-counts-sync';
 
+/**
+ * WorkspaceLayout — JPK ERP v3 shell
+ * - .app grid: [sb-w | 1fr] x [topbar-h | 1fr]
+ * - .sidebar 풀하이트 (column 1 / row 1/-1)
+ * - .topbar  메인 위만 (column 2 / row 1)
+ * - .main    메인 본문 (column 2 / row 2)
+ */
 export default function WorkspaceLayout({
   children,
 }: {
@@ -14,12 +21,10 @@ export default function WorkspaceLayout({
     <AuthGuard>
       <RouteGuard>
         <MenuCountsSync />
-        <div className="shell">
+        <div className="app">
           <Sidebar />
-          <main className="main">
-            <Topbar />
-            {children}
-          </main>
+          <Topbar />
+          <main className="main">{children}</main>
         </div>
         <CommandPalette />
       </RouteGuard>
