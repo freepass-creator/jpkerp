@@ -3414,3 +3414,356 @@ i.ph {
   opacity: 0.85;
   font-size: var(--fs-tag);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Phase 9 — 우측 슬라이드 상세 패널 + 타임라인
+   ═══════════════════════════════════════════════════════════════ */
+
+.detail-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.28);
+  z-index: 90;
+  animation: detailFade 160ms ease-out;
+}
+
+.detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 520px;
+  max-width: 92vw;
+  background: var(--c-surface);
+  border-left: 1px solid var(--c-border);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.08);
+  animation: detailSlide 220ms cubic-bezier(0.22, 0.85, 0.36, 1);
+}
+
+@keyframes detailFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes detailSlide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.detail-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px 12px;
+  background: var(--c-bg-sub);
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
+}
+.detail-panel-head .ident { flex: 1; min-width: 0; }
+.detail-panel-head .ident .car {
+  font-weight: var(--fw-bold);
+  font-size: 14px;
+  color: var(--c-text);
+  letter-spacing: -0.2px;
+}
+.detail-panel-head .ident .sub {
+  font-size: var(--fs-tag);
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detail-panel-head .status-pill {
+  height: 22px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  font-size: var(--fs-tag);
+  color: var(--c-text-sub);
+  flex-shrink: 0;
+}
+.detail-panel-head .close {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--c-border);
+  color: var(--c-text-sub);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  font-family: inherit;
+}
+.detail-panel-head .close:hover { background: var(--c-bg-hover); color: var(--c-text); }
+
+.detail-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* 기본정보 그리드 */
+.detail-info {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+}
+.detail-info-head {
+  padding: 6px 12px;
+  background: var(--c-bg-sub);
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--fs-tag);
+  color: var(--c-text-sub);
+  font-weight: 600;
+}
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+.detail-info-grid > div {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--c-border-soft);
+  border-right: 1px solid var(--c-border-soft);
+  font-size: var(--fs-tag);
+  min-height: 28px;
+}
+.detail-info-grid > div:nth-child(2n) { border-right: none; }
+.detail-info-grid > div:nth-last-child(-n+2) { border-bottom: none; }
+.detail-info-grid dt {
+  width: 72px;
+  flex-shrink: 0;
+  color: var(--c-text-muted);
+}
+.detail-info-grid dd {
+  flex: 1;
+  margin: 0;
+  color: var(--c-text);
+  word-break: break-all;
+}
+.detail-info-grid dd.num { font-feature-settings: 'tnum'; }
+
+/* 카테고리 필터 칩 */
+.timeline-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.timeline-filter .chip {
+  height: 24px;
+  padding: 0 10px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-sub);
+  cursor: pointer;
+  font-size: var(--fs-tag);
+  font-family: inherit;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.timeline-filter .chip:hover { background: var(--c-bg-hover); color: var(--c-text); }
+.timeline-filter .chip.is-active {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-text-inv);
+}
+.timeline-filter .chip .cnt {
+  display: inline-block;
+  min-width: 16px;
+  padding: 0 4px;
+  background: var(--c-bg-sub);
+  color: var(--c-text-muted);
+  font-size: 10px;
+  text-align: center;
+  border-radius: 0;
+}
+.timeline-filter .chip.is-active .cnt {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--c-text-inv);
+}
+
+/* 타임라인 */
+.timeline {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+}
+.timeline-head {
+  padding: 6px 12px;
+  background: var(--c-bg-sub);
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--fs-tag);
+  color: var(--c-text-sub);
+  font-weight: 600;
+}
+.timeline-head .muted {
+  font-weight: normal;
+  color: var(--c-text-muted);
+  margin-left: 4px;
+}
+.timeline-list { display: block; }
+.timeline-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--c-border-soft);
+  font-size: var(--fs-tag);
+}
+.timeline-row:last-child { border-bottom: none; }
+.timeline-row:hover { background: var(--c-bg-hover); }
+.timeline-row .t-date {
+  width: 76px;
+  flex-shrink: 0;
+  color: var(--c-text-muted);
+  font-feature-settings: 'tnum';
+  padding-top: 1px;
+}
+.timeline-row .t-icon {
+  width: 16px;
+  text-align: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+.timeline-row .t-tag {
+  width: 56px;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 11px;
+  padding-top: 1px;
+}
+.timeline-row .t-body {
+  flex: 1;
+  min-width: 0;
+}
+.timeline-row .t-title {
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.timeline-row .t-amount {
+  margin-left: 6px;
+  color: var(--c-text-muted);
+  font-feature-settings: 'tnum';
+}
+.timeline-row .t-memo {
+  margin-top: 2px;
+  color: var(--c-text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.timeline-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--c-text-muted);
+  font-size: var(--fs-tag);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Phase 9 — 과태료 일괄 도구
+   ═══════════════════════════════════════════════════════════════ */
+
+.penalty-tool { display: flex; flex-direction: column; gap: 0; }
+
+.penalty-steps {
+  display: flex;
+  align-items: stretch;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  margin-bottom: var(--sp-3);
+}
+.penalty-step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-right: 1px solid var(--c-border);
+  color: var(--c-text-muted);
+  font-size: var(--fs-tag);
+}
+.penalty-step:last-child { border-right: none; }
+.penalty-step .n {
+  width: 22px;
+  height: 22px;
+  background: var(--c-bg-sub);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.penalty-step.is-active { color: var(--c-text); background: var(--c-bg-sub); }
+.penalty-step.is-active .n {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-text-inv);
+}
+.penalty-step.is-done { color: var(--c-ok); }
+.penalty-step.is-done .n {
+  background: var(--c-ok);
+  border-color: var(--c-ok);
+  color: var(--c-text-inv);
+}
+.penalty-step .lbl { flex: 1; min-width: 0; }
+
+.penalty-uploader {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-bottom: none;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.penalty-pick {
+  height: 40px;
+  border: 1px dashed var(--c-border-strong);
+  background: var(--c-bg-sub);
+  color: var(--c-text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 0;
+}
+.penalty-pick:hover { background: var(--c-bg-hover); border-color: var(--c-accent); color: var(--c-accent); }
+.penalty-pick:disabled { opacity: 0.5; cursor: default; }
+.penalty-pick i.ph { font-size: 16px; }
+
+.penalty-tip {
+  font-size: 11px;
+  color: var(--c-text-muted);
+  text-align: center;
+}
+
+.penalty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--c-border-soft);
+}

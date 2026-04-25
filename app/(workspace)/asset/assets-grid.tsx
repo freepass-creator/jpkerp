@@ -37,9 +37,10 @@ type Asset = {
 interface AssetsGridProps {
   gridRef?: RefObject<JpkGridApi<Asset> | null>;
   onCountChange?: (count: number) => void;
+  onRowClick?: (row: Asset) => void;
 }
 
-export function AssetsGrid({ gridRef: externalRef, onCountChange }: AssetsGridProps = {}) {
+export function AssetsGrid({ gridRef: externalRef, onCountChange, onRowClick }: AssetsGridProps = {}) {
   const internalRef = useRef<JpkGridApi<Asset> | null>(null);
   const gridRef = externalRef ?? internalRef;
   const assets = useRtdbCollection<Asset>('assets');
@@ -110,6 +111,7 @@ export function AssetsGrid({ gridRef: externalRef, onCountChange }: AssetsGridPr
         rowData={assets.data}
         getRowId={(d) => d._key ?? d.car_number ?? ''}
         storageKey="jpk.grid.assets.v2"
+        onRowClicked={onRowClick}
         contextMenu={() => [
           { label: 'CSV 내보내기', icon: 'ph-download-simple', onClick: () => gridRef.current?.exportCsv('자산목록') },
           { label: '필터 초기화', icon: 'ph-funnel-x', onClick: () => gridRef.current?.resetFilters() },

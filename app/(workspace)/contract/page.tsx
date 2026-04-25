@@ -13,7 +13,8 @@ import type {
 import { computeContractEnd, today as todayStr } from '@/lib/date-utils';
 import { fmt } from '@/lib/utils';
 import { ContractClient, type ContractRow } from './contract-client';
-import { ContractEditDialog } from './contract-edit-dialog';
+import { ContractDetailPanel } from '@/components/v3/ContractDetailPanel';
+import { PenaltyBatchTool } from '@/components/v3/PenaltyBatchTool';
 
 type SubpageId =
   | 'contract-list'
@@ -57,7 +58,7 @@ const TAB_CRUMB: Record<SubpageId, string> = {
 export default function ContractPage() {
   const gridRef = useRef<JpkGridApi<ContractRow> | null>(null);
   const [active, setActive] = useState<SubpageId>('contract-list');
-  const [editing, setEditing] = useState<ContractRow | null>(null);
+  const [detailRow, setDetailRow] = useState<ContractRow | null>(null);
   const [count, setCount] = useState(0);
 
   const contracts = useRtdbCollection<RtdbContract>('contracts');
@@ -136,7 +137,7 @@ export default function ContractPage() {
           stats={stats}
           gridRef={gridRef}
           onCountChange={setCount}
-          onRowClick={setEditing}
+          onRowClick={setDetailRow}
           count={count}
         />
       ) : active === 'contract-idle' ? (
@@ -150,11 +151,15 @@ export default function ContractPage() {
           loading={billings.loading}
           alerts={overdueAlerts}
         />
+      ) : active === 'contract-fine' ? (
+        <div className="v3-subpage is-active">
+          <PenaltyBatchTool />
+        </div>
       ) : (
         <PlaceholderSubpage label={activeTab.label} />
       )}
 
-      <ContractEditDialog record={editing} onClose={() => setEditing(null)} />
+      <ContractDetailPanel contract={detailRow} onClose={() => setDetailRow(null)} />
     </>
   );
 }

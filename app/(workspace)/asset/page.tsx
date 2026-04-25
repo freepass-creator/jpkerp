@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import type { JpkGridApi } from '@/components/shared/jpk-grid';
 import { AssetsGrid } from './assets-grid';
+import { AssetDetailPanel } from '@/components/v3/AssetDetailPanel';
 
 type AssetRow = {
   _key?: string;
@@ -59,6 +60,7 @@ const TAB_CRUMB: Record<SubpageId, string> = {
 export default function AssetPage() {
   const gridRef = useRef<JpkGridApi<AssetRow> | null>(null);
   const [active, setActive] = useState<SubpageId>('asset-list');
+  const [detailRow, setDetailRow] = useState<AssetRow | null>(null);
   const assets = useRtdbCollection<AssetRow>('assets');
 
   const stats = useMemo(() => deriveStats(assets.data), [assets.data]);
@@ -122,10 +124,13 @@ export default function AssetPage() {
           alerts={alerts}
           stats={stats}
           gridRef={gridRef}
+          onRowClick={setDetailRow}
         />
       ) : (
         <PlaceholderSubpage label={activeTab.label} />
       )}
+
+      <AssetDetailPanel asset={detailRow} onClose={() => setDetailRow(null)} />
     </>
   );
 }
@@ -137,12 +142,14 @@ function AssetListSubpage({
   alerts,
   stats,
   gridRef,
+  onRowClick,
 }: {
   loading: boolean;
   error: Error | null;
   alerts: AlertItem[];
   stats: AssetStats;
   gridRef: React.RefObject<JpkGridApi<AssetRow> | null>;
+  onRowClick: (row: AssetRow) => void;
 }) {
   const isClear = alerts.length === 0;
   const totalAlerts = alerts.reduce((sum, a) => sum + a.count, 0);
@@ -192,7 +199,10 @@ function AssetListSubpage({
           </div>
         ) : (
           <div className="v3-grid-host">
-            <AssetsGrid gridRef={gridRef} />
+            <AssetsGrid
+              gridRef={gridRef}
+              onRowClick={(row) => onRowClick(row as unknown as AssetRow)}
+            />
           </div>
         )}
       </div>
