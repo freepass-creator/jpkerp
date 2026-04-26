@@ -49,20 +49,19 @@ export function IgnitionClient({ gridRef: externalRef, onCountChange }: Props = 
         const carBills = billings.data.filter(
           (b) => b.contract_code === c.contract_code && b.status !== 'deleted',
         );
+        // 미수 = 결제일 지난 미납만 (결제대기 회차는 제외)
         let unpaid_count = 0;
         let unpaid_sum = 0;
         let max_overdue = 0;
         for (const b of carBills) {
           const due = computeTotalDue(b);
           const paid = Number(b.paid_total) || 0;
-          if (paid < due) {
-            unpaid_count++;
-            unpaid_sum += due - paid;
-            if (b.due_date && b.due_date < t) {
-              const od = daysBetween(b.due_date, t);
-              if (od > max_overdue) max_overdue = od;
-            }
-          }
+          if (paid >= due) continue;
+          if (!b.due_date || b.due_date >= t) continue;
+          unpaid_count++;
+          unpaid_sum += due - paid;
+          const od = daysBetween(b.due_date, t);
+          if (od > max_overdue) max_overdue = od;
         }
         return {
           partner_code: c.partner_code ?? '-',
@@ -94,8 +93,8 @@ export function IgnitionClient({ gridRef: externalRef, onCountChange }: Props = 
           filter: JpkSetFilter,
           cellStyle: (p: { value: unknown }) => ({ color: ACTION_COLOR[p.value as string] ?? 'var(--c-text)', fontWeight: '600' }),
         },
-        { headerName: '미납', field: 'unpaid_count', width: 60, filter: false, cellStyle: (p: { value: unknown }) => ({ textAlign: 'right', color: Number(p.value) ? 'var(--c-danger)' : 'var(--c-text-muted)', fontWeight: '600' }), valueFormatter: (p: { value: unknown }) => (p.value ? `${p.value}회` : '-') },
-        { headerName: '미납액', field: 'unpaid_sum', width: 110, filter: false, cellStyle: { textAlign: 'right', color: 'var(--c-danger)' }, valueFormatter: (p: { value: unknown }) => fmt(Number(p.value)) },
+        { headerName: '미수', field: 'unpaid_count', width: 60, filter: false, cellStyle: (p: { value: unknown }) => ({ textAlign: 'right', color: Number(p.value) ? 'var(--c-danger)' : 'var(--c-text-muted)', fontWeight: '600' }), valueFormatter: (p: { value: unknown }) => (p.value ? `${p.value}회` : '-') },
+        { headerName: '미수액', field: 'unpaid_sum', width: 110, filter: false, cellStyle: { textAlign: 'right', color: 'var(--c-danger)' }, valueFormatter: (p: { value: unknown }) => fmt(Number(p.value)) },
         {
           headerName: '연체일',
           field: 'max_overdue_days',

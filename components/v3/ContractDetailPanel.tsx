@@ -8,7 +8,7 @@
  */
 
 import { useRtdbCollection } from '@/lib/collections/rtdb';
-import { computeContractEnd } from '@/lib/date-utils';
+import { computeContractEnd, computeTotalDue, today as todayStr } from '@/lib/date-utils';
 import { metaFor } from '@/lib/event-meta';
 import type { RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt, fmtDate } from '@/lib/utils';
@@ -87,20 +87,38 @@ export function ContractDetailPanel({ contract, onClose }: Props) {
   }, [cEvents]);
 
   const billingSummary = useMemo(() => {
+    // 미수 = 결제일 지난 미납 / 결제대기 = 결제일 미도래 미납
+    const t = todayStr();
     let total = 0;
     let paid = 0;
-    let overdue = 0;
+    let outstanding = 0;
+    let overdueCount = 0;
+    let pendingAmount = 0;
+    let pendingCount = 0;
     for (const b of cBillings) {
-      total += Number(b.amount ?? 0);
-      paid += Number(b.paid_total ?? 0);
-      if (Number(b.paid_total ?? 0) < Number(b.amount ?? 0)) overdue += 1;
+      if (b.status === 'deleted') continue;
+      const due = computeTotalDue(b);
+      const p = Number(b.paid_total ?? 0);
+      total += due;
+      paid += p;
+      if (p >= due) continue;
+      if (!b.due_date) continue;
+      if (b.due_date < t) {
+        outstanding += due - p;
+        overdueCount += 1;
+      } else {
+        pendingAmount += due - p;
+        pendingCount += 1;
+      }
     }
     return {
       total,
       paid,
-      outstanding: total - paid,
-      overdueCount: overdue,
-      count: cBillings.length,
+      outstanding,
+      overdueCount,
+      pendingAmount,
+      pendingCount,
+      count: cBillings.filter((b) => b.status !== 'deleted').length,
     };
   }, [cBillings]);
 
@@ -202,6 +220,12 @@ export function ContractDetailPanel({ contract, onClose }: Props) {
                 <dt>미수</dt>
                 <dd className={`num${billingSummary.outstanding > 0 ? ' is-danger' : ''}`}>
                   {fmt(billingSummary.outstanding)}원 ({billingSummary.overdueCount}건)
+                </dd>
+              </div>
+              <div>
+                <dt>결제대기</dt>
+                <dd className="num">
+                  {fmt(billingSummary.pendingAmount)}원 ({billingSummary.pendingCount}건)
                 </dd>
               </div>
             </dl>

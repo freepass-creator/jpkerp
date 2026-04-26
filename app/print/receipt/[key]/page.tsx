@@ -6,7 +6,7 @@ import { ref, get } from 'firebase/database';
 import { getRtdb } from '@/lib/firebase/rtdb';
 import type { RtdbBilling, RtdbContract } from '@/lib/types/rtdb-entities';
 import { fmt, fmtDate } from '@/lib/utils';
-import { computeTotalDue } from '@/lib/date-utils';
+import { computeTotalDue, today as todayStr } from '@/lib/date-utils';
 
 async function fetchBillingWithContract(key: string): Promise<{ billing: RtdbBilling | null; contract: RtdbContract | null }> {
   const snap = await get(ref(getRtdb(), `billings/${key}`));
@@ -36,6 +36,9 @@ export default function ReceiptPrintPage() {
   const due = computeTotalDue(billing);
   const paid = Number(billing.paid_total) || 0;
   const unpaid = due - paid;
+  // 미수 = 결제일 지난 미납 / 결제대기 = 결제일 미도래 미납
+  const isOverdue = unpaid > 0 && !!billing.due_date && billing.due_date < todayStr();
+  const stateLabel = unpaid <= 0 ? '완납' : isOverdue ? '미수' : '결제대기';
 
   return (
     <div>
@@ -75,7 +78,7 @@ export default function ReceiptPrintPage() {
               {fmt(unpaid)}원
             </td>
           </tr>
-          <tr><th>상태</th><td>{unpaid > 0 ? '미수' : '완납'}</td></tr>
+          <tr><th>상태</th><td>{stateLabel}</td></tr>
         </tbody>
       </table>
 

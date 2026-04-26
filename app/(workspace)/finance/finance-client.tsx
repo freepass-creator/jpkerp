@@ -70,8 +70,20 @@ export function FinanceClient({ gridRef: externalRef, onCountChange }: Props = {
     const yearRows = byMonth.filter((r) => r.month.startsWith(year));
     const yearRevenue = yearRows.reduce((s, r) => s + r.revenue, 0);
     const yearExpense = yearRows.reduce((s, r) => s + r.expense, 0);
-    const outstanding = billings.data.reduce((s, b) => s + Math.max(0, computeTotalDue(b) - (Number(b.paid_total) || 0)), 0);
-    return { mo, yearRevenue, yearExpense, yearProfit: yearRevenue - yearExpense, outstanding };
+    // 미수금 = 결제일 지난 미납만 (결제대기는 제외)
+    const tDay = today();
+    let outstanding = 0;
+    let pending = 0;
+    for (const b of billings.data) {
+      if (b.status === 'deleted') continue;
+      const due = computeTotalDue(b);
+      const paid = Number(b.paid_total) || 0;
+      if (paid >= due) continue;
+      if (!b.due_date) continue;
+      if (b.due_date < tDay) outstanding += due - paid;
+      else pending += due - paid;
+    }
+    return { mo, yearRevenue, yearExpense, yearProfit: yearRevenue - yearExpense, outstanding, pending };
   }, [byMonth, billings.data]);
 
   const cols = useMemo<ColDef<MonthlyRow>[]>(

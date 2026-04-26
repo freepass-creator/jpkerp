@@ -8,7 +8,7 @@
  */
 
 import { useRtdbCollection } from '@/lib/collections/rtdb';
-import { computeContractEnd } from '@/lib/date-utils';
+import { computeContractEnd, computeTotalDue, today as todayStr } from '@/lib/date-utils';
 import { metaFor } from '@/lib/event-meta';
 import type { RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt, fmtDate } from '@/lib/utils';
@@ -108,11 +108,18 @@ export function AssetDetailPanel({ asset, onClose }: Props) {
   }, [billings.data, carNumber]);
 
   const summary = useMemo(() => {
+    // 미수 = 결제일 지난 미납만 (결제대기 회차는 제외)
+    const t = todayStr();
     let outstanding = 0;
+    let pendingAmount = 0;
     for (const b of carBillings) {
-      const due = Number(b.amount ?? 0);
+      if (b.status === 'deleted') continue;
+      const due = computeTotalDue(b);
       const paid = Number(b.paid_total ?? 0);
-      if (paid < due) outstanding += due - paid;
+      if (paid >= due) continue;
+      if (!b.due_date) continue;
+      if (b.due_date < t) outstanding += due - paid;
+      else pendingAmount += due - paid;
     }
     // 보유개월 — first_registration_date 또는 가장 빠른 계약 시작일 기준
     const firstReg =
@@ -136,7 +143,7 @@ export function AssetDetailPanel({ asset, onClose }: Props) {
     }
     const accidentCount = carEvents.filter((e) => e.type === 'accident').length;
     const penaltyCount = carEvents.filter((e) => e.type === 'penalty').length;
-    return { outstanding, holdMonths, accidentCount, penaltyCount };
+    return { outstanding, pendingAmount, holdMonths, accidentCount, penaltyCount };
   }, [carBillings, carEvents, contracts.data, carNumber, asset?.first_registration_date]);
 
   if (!asset) return null;

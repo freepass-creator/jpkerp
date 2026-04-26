@@ -6,6 +6,7 @@ import { EditableField } from '@/components/shared/editable-field';
 import { KpiCard } from '@/components/shared/kpi-card';
 import { LifecycleStepper } from '@/components/entity/lifecycle-stepper';
 import { PageHeader } from '@/components/shared/page-header';
+import { computeTotalDue, today as todayStr } from '@/lib/date-utils';
 import { fmt, fmtDate } from '@/lib/utils';
 import { useMemo } from 'react';
 
@@ -106,7 +107,20 @@ export function AssetProfileClient({ carNumber }: { carNumber: string }) {
         return s + (Number(e.amount) || 0);
       return s;
     }, 0);
-    return { revenue, cost, profit: revenue - cost };
+    // 미수 = 결제일 지난 미납만 / 결제대기는 별도 카운트
+    const t = todayStr();
+    let overdueCount = 0;
+    let pendingCount = 0;
+    for (const b of carBillings) {
+      if (b.status === 'deleted') continue;
+      const due = computeTotalDue(b);
+      const paid = Number(b.paid_total ?? 0);
+      if (paid >= due) continue;
+      if (!b.due_date) continue;
+      if (b.due_date < t) overdueCount += 1;
+      else pendingCount += 1;
+    }
+    return { revenue, cost, profit: revenue - cost, overdueCount, pendingCount };
   }, [carBillings, carEvents]);
 
   if (loading) {
@@ -178,9 +192,9 @@ export function AssetProfileClient({ carNumber }: { carNumber: string }) {
             tone={stats.profit >= 0 ? 'primary' : 'danger'}
           />
           <KpiCard
-            label="미납"
-            value={`${fmt(carBillings.filter((b) => (b.paid_total ?? 0) < (b.amount ?? 0)).length)}건`}
-            tone="warn"
+            label="미수"
+            value={`${stats.overdueCount}건`}
+            tone={stats.overdueCount > 0 ? 'warn' : undefined}
           />
         </section>
 
