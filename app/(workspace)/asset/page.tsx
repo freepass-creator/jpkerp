@@ -10,6 +10,7 @@ import {
   DisposalSubpage,
   InspectionSubpage,
   InsuranceSubpage,
+  LoanSubpage,
   RepairSubpage,
   TaxSubpage,
 } from './asset-subpages';
@@ -36,6 +37,7 @@ type AssetRow = {
 type SubpageId =
   | 'asset-list'
   | 'asset-insurance'
+  | 'asset-loan'
   | 'asset-repair'
   | 'asset-inspection'
   | 'asset-tax'
@@ -45,11 +47,14 @@ interface TabSpec {
   id: SubpageId;
   label: string;
   action: string;
+  /** 활성화된 [+] 버튼 — 신규 입력 라우트. 없으면 disabled placeholder */
+  inputType?: string;
 }
 
 const TABS: TabSpec[] = [
-  { id: 'asset-list', label: '자산목록', action: '+ 자산 신규' },
-  { id: 'asset-insurance', label: '보험', action: '+ 보험 등록' },
+  { id: 'asset-list', label: '자산목록', action: '+ 자산 신규', inputType: 'asset' },
+  { id: 'asset-insurance', label: '보험', action: '+ 보험 등록', inputType: 'insurance' },
+  { id: 'asset-loan', label: '할부', action: '+ 할부 등록', inputType: 'loan' },
   { id: 'asset-repair', label: '수선', action: '+ 수선 등록' },
   { id: 'asset-inspection', label: '검사', action: '+ 검사 등록' },
   { id: 'asset-tax', label: '자동차세', action: '+ 납부 등록' },
@@ -59,6 +64,7 @@ const TABS: TabSpec[] = [
 const TAB_CRUMB: Record<SubpageId, string> = {
   'asset-list': '자산목록',
   'asset-insurance': '보험',
+  'asset-loan': '할부',
   'asset-repair': '수선',
   'asset-inspection': '검사',
   'asset-tax': '자동차세',
@@ -69,6 +75,7 @@ const TAB_CRUMB: Record<SubpageId, string> = {
 const TAB_ALIAS: Record<string, SubpageId> = {
   list: 'asset-list',
   insurance: 'asset-insurance',
+  loan: 'asset-loan',
   repair: 'asset-repair',
   inspection: 'asset-inspection',
   tax: 'asset-tax',
@@ -97,6 +104,7 @@ export default function AssetPage() {
 
   const activeTab = TABS.find((t) => t.id === active) ?? TABS[0];
   const isList = active === 'asset-list';
+  const inputType = activeTab.inputType;
 
   return (
     <>
@@ -120,9 +128,9 @@ export default function AssetPage() {
           ))}
         </div>
         <div className="action">
-          {isList ? (
+          {inputType ? (
             <Link
-              href="/input?type=asset"
+              href={`/input?type=${inputType}`}
               className=""
               style={{
                 textDecoration: 'none',
@@ -157,6 +165,8 @@ export default function AssetPage() {
         />
       ) : active === 'asset-insurance' ? (
         <InsuranceSubpage />
+      ) : active === 'asset-loan' ? (
+        <LoanSubpage />
       ) : active === 'asset-repair' ? (
         <RepairSubpage />
       ) : active === 'asset-inspection' ? (

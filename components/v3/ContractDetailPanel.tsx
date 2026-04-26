@@ -231,6 +231,9 @@ export function ContractDetailPanel({ contract, onClose }: Props) {
             </dl>
           </section>
 
+          {/* 회차별 납부 상태 */}
+          <BillingsTable billings={cBillings} />
+
           <div className="timeline-filter">
             {CATEGORIES.map((c) => (
               <button
@@ -355,5 +358,93 @@ function EventDetailModal({ event, onClose }: { event: RtdbEvent | null; onClose
         </div>
       </div>
     </>
+  );
+}
+
+/* ─────────────── 회차별 납부표 ─────────────── */
+
+function billingStatus(
+  b: RtdbBilling,
+  today: string,
+): { label: string; tone: 'ok' | 'partial' | 'overdue' | 'pending' } {
+  const due = computeTotalDue(b);
+  const paid = Number(b.paid_total ?? 0);
+  if (paid >= due && due > 0) return { label: '완납', tone: 'ok' };
+  if (paid > 0) return { label: '부분', tone: 'partial' };
+  if (b.due_date && b.due_date < today) return { label: '미납', tone: 'overdue' };
+  return { label: '대기', tone: 'pending' };
+}
+
+function BillingsTable({ billings }: { billings: RtdbBilling[] }) {
+  const today = todayStr();
+  const sorted = useMemo(
+    () =>
+      [...billings]
+        .filter((b) => b.status !== 'deleted')
+        .sort((a, b) => (a.bill_count ?? 0) - (b.bill_count ?? 0)),
+    [billings],
+  );
+
+  if (sorted.length === 0) {
+    return (
+      <section className="detail-info">
+        <div className="detail-info-head">회차별 납부</div>
+        <div style={{ padding: 12, color: 'var(--c-text-muted)', textAlign: 'center' }}>
+          수납 회차가 생성되지 않았습니다 (계약 정보 부족)
+        </div>
+      </section>
+    );
+  }
+
+  const toneColor = (tone: 'ok' | 'partial' | 'overdue' | 'pending'): string => {
+    if (tone === 'ok') return 'var(--c-ok, #16a34a)';
+    if (tone === 'partial') return 'var(--c-warn, #d97706)';
+    if (tone === 'overdue') return 'var(--c-err, #dc2626)';
+    return 'var(--c-text-muted)';
+  };
+
+  return (
+    <section className="detail-info">
+      <div className="detail-info-head">
+        회차별 납부{' '}
+        <span style={{ color: 'var(--c-text-muted)', fontWeight: 400 }}>· {sorted.length}회차</span>
+      </div>
+      <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid var(--c-border)' }}>
+        <table className="v3-subtab-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+          <colgroup>
+            <col style={{ width: 44 }} />
+            <col style={{ width: 100 }} />
+            <col />
+            <col />
+            <col style={{ width: 64 }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>회차</th>
+              <th>도래일</th>
+              <th className="right">청구</th>
+              <th className="right">납부</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((b) => {
+              const due = computeTotalDue(b);
+              const paid = Number(b.paid_total ?? 0);
+              const st = billingStatus(b, today);
+              return (
+                <tr key={b._key}>
+                  <td className="num">{b.bill_count ?? '—'}</td>
+                  <td className="num">{fmtDate(b.due_date) || '—'}</td>
+                  <td className="right num">{fmt(due)}</td>
+                  <td className="right num">{fmt(paid)}</td>
+                  <td style={{ color: toneColor(st.tone), fontWeight: 600 }}>{st.label}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

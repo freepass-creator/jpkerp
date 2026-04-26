@@ -653,3 +653,156 @@ export function DisposalSubpage() {
     </div>
   );
 }
+
+/* ─────────────── 할부 sub-tab ─────────────── */
+
+interface LoanRec extends Record<string, unknown> {
+  _key?: string;
+  loan_code?: string;
+  car_number?: string;
+  partner_code?: string;
+  finance_company?: string;
+  repay_type?: string;
+  principal?: number;
+  annual_rate?: number;
+  months?: number;
+  start_date?: string;
+  status?: string;
+}
+
+interface LoanScheduleRec extends Record<string, unknown> {
+  _key?: string;
+  loan_key?: string;
+  loan_code?: string;
+  car_number?: string;
+  schedule_no?: number;
+  due_date?: string;
+  amount?: number;
+  principal_amount?: number;
+  interest_amount?: number;
+  paid_total?: number;
+  status?: string;
+}
+
+export function LoanSubpage() {
+  const loans = useRtdbCollection<LoanRec>('loans');
+  const schedules = useRtdbCollection<LoanScheduleRec>('loan_schedules');
+  const [filter, setFilter] = useState<string>('all');
+
+  const activeLoans = useMemo(() => loans.data.filter((l) => l.status !== 'deleted'), [loans.data]);
+  const activeSchedules = useMemo(
+    () => schedules.data.filter((s) => s.status !== 'deleted'),
+    [schedules.data],
+  );
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // 회차 미납 = 도래일 < today AND paid_total < amount
+  const overdueByCar = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of activeSchedules) {
+      if (!s.due_date || !s.car_number) continue;
+      if (s.due_date < today && (Number(s.paid_total) || 0) < (Number(s.amount) || 0)) {
+        m.set(s.car_number, (m.get(s.car_number) ?? 0) + 1);
+      }
+    }
+    return m;
+  }, [activeSchedules, today]);
+
+  const filterOpts = [
+    { key: 'all', label: '전체', count: activeLoans.length },
+    {
+      key: 'overdue',
+      label: '연체',
+      count: activeLoans.filter((l) => overdueByCar.get(l.car_number ?? '') ?? 0).length,
+    },
+  ];
+
+  const filteredLoans = useMemo(() => {
+    if (filter === 'overdue') {
+      return activeLoans.filter((l) => (overdueByCar.get(l.car_number ?? '') ?? 0) > 0);
+    }
+    return activeLoans;
+  }, [filter, activeLoans, overdueByCar]);
+
+  const alerts: AlertCardProps[] = [];
+  const overdueCars = activeLoans.filter((l) => (overdueByCar.get(l.car_number ?? '') ?? 0) > 0);
+  if (overdueCars.length > 0) {
+    alerts.push({
+      severity: 'danger',
+      icon: 'ph-warning',
+      head: `할부 연체 ${overdueCars.length}건`,
+      desc: overdueCars
+        .slice(0, 3)
+        .map((l) => l.car_number)
+        .filter(Boolean)
+        .join(' · '),
+      count: overdueCars.length,
+    });
+  }
+
+  return (
+    <div className="v3-subpage is-active">
+      <AlertSection alerts={alerts} />
+      <StatusFilter value={filter} onChange={setFilter} options={filterOpts} />
+      <div className="v3-table-wrap">
+        {loans.loading ? (
+          <EmptyState label="로드 중..." />
+        ) : filteredLoans.length === 0 ? (
+          <EmptyState label="할부 데이터가 없습니다" />
+        ) : (
+          <table className="v3-subtab-table">
+            <thead>
+              <tr>
+                <th style={{ width: 100 }}>할부코드</th>
+                <th style={{ width: 110 }}>차량번호</th>
+                <th>금융사</th>
+                <th>상환방식</th>
+                <th className="right" style={{ width: 120 }}>
+                  원금
+                </th>
+                <th className="right" style={{ width: 70 }}>
+                  이자%
+                </th>
+                <th style={{ width: 70 }}>기간</th>
+                <th style={{ width: 100 }}>시작일</th>
+                <th style={{ width: 90 }}>연체</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLoans.map((l) => {
+                const od = overdueByCar.get(l.car_number ?? '') ?? 0;
+                return (
+                  <tr key={l._key}>
+                    <td className="num">{l.loan_code ?? '—'}</td>
+                    <td>{l.car_number ?? '—'}</td>
+                    <td>{l.finance_company ?? '—'}</td>
+                    <td>{l.repay_type ?? '—'}</td>
+                    <td className="right">{l.principal ? fmt(Number(l.principal)) : '—'}</td>
+                    <td className="right">{l.annual_rate ?? '—'}</td>
+                    <td>{l.months ? `${l.months}개월` : '—'}</td>
+                    <td>{fmtDate(l.start_date) || '—'}</td>
+                    <td>
+                      {od > 0 ? (
+                        <span style={{ color: 'var(--c-err)', fontWeight: 600 }}>{od}회</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+      <div className="v3-table-foot">
+        <div>
+          총 {filteredLoans.length}건<span className="sep">│</span>
+          회차 {activeSchedules.length}건<span className="sep">│</span>
+          원금합계 {fmt(filteredLoans.reduce((s, l) => s + (Number(l.principal) || 0), 0))}원
+        </div>
+      </div>
+    </div>
+  );
+}

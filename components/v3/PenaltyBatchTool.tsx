@@ -15,7 +15,7 @@ import { computeContractEnd } from '@/lib/date-utils';
 import { saveEvent } from '@/lib/firebase/events';
 import { ocrFile } from '@/lib/ocr';
 import { detectPenalty, parsePenalty } from '@/lib/parsers/penalty';
-import { downloadPenaltyZip } from '@/lib/penalty-pdf';
+import { downloadPenaltyMergedPdf } from '@/lib/penalty-pdf';
 import type { RtdbAsset, RtdbContract } from '@/lib/types/rtdb-entities';
 import { fmt } from '@/lib/utils';
 import { useMemo, useRef, useState } from 'react';
@@ -214,8 +214,8 @@ export function PenaltyBatchTool() {
         _contractor: p.contract?.contractor_name ?? '',
       }));
 
-  // PDF ZIP 다운로드 (3종 한 PDF로 묶이고 파일별 ZIP)
-  const onDownloadZip = async () => {
+  // PDF 통합 다운로드 (모든 고지서를 한 PDF로 — 3페이지 × N건)
+  const onDownloadMergedPdf = async () => {
     const work = buildWorkItems(items);
     if (work.length === 0) {
       toast.warning('처리할 고지서가 없습니다');
@@ -223,12 +223,12 @@ export function PenaltyBatchTool() {
     }
     setBusy(true);
     try {
-      toast.info(`${work.length}건 PDF 생성 중...`);
-      await downloadPenaltyZip(work);
+      toast.info(`${work.length}건 통합 PDF 생성 중...`);
+      await downloadPenaltyMergedPdf(work);
       setItems((prev) =>
         prev.map((p) => (work.some((w) => w.id === p.id) ? { ...p, generated: true } : p)),
       );
-      toast.success(`${work.length}건 ZIP 다운로드 완료`);
+      toast.success(`${work.length}건 통합 PDF 다운로드 완료`);
     } catch (err) {
       toast.error(`다운로드 실패: ${(err as Error).message}`);
     } finally {
@@ -344,11 +344,11 @@ export function PenaltyBatchTool() {
           <button
             type="button"
             className="m-btn"
-            onClick={onDownloadZip}
+            onClick={onDownloadMergedPdf}
             disabled={!hasOk || busy}
-            title="변경공문 + 고지서사본 + 계약사실확인서 (ZIP)"
+            title="변경공문 + 고지서사본 + 계약사실확인서 (전체 1 PDF)"
           >
-            <i className="ph ph-download-simple" /> PDF 3종 ZIP
+            <i className="ph ph-download-simple" /> 통합 PDF 다운로드
           </button>
           <button
             type="button"
