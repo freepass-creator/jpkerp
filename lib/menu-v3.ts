@@ -31,6 +31,11 @@ export const MENU_V3: MenuV3Section[] = [
     divider: false,
     items: [
       {
+        href: '/',
+        label: '대시보드',
+        icon: 'ph-chart-line',
+      },
+      {
         href: '/status/pending',
         label: '업무현황',
         icon: 'ph-push-pin',

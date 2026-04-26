@@ -4040,3 +4040,66 @@ button.timeline-row.is-clickable:last-child { border-bottom: none; }
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   v3 Dashboard — 4 핵심 카드 (Phase 14)
+   ═══════════════════════════════════════════════════════════════ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--sp-4);
+}
+.dashboard-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.dashboard-card:hover {
+  border-color: var(--c-accent);
+}
+.dashboard-card:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
+}
+.dashboard-card .card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--c-text-sub);
+}
+.dashboard-card .card-head .ico {
+  font-size: var(--icon-lg);
+  color: var(--c-accent);
+}
+.dashboard-card .card-main {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--c-text);
+  margin-bottom: 4px;
+  font-feature-settings: 'tnum';
+}
+.dashboard-card .card-sub {
+  color: var(--c-text-muted);
+  font-size: var(--fs-tag);
+}
+.dashboard-card .card-detail {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-border-soft);
+}
+.dashboard-card .card-detail .item {
+  flex: 1;
+}
+.dashboard-card .card-detail .item .lbl {
+  color: var(--c-text-muted);
+  font-size: var(--fs-tag);
+}
+.dashboard-card .card-detail .item .val {
+  color: var(--c-text);
+  font-feature-settings: 'tnum';
+}
