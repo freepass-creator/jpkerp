@@ -1,6 +1,7 @@
 'use client';
 
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
+import { AlimtalkSendDialog, type AlimtalkTarget } from '@/components/v3/alimtalk-send-dialog';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { computeContractEnd, daysBetween, normalizeDate, today } from '@/lib/date-utils';
 import { JpkSetFilter } from '@/lib/grid/set-filter';
@@ -37,6 +38,7 @@ export function ExpiringClient({ gridRef: externalRef, onCountChange }: Props = 
   const assets = useRtdbCollection<RtdbAsset>('assets');
   const contracts = useRtdbCollection<RtdbContract>('contracts');
   const [rangeMonths, setRangeMonths] = useState(3);
+  const [alimtalkTarget, setAlimtalkTarget] = useState<AlimtalkTarget | null>(null);
 
   const rows = useMemo<ExpiringRow[]>(() => {
     const t = today();
@@ -126,26 +128,50 @@ export function ExpiringClient({ gridRef: externalRef, onCountChange }: Props = 
           valueFormatter: (p: { value: unknown }) => `D-${p.value}`,
         },
         {
-          headerName: '연장',
+          headerName: '액션',
           field: 'contract_code',
-          width: 70,
+          width: 150,
           filter: false,
           sortable: false,
           cellRenderer: (p: { data?: ExpiringRow }) => {
-            const code = p.data?.contract_code;
-            if (!code) return '';
+            const row = p.data;
+            const code = row?.contract_code;
+            if (!row || !code) return '';
             return (
-              <button
-                type="button"
-                className="btn btn-xs btn-outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(`/input?type=extension&contract=${encodeURIComponent(code)}`);
-                }}
-              >
-                <i className="ph ph-arrow-clockwise" />
-                연장
-              </button>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button
+                  type="button"
+                  className="btn btn-xs btn-outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/input?type=extension&contract=${encodeURIComponent(code)}`);
+                  }}
+                >
+                  <i className="ph ph-arrow-clockwise" />
+                  연장
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-xs btn-outline"
+                  disabled={!row.contractor_phone}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAlimtalkTarget({
+                      kind: 'expiring',
+                      contract_code: code,
+                      car_number: row.car_number,
+                      contractor_name: row.contractor_name,
+                      contractor_phone: row.contractor_phone,
+                      end_date: row.end_date,
+                      d_day: row.d_day,
+                    });
+                  }}
+                  title={row.contractor_phone ? '만기 안내 알림톡' : '연락처 없음'}
+                >
+                  <i className="ph ph-chat-circle" />
+                  알림톡
+                </button>
+              </div>
             );
           },
         },
@@ -188,6 +214,11 @@ export function ExpiringClient({ gridRef: externalRef, onCountChange }: Props = 
           storageKey="jpk.grid.status.expiring"
         />
       </div>
+      <AlimtalkSendDialog
+        open={alimtalkTarget !== null}
+        target={alimtalkTarget}
+        onClose={() => setAlimtalkTarget(null)}
+      />
     </div>
   );
 }

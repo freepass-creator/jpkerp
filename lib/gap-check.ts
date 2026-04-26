@@ -226,7 +226,7 @@ function pushContract(
   out: PendingItem[],
   { contracts, billings, events }: GapCheckInput,
   t: string,
-  _alarm: AlarmSettings,
+  alarm: AlarmSettings,
 ): void {
   // 1) 미납 발생 [N] (billings.paid_total < amount AND due_date < today)
   const overdueBills = billings.filter((b) => {
@@ -256,6 +256,46 @@ function pushContract(
       gotoMenu: 'journal',
       route: '/operation?tab=eungdae&filter=overdue',
     });
+  }
+
+  // 2-pre) 시동제어 권유 [N] — 미납 D+ignition_recommend_days 이상 + 시동제어 미적용
+  const igThreshold = alarm.ignition_recommend_days;
+  if (igThreshold > 0) {
+    // 계약별 최대 D+ 일수 집계
+    const overdueByCode = new Map<string, number>();
+    for (const b of overdueBills) {
+      if (!b.contract_code || !b.due_date) continue;
+      const d = daysAfter(b.due_date, t);
+      const prev = overdueByCode.get(b.contract_code) ?? 0;
+      if (d > prev) overdueByCode.set(b.contract_code, d);
+    }
+    const ignitionCandidates = contracts.filter((c) => {
+      if (c.status === 'deleted' || !c.contract_code) return false;
+      if ((c.action_status ?? '').toString().includes('시동제어')) return false;
+      const maxD = overdueByCode.get(c.contract_code) ?? 0;
+      return maxD >= igThreshold;
+    });
+    if (ignitionCandidates.length > 0) {
+      out.push({
+        id: 'contract.ignition-recommend',
+        category: '계약',
+        label: `시동제어 권유 [${ignitionCandidates.length}]`,
+        count: ignitionCandidates.length,
+        description:
+          ignitionCandidates
+            .slice(0, 3)
+            .map((c) => {
+              const d = overdueByCode.get(c.contract_code ?? '') ?? 0;
+              return `${c.car_number ?? c.contract_code} D+${d}`;
+            })
+            .join(' · ') +
+          (ignitionCandidates.length > 3 ? ` 외 ${ignitionCandidates.length - 3}건` : ''),
+        priority: 'urgent',
+        action: '제어',
+        gotoMenu: 'journal',
+        route: '/operation?tab=sidong&filter=overdue',
+      });
+    }
   }
 
   // 2) 시동제어 중 [N]

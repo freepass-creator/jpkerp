@@ -17,7 +17,10 @@ import { fmt } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+export type AlimtalkKind = 'overdue' | 'expiring';
+
 export interface AlimtalkTarget {
+  kind?: AlimtalkKind; // 기본 'overdue'
   contract_code?: string;
   car_number?: string;
   contractor_name?: string;
@@ -25,6 +28,8 @@ export interface AlimtalkTarget {
   unpaid_total?: number;
   bill_count?: number;
   max_days?: number;
+  end_date?: string; // expiring 모드 — 만기일 (YYYY-MM-DD)
+  d_day?: number; // expiring 모드 — D-day (양수)
 }
 
 interface Props {
@@ -33,7 +38,7 @@ interface Props {
   onClose: () => void;
 }
 
-function buildTemplate(t: AlimtalkTarget): string {
+function buildOverdueTemplate(t: AlimtalkTarget): string {
   const name = t.contractor_name ?? '고객';
   const car = t.car_number ?? '';
   const amt = t.unpaid_total ? `${fmt(t.unpaid_total)}원` : '';
@@ -48,6 +53,27 @@ function buildTemplate(t: AlimtalkTarget): string {
     '문의: 02-1234-5678',
   ].filter(Boolean);
   return lines.join('\n');
+}
+
+function buildExpiringTemplate(t: AlimtalkTarget): string {
+  const name = t.contractor_name ?? '고객';
+  const car = t.car_number ?? '';
+  const dday = typeof t.d_day === 'number' ? t.d_day : null;
+  const endLabel = t.end_date ? t.end_date.replace(/-/g, '.') : '';
+  const ddayPhrase = dday !== null ? (dday <= 0 ? '오늘 만기' : `${dday}일 후 만기`) : '';
+  const lines = [
+    `[JPK 장기렌터카] ${name}님 안녕하세요.`,
+    car
+      ? `이용 중이신 차량 ${car}${endLabel ? `의 임대차계약 만기(${endLabel})` : '의 임대차계약 만기'}가 ${ddayPhrase || '임박'}하여 안내 드립니다.`
+      : `임대차계약 만기가 ${ddayPhrase || '임박'}하여 안내 드립니다.`,
+    '연장을 원하시면 회신 부탁드립니다. 차량 반납을 원하시는 경우 반납 일정 협의를 위해 연락 부탁드립니다.',
+    '문의: 02-1234-5678',
+  ].filter(Boolean);
+  return lines.join('\n');
+}
+
+function buildTemplate(t: AlimtalkTarget): string {
+  return t.kind === 'expiring' ? buildExpiringTemplate(t) : buildOverdueTemplate(t);
 }
 
 export function AlimtalkSendDialog({ open, target, onClose }: Props) {
@@ -77,11 +103,13 @@ export function AlimtalkSendDialog({ open, target, onClose }: Props) {
     setBusy(true);
     try {
       const today = new Date().toISOString().slice(0, 10);
+      const kind: AlimtalkKind = target.kind ?? 'overdue';
+      const isExpiring = kind === 'expiring';
       // contact 이벤트 push — message-tool.tsx 이력에서 픽업
       await saveEvent({
         type: 'contact',
         date: today,
-        title: '미납 독촉 알림톡',
+        title: isExpiring ? '만기 임박 안내 알림톡' : '미납 독촉 알림톡',
         contact_channel: '알림톡',
         contact_result: '발송 예약',
         memo: message,
@@ -93,20 +121,24 @@ export function AlimtalkSendDialog({ open, target, onClose }: Props) {
         handler: user?.displayName ?? user?.email ?? undefined,
       });
 
-      // 추가로 collect 이벤트도 기록 — 미납관리 grid 의 sms_count 집계 반영
-      await saveEvent({
-        type: 'collect',
-        date: today,
-        title: '알림톡 독촉',
-        memo: `알림톡: ${message.slice(0, 60)}${message.length > 60 ? '…' : ''}`,
-        collect_result: '발송 예약',
-        car_number: target.car_number,
-        contract_code: target.contract_code,
-        handler_uid: user?.uid,
-        handler: user?.displayName ?? user?.email ?? undefined,
-      });
+      // 미납 모드는 collect 이벤트도 기록 (미납관리 grid 의 sms_count 집계 반영)
+      if (!isExpiring) {
+        await saveEvent({
+          type: 'collect',
+          date: today,
+          title: '알림톡 독촉',
+          memo: `알림톡: ${message.slice(0, 60)}${message.length > 60 ? '…' : ''}`,
+          collect_result: '발송 예약',
+          car_number: target.car_number,
+          contract_code: target.contract_code,
+          handler_uid: user?.uid,
+          handler: user?.displayName ?? user?.email ?? undefined,
+        });
+      }
 
-      toast.success('알림톡 발송 예약 완료 (이력 등록)');
+      toast.success(
+        isExpiring ? '만기 안내 알림톡 발송 예약 완료' : '알림톡 발송 예약 완료 (이력 등록)',
+      );
       onClose();
     } catch (e) {
       toast.error(`발송 실패: ${(e as Error).message}`);
@@ -132,13 +164,20 @@ export function AlimtalkSendDialog({ open, target, onClose }: Props) {
     borderRadius: 2,
   };
 
+  const isExpiring = target.kind === 'expiring';
+  const subtitle = isExpiring
+    ? `${target.contractor_name ?? '-'} · ${target.car_number ?? '-'}${
+        target.end_date ? ` · 만기 ${target.end_date.replace(/-/g, '.')}` : ''
+      }${typeof target.d_day === 'number' ? ` · D-${target.d_day}` : ''}`
+    : `${target.contractor_name ?? '-'} · ${target.car_number ?? '-'}${
+        target.unpaid_total ? ` · 미납 ${fmt(target.unpaid_total)}원` : ''
+      }`;
+
   return (
     <EditDialog
       open={open}
-      title="알림톡 발송"
-      subtitle={`${target.contractor_name ?? '-'} · ${target.car_number ?? '-'}${
-        target.unpaid_total ? ` · 미납 ${fmt(target.unpaid_total)}원` : ''
-      }`}
+      title={isExpiring ? '만기 안내 알림톡' : '알림톡 발송'}
+      subtitle={subtitle}
       onClose={onClose}
       onSave={onSend}
       saving={busy}

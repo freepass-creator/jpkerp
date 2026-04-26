@@ -1138,6 +1138,13 @@ const ALARM_FIELDS: AlarmFieldSpec[] = [
     kind: 'number',
   },
   {
+    key: 'ignition_recommend_days',
+    label: '시동제어 권유 임계',
+    desc: '미납 D+N 이상 + 시동제어 미적용 계약을 시동제어 권유 미결로 표시',
+    unit: '일',
+    kind: 'number',
+  },
+  {
     key: 'daily_report_required',
     label: '자금일보 매일 작성 필수',
     desc: '활성화시 오늘 자금일보 미작성이면 미결업무에 표시',

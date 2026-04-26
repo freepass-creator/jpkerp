@@ -25,6 +25,8 @@ export interface AlarmSettings {
   idle_alert_days: number;
   /** 받은 요청 마감 임박 — 마감 N일 전부터 알람 */
   request_due_days: number;
+  /** 시동제어 권유 — 미납 D+N 이상 + 미접촉 시 권유 알람 */
+  ignition_recommend_days: number;
   /** 자금일보 매일 작성 필수 여부 (true면 미작성시 알람) */
   daily_report_required: boolean;
 }
@@ -38,6 +40,7 @@ export const DEFAULT_ALARM_SETTINGS: AlarmSettings = {
   loan_due_days: 7,
   idle_alert_days: 30,
   request_due_days: 1,
+  ignition_recommend_days: 60,
   daily_report_required: true,
 };
 
@@ -72,6 +75,10 @@ export function withAlarmDefaults(
     request_due_days: numOrDefault(
       partial.request_due_days,
       DEFAULT_ALARM_SETTINGS.request_due_days,
+    ),
+    ignition_recommend_days: numOrDefault(
+      partial.ignition_recommend_days,
+      DEFAULT_ALARM_SETTINGS.ignition_recommend_days,
     ),
     daily_report_required:
       typeof partial.daily_report_required === 'boolean'
