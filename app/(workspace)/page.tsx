@@ -15,6 +15,7 @@
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { computeContractEnd, today as todayStr } from '@/lib/date-utils';
 import { groupByCategory, runGapCheck } from '@/lib/gap-check';
+import { useAlarmSettings } from '@/lib/hooks/useAlarmSettings';
 import type { RtdbAsset, RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -43,6 +44,7 @@ export default function DashboardPage() {
   const events = useRtdbCollection<RtdbEvent>('events');
   const insurances = useRtdbCollection<InsuranceRow>('insurances');
   const tasks = useRtdbCollection<TaskRow>('tasks');
+  const { settings: alarm } = useAlarmSettings();
 
   const loading =
     assets.loading ||
@@ -110,6 +112,9 @@ export default function DashboardPage() {
   }, [loading, billings.data, t]);
 
   /* ───── 카드 3: 반납스케줄 ───── */
+  // 임계값: 임박(near) = contract_expiring_days / 4 (≥1), 일반(soon) = contract_expiring_days
+  const expiringSoon = Math.max(1, alarm.contract_expiring_days);
+  const expiringNear = Math.max(1, Math.round(expiringSoon / 4));
   const returnSchedule = useMemo(() => {
     if (loading) return null;
     const returnedCodes = new Set(
@@ -118,8 +123,8 @@ export default function DashboardPage() {
         .map((e) => e.contract_code)
         .filter((v): v is string => Boolean(v)),
     );
-    let d7 = 0;
-    let d30 = 0;
+    let near = 0;
+    let soon = 0;
     let expired = 0;
     for (const c of contracts.data) {
       if (c.status === 'deleted') continue;
@@ -133,12 +138,12 @@ export default function DashboardPage() {
         if (!returnedCodes.has(c.contract_code)) expired++;
       } else {
         const days = diffDays(end, t);
-        if (days <= 7) d7++;
-        else if (days <= 30) d30++;
+        if (days <= expiringNear) near++;
+        else if (days <= expiringSoon) soon++;
       }
     }
-    return { d7, d30, expired };
-  }, [loading, contracts.data, events.data, t]);
+    return { near, soon, expired };
+  }, [loading, contracts.data, events.data, t, expiringNear, expiringSoon]);
 
   /* ───── 카드 4: 미결업무 ───── */
   const pending = useMemo(() => {
@@ -149,6 +154,7 @@ export default function DashboardPage() {
       billings: billings.data,
       events: events.data,
       extra: { insurances: insurances.data, tasks: tasks.data },
+      alarm,
     });
     const grouped = groupByCategory(items);
     const total = items.reduce((s, it) => s + it.count, 0);
@@ -167,6 +173,7 @@ export default function DashboardPage() {
     events.data,
     insurances.data,
     tasks.data,
+    alarm,
   ]);
 
   return (
@@ -221,20 +228,24 @@ export default function DashboardPage() {
             onClick={() => router.push('/contract?tab=overdue')}
           />
 
-          {/* 카드 3: 반납스케줄 */}
+          {/* 카드 3: 반납스케줄 — 임계값은 시스템 설정의 contract_expiring_days 사용 */}
           <DashboardCard
             icon="ph-calendar-check"
             label="반납스케줄"
-            mainValue={`${(returnSchedule?.d7 ?? 0) + (returnSchedule?.expired ?? 0)}건`}
-            subText="긴급(만기경과+D-7) 처리 필요"
+            mainValue={`${(returnSchedule?.near ?? 0) + (returnSchedule?.expired ?? 0)}건`}
+            subText={`긴급(만기경과+D-${expiringNear}) 처리 필요`}
             details={[
               {
                 lbl: '만기경과',
                 val: `${returnSchedule?.expired ?? 0}건`,
                 tone: 'danger',
               },
-              { lbl: 'D-7', val: `${returnSchedule?.d7 ?? 0}건`, tone: 'warn' },
-              { lbl: 'D-30', val: `${returnSchedule?.d30 ?? 0}건` },
+              {
+                lbl: `D-${expiringNear}`,
+                val: `${returnSchedule?.near ?? 0}건`,
+                tone: 'warn',
+              },
+              { lbl: `D-${expiringSoon}`, val: `${returnSchedule?.soon ?? 0}건` },
             ]}
             onClick={() => router.push('/contract?tab=releaseReturn')}
           />

@@ -20,12 +20,15 @@
 import { JpkGrid } from '@/components/shared/jpk-grid';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { computeTotalDue } from '@/lib/date-utils';
+import { getRtdb } from '@/lib/firebase/rtdb';
 import {
   MONO_CELL_STYLE,
   MONO_CELL_STYLE_BOLD,
   rowNumColumn,
   typedColumn,
 } from '@/lib/grid/typed-column';
+import { useAlarmSettings } from '@/lib/hooks/useAlarmSettings';
+import { type AlarmSettings, DEFAULT_ALARM_SETTINGS } from '@/lib/types/alarm-settings';
 import type {
   RtdbAsset,
   RtdbBilling,
@@ -36,7 +39,9 @@ import type {
 } from '@/lib/types/rtdb-entities';
 import { fmt } from '@/lib/utils';
 import type { ColDef } from 'ag-grid-community';
-import { useMemo, useState } from 'react';
+import { ref, set } from 'firebase/database';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 type SubpageId =
   | 'dev-models'
@@ -126,11 +131,7 @@ export default function DevToolsPage() {
       ) : active === 'dev-integrity' ? (
         <IntegritySubpage />
       ) : active === 'dev-settings' ? (
-        <PlaceholderSubpage
-          label="시스템 설정"
-          icon="ph-gear-six"
-          desc="이관 기준일 · 자동이체일 · 미수 알림 기준 · 외부 연동"
-        />
+        <SystemSettingsSubpage />
       ) : active === 'dev-backup' ? (
         <PlaceholderSubpage
           label="백업·내보내기"
@@ -1064,6 +1065,262 @@ function IntegritySubpage() {
           경고 {stats.warn}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ═════════ 7. 시스템 설정 — 알람 임계값 ═════════ */
+
+interface AlarmFieldSpec {
+  key: keyof AlarmSettings;
+  label: string;
+  desc: string;
+  unit?: string;
+  kind: 'number' | 'boolean';
+}
+
+const ALARM_FIELDS: AlarmFieldSpec[] = [
+  {
+    key: 'contract_expiring_days',
+    label: '계약 만기 알람',
+    desc: '반납날짜 N일 전부터 임박 처리 (사이드바 만기도래 / 대시보드 반납스케줄)',
+    unit: '일',
+    kind: 'number',
+  },
+  {
+    key: 'contract_overdue_critical_days',
+    label: '미납 긴급 임계',
+    desc: '연체 D+N 이상이면 긴급으로 분류',
+    unit: '일',
+    kind: 'number',
+  },
+  {
+    key: 'insurance_expiring_days',
+    label: '보험 만료 알람',
+    desc: '보험 만기 N일 전부터 알람 (자산관리 보험 sub-tab · 미결업무 카드)',
+    unit: '일',
+    kind: 'number',
+  },
+  {
+    key: 'inspection_expiring_days',
+    label: '정기검사 도래 알람',
+    desc: '검사 만기 N일 전부터 알람 (자산관리 검사 sub-tab · 미결업무 카드)',
+    unit: '일',
+    kind: 'number',
+  },
+  {
+    key: 'tax_expiring_days',
+    label: '자동차세 알람',
+    desc: '납부일 N일 전부터 알람',
+    unit: '일',
+    kind: 'number',
+  },
+  {
+    key: 'loan_due_days',
+    label: '할부금 도래 알람',
+    desc: '결제일 N일 전부터 알람',
+    unit: '일',
+    kind: 'number',
+  },
+  {
+    key: 'idle_alert_days',
+    label: '휴차 초과 알람',
+    desc: '휴차 N일 초과시 알람 (미결업무 자산 카테고리)',
+    unit: '일',
+    kind: 'number',
+  },
+  {
+    key: 'request_due_days',
+    label: '받은 요청 마감 임박',
+    desc: '마감 N일 전부터 알람 (미결업무 업무 카테고리)',
+    unit: '일',
+    kind: 'number',
+  },
+  {
+    key: 'daily_report_required',
+    label: '자금일보 매일 작성 필수',
+    desc: '활성화시 오늘 자금일보 미작성이면 미결업무에 표시',
+    kind: 'boolean',
+  },
+];
+
+function SystemSettingsSubpage() {
+  const { settings, loading } = useAlarmSettings();
+  const [draft, setDraft] = useState<AlarmSettings>(settings);
+  const [saving, setSaving] = useState(false);
+
+  // 외부에서 settings 변경시 draft도 동기화 (다른 사용자 저장 등)
+  useEffect(() => {
+    setDraft(settings);
+  }, [settings]);
+
+  const dirty = useMemo(() => {
+    for (const f of ALARM_FIELDS) {
+      if (draft[f.key] !== settings[f.key]) return true;
+    }
+    return false;
+  }, [draft, settings]);
+
+  const updateField = (key: keyof AlarmSettings, value: number | boolean) => {
+    setDraft((d) => ({ ...d, [key]: value }) as AlarmSettings);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await set(ref(getRtdb(), 'settings/alarms'), draft);
+      toast.success('알람 설정이 저장되었습니다');
+    } catch (e) {
+      toast.error(`저장 실패: ${(e as Error).message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = () => {
+    setDraft(DEFAULT_ALARM_SETTINGS);
+  };
+
+  return (
+    <div className="v3-subpage is-active">
+      <div className="v3-alerts">
+        <div className="v3-alerts-head">
+          <i className="ph ph-bell ico" />
+          <span className="title">알람 임계값 설정</span>
+          <span className="count">
+            · settings/alarms (gap-check · 사이드바 카운트 · 대시보드 · 자산 sub-tab 공통)
+          </span>
+        </div>
+      </div>
+
+      {loading ? (
+        <LoadingPanel label="알람 설정" />
+      ) : (
+        <div
+          style={{
+            background: 'var(--c-surface)',
+            border: '1px solid var(--c-border)',
+            padding: 16,
+            maxWidth: 880,
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {ALARM_FIELDS.map((f) => (
+              <AlarmField
+                key={f.key as string}
+                spec={f}
+                value={draft[f.key]}
+                onChange={(v) => updateField(f.key, v)}
+              />
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              marginTop: 20,
+              paddingTop: 16,
+              borderTop: '1px solid var(--c-border)',
+              alignItems: 'center',
+            }}
+          >
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!dirty || saving}
+              style={{
+                background: dirty ? 'var(--c-accent)' : 'var(--c-bg-soft)',
+                color: dirty ? '#fff' : 'var(--c-text-muted)',
+                border: '1px solid var(--c-border)',
+                padding: '6px 16px',
+                fontWeight: 600,
+                cursor: dirty && !saving ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {saving ? '저장 중...' : '저장'}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={saving}
+              style={{
+                background: 'transparent',
+                color: 'var(--c-text-sub)',
+                border: '1px solid var(--c-border)',
+                padding: '6px 12px',
+                cursor: 'pointer',
+              }}
+            >
+              기본값 복원
+            </button>
+            <span style={{ marginLeft: 'auto', color: 'var(--c-text-muted)', fontSize: 12 }}>
+              {dirty ? '변경사항 있음' : '저장됨'}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AlarmField({
+  spec,
+  value,
+  onChange,
+}: {
+  spec: AlarmFieldSpec;
+  value: number | boolean;
+  onChange: (v: number | boolean) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '180px 140px 1fr',
+        gap: 12,
+        alignItems: 'center',
+        padding: '6px 0',
+        borderBottom: '1px solid var(--c-border)',
+      }}
+    >
+      <div style={{ fontWeight: 600, fontSize: 13 }}>{spec.label}</div>
+      <div>
+        {spec.kind === 'number' ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input
+              type="number"
+              min={0}
+              max={3650}
+              value={Number(value)}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                onChange(Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0);
+              }}
+              style={{
+                width: 80,
+                padding: '4px 8px',
+                border: '1px solid var(--c-border)',
+                background: 'var(--c-bg)',
+                fontSize: 13,
+                textAlign: 'right',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            />
+            <span style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>{spec.unit ?? ''}</span>
+          </div>
+        ) : (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={Boolean(value)}
+              onChange={(e) => onChange(e.target.checked)}
+            />
+            <span style={{ fontSize: 12 }}>{value ? '활성' : '비활성'}</span>
+          </label>
+        )}
+      </div>
+      <div style={{ color: 'var(--c-text-muted)', fontSize: 12 }}>{spec.desc}</div>
     </div>
   );
 }

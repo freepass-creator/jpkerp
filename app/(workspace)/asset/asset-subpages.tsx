@@ -7,6 +7,7 @@
  */
 
 import { useRtdbCollection } from '@/lib/collections/rtdb';
+import { useAlarmSettings } from '@/lib/hooks/useAlarmSettings';
 import type { RtdbAsset, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt, fmtDate } from '@/lib/utils';
 import { useMemo, useState } from 'react';
@@ -86,7 +87,9 @@ function AlertSection({ alerts }: { alerts: AlertCardProps[] }) {
 export function InsuranceSubpage() {
   const events = useRtdbCollection<EventLike>('events');
   const assets = useRtdbCollection<RtdbAsset>('assets');
+  const { settings: alarm } = useAlarmSettings();
   const [filter, setFilter] = useState<string>('all');
+  const insThreshold = alarm.insurance_expiring_days;
 
   const insurances = useMemo(
     () =>
@@ -107,6 +110,19 @@ export function InsuranceSubpage() {
     [assets.data, insurances],
   );
 
+  // 만기 임박 (expire_date가 today + insThreshold 이내)
+  const expiring = useMemo(() => {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + insThreshold * 86400000);
+    return insurances.filter((e) => {
+      const v = e.expire_date as string | undefined;
+      if (!v) return false;
+      const d = new Date(String(v));
+      if (Number.isNaN(d.getTime())) return false;
+      return d >= now && d <= cutoff;
+    });
+  }, [insurances, insThreshold]);
+
   const filterOpts = [
     { key: 'all', label: '전체', count: insurances.length },
     {
@@ -119,33 +135,45 @@ export function InsuranceSubpage() {
       label: '자차',
       count: insurances.filter((e) => String(e.ins_kind ?? '').includes('자차')).length,
     },
+    { key: 'expiring', label: `${insThreshold}일내 만기`, count: expiring.length },
   ];
 
   const filtered = useMemo(() => {
     if (filter === 'all') return insurances;
+    if (filter === 'expiring') return expiring;
     if (filter.startsWith('kind:')) {
       const k = filter.slice(5);
       return insurances.filter((e) => String(e.ins_kind ?? '').includes(k));
     }
     return insurances;
-  }, [filter, insurances]);
+  }, [filter, insurances, expiring]);
 
-  const alerts: AlertCardProps[] =
-    noIns.length > 0
-      ? [
-          {
-            severity: 'warn',
-            icon: 'ph-shield-warning',
-            head: `보험 미연결 ${noIns.length}대`,
-            desc: noIns
-              .slice(0, 3)
-              .map((a) => a.car_number)
-              .filter(Boolean)
-              .join(' · '),
-            count: noIns.length,
-          },
-        ]
-      : [];
+  const alerts: AlertCardProps[] = [];
+  if (noIns.length > 0) {
+    alerts.push({
+      severity: 'warn',
+      icon: 'ph-shield-warning',
+      head: `보험 미연결 ${noIns.length}대`,
+      desc: noIns
+        .slice(0, 3)
+        .map((a) => a.car_number)
+        .filter(Boolean)
+        .join(' · '),
+      count: noIns.length,
+    });
+  }
+  if (expiring.length > 0) {
+    alerts.push({
+      severity: 'warn',
+      icon: 'ph-clock',
+      head: `${insThreshold}일내 만기 ${expiring.length}건`,
+      desc: expiring
+        .slice(0, 3)
+        .map((e) => `${e.car_number ?? '—'} (${String(e.expire_date ?? '')})`)
+        .join(' · '),
+      count: expiring.length,
+    });
+  }
 
   return (
     <div className="v3-subpage is-active">
@@ -285,7 +313,9 @@ export function RepairSubpage() {
 export function InspectionSubpage() {
   const events = useRtdbCollection<EventLike>('events');
   const assets = useRtdbCollection<RtdbAsset>('assets');
+  const { settings: alarm } = useAlarmSettings();
   const [filter, setFilter] = useState<string>('all');
+  const inspThreshold = alarm.inspection_expiring_days;
 
   const inspections = useMemo(
     () =>
@@ -295,17 +325,17 @@ export function InspectionSubpage() {
     [events.data],
   );
 
-  // 검사 만료 예정 (자산.inspection_valid_until 기준)
+  // 검사 만료 예정 (자산.inspection_valid_until 기준 — alarm.inspection_expiring_days)
   const expiring = useMemo(() => {
     const now = new Date();
-    const cutoff = new Date(now.getTime() + 60 * 86400000);
+    const cutoff = new Date(now.getTime() + inspThreshold * 86400000);
     return assets.data.filter((a) => {
       const v = a.inspection_valid_until;
       if (!v) return false;
       const d = new Date(String(v));
       return d <= cutoff && d >= now;
     });
-  }, [assets.data]);
+  }, [assets.data, inspThreshold]);
 
   const overdue = useMemo(() => {
     const now = new Date();
@@ -319,7 +349,7 @@ export function InspectionSubpage() {
 
   const filterOpts = [
     { key: 'all', label: '전체이력', count: inspections.length },
-    { key: 'expiring', label: '60일내 만료', count: expiring.length },
+    { key: 'expiring', label: `${inspThreshold}일내 만료`, count: expiring.length },
     { key: 'overdue', label: '만료', count: overdue.length },
   ];
 
@@ -345,7 +375,7 @@ export function InspectionSubpage() {
     alerts.push({
       severity: 'warn',
       icon: 'ph-clock',
-      head: `60일내 만료 ${expiring.length}대`,
+      head: `${inspThreshold}일내 만료 ${expiring.length}대`,
       desc: expiring
         .slice(0, 3)
         .map((a) => `${a.car_number} (${a.inspection_valid_until})`)
@@ -428,7 +458,7 @@ export function InspectionSubpage() {
         <div>
           이력 {inspections.length}건<span className="sep">│</span>
           만료 {overdue.length}대<span className="sep">│</span>
-          60일내 {expiring.length}대
+          {inspThreshold}일내 {expiring.length}대
         </div>
       </div>
     </div>

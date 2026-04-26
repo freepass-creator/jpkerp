@@ -5,10 +5,12 @@ import { computeContractEnd, today as todayStr } from '@/lib/date-utils';
  * 설계 원칙
  *  - 입력은 useRtdbCollection 결과 그대로 (RtdbAsset/RtdbContract/RtdbBilling/RtdbEvent)
  *  - 추가로 insurance·task 등 collection이 필요하면 optional로 받기
+ *  - 임계값(D-N)은 alarm AlarmSettings로 외부 주입, 미지정시 DEFAULT 사용
  *  - 출력은 PendingItem[] 단일 배열 → 카테고리별 group은 호출자가 처리
  *  - 카운트 0인 룰은 결과에서 제외
  *  - description은 대상 차번/계약자 요약 (최대 3~4건 + "외 N건")
  */
+import { type AlarmSettings, DEFAULT_ALARM_SETTINGS } from '@/lib/types/alarm-settings';
 import type { RtdbAsset, RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt } from '@/lib/utils';
 
@@ -43,6 +45,8 @@ export interface GapCheckInput {
   extra?: GapCheckExtra;
   /** 기준일 (YYYY-MM-DD) — 미지정시 today() */
   today?: string;
+  /** 알람 임계값 — 미지정시 DEFAULT_ALARM_SETTINGS */
+  alarm?: AlarmSettings;
 }
 
 interface InsuranceLike {
@@ -73,12 +77,13 @@ export function gotoRoute(item: PendingItem): string {
 /* ═════════ 메인 엔진 ═════════ */
 export function runGapCheck(input: GapCheckInput): PendingItem[] {
   const t = input.today ?? todayStr();
+  const alarm = input.alarm ?? DEFAULT_ALARM_SETTINGS;
   const items: PendingItem[] = [];
 
-  pushFinance(items, input, t);
-  pushContract(items, input, t);
-  pushAsset(items, input, t);
-  pushTask(items, input, t);
+  pushFinance(items, input, t, alarm);
+  pushContract(items, input, t, alarm);
+  pushAsset(items, input, t, alarm);
+  pushTask(items, input, t, alarm);
 
   return items;
 }
@@ -98,23 +103,30 @@ export function groupByCategory(
 }
 
 /* ═════════ 재무 ═════════ */
-function pushFinance(out: PendingItem[], { events, billings }: GapCheckInput, t: string): void {
-  // 1) 자금일보 미작성 (오늘 daily_finance_report 이벤트 없음)
-  const todayReport = events.some(
-    (e) => e.date === t && isDailyFinanceReport(e.type) && e.status !== 'deleted',
-  );
-  if (!todayReport) {
-    out.push({
-      id: 'finance.no-daily-report',
-      category: '재무',
-      label: '자금일보 미작성',
-      count: 1,
-      description: `오늘(${t}) 자금일보가 아직 작성되지 않음`,
-      priority: 'urgent',
-      action: '작성',
-      gotoMenu: 'finance',
-      route: '/ledger?tab=daily',
-    });
+function pushFinance(
+  out: PendingItem[],
+  { events, billings }: GapCheckInput,
+  t: string,
+  alarm: AlarmSettings,
+): void {
+  // 1) 자금일보 미작성 (오늘 daily_finance_report 이벤트 없음) — 설정 시에만
+  if (alarm.daily_report_required) {
+    const todayReport = events.some(
+      (e) => e.date === t && isDailyFinanceReport(e.type) && e.status !== 'deleted',
+    );
+    if (!todayReport) {
+      out.push({
+        id: 'finance.no-daily-report',
+        category: '재무',
+        label: '자금일보 미작성',
+        count: 1,
+        description: `오늘(${t}) 자금일보가 아직 작성되지 않음`,
+        priority: 'urgent',
+        action: '작성',
+        gotoMenu: 'finance',
+        route: '/ledger?tab=daily',
+      });
+    }
   }
 
   // 2) 예수금 매칭 [N] (bank_tx events 중 contract_code 없음)
@@ -214,6 +226,7 @@ function pushContract(
   out: PendingItem[],
   { contracts, billings, events }: GapCheckInput,
   t: string,
+  _alarm: AlarmSettings,
 ): void {
   // 1) 미납 발생 [N] (billings.paid_total < amount AND due_date < today)
   const overdueBills = billings.filter((b) => {
@@ -340,14 +353,20 @@ function pushContract(
 }
 
 /* ═════════ 자산 ═════════ */
-function pushAsset(out: PendingItem[], { assets, events, extra }: GapCheckInput, t: string): void {
-  // 1) 보험 만료 임박 [N] (insurance end_date ≤ today+7)
+function pushAsset(
+  out: PendingItem[],
+  { assets, events, extra }: GapCheckInput,
+  t: string,
+  alarm: AlarmSettings,
+): void {
+  // 1) 보험 만료 임박 [N] (insurance end_date ≤ today + alarm.insurance_expiring_days)
   const insurances = extra?.insurances ?? [];
+  const insThreshold = alarm.insurance_expiring_days;
   const inSoon = insurances.filter((i) => {
     if (i.status === 'deleted') return false;
     if (!i.end_date) return false;
     const days = diffDays(i.end_date, t);
-    return days >= 0 && days <= 7;
+    return days >= 0 && days <= insThreshold;
   });
   if (inSoon.length > 0) {
     out.push({
@@ -367,12 +386,13 @@ function pushAsset(out: PendingItem[], { assets, events, extra }: GapCheckInput,
     });
   }
 
-  // 2) 정기검사 도래 [N] (asset.inspection_valid_until ≤ today+14)
+  // 2) 정기검사 도래 [N] (asset.inspection_valid_until ≤ today + alarm.inspection_expiring_days)
+  const inspThreshold = alarm.inspection_expiring_days;
   const inspectionDue = assets.filter((a) => {
     if (a.status === 'deleted') return false;
     if (!a.inspection_valid_until) return false;
     const days = diffDays(a.inspection_valid_until, t);
-    return days <= 14; // 이미 지난 것 포함 (음수)
+    return days <= inspThreshold; // 이미 지난 것 포함 (음수)
   });
   if (inspectionDue.length > 0) {
     out.push({
@@ -395,9 +415,10 @@ function pushAsset(out: PendingItem[], { assets, events, extra }: GapCheckInput,
     });
   }
 
-  // 3) 휴차 30일 초과 [N]
+  // 3) 휴차 N일 초과 [N] — alarm.idle_alert_days
   // — 휴차 진입일을 정확히 알기 어려우므로, asset_status가 휴차이고 last_maint_date 기준으로 derive.
   //   더 정확하게는 events에서 마지막 idle/return 이벤트 일자 사용.
+  const idleThreshold = alarm.idle_alert_days;
   const idleSince = new Map<string, string>();
   for (const e of events) {
     if (e.status === 'deleted') continue;
@@ -413,13 +434,13 @@ function pushAsset(out: PendingItem[], { assets, events, extra }: GapCheckInput,
     if (!s.includes('휴차')) return false;
     const since = a.car_number ? idleSince.get(a.car_number) : undefined;
     if (!since) return false; // 시작일 모르면 제외
-    return diffDays(t, since) > 30;
+    return diffDays(t, since) > idleThreshold;
   });
   if (longIdle.length > 0) {
     out.push({
       id: 'asset.long-idle',
       category: '자산',
-      label: `휴차 30일 초과 [${longIdle.length}]`,
+      label: `휴차 ${idleThreshold}일 초과 [${longIdle.length}]`,
       count: longIdle.length,
       description:
         longIdle
@@ -438,15 +459,21 @@ function pushAsset(out: PendingItem[], { assets, events, extra }: GapCheckInput,
 }
 
 /* ═════════ 업무 ═════════ */
-function pushTask(out: PendingItem[], { events, extra }: GapCheckInput, t: string): void {
-  // 1) 받은 요청 마감 임박 [N] — tasks.due_date ≤ today+1, state != 완료
+function pushTask(
+  out: PendingItem[],
+  { events, extra }: GapCheckInput,
+  t: string,
+  alarm: AlarmSettings,
+): void {
+  // 1) 받은 요청 마감 임박 [N] — tasks.due_date ≤ today + alarm.request_due_days
   const tasks = extra?.tasks ?? [];
+  const reqThreshold = alarm.request_due_days;
   const dueSoon = tasks.filter((tk) => {
     const state = (tk.state ?? '').toString();
     if (state.includes('완료')) return false;
     if (!tk.due_date) return false;
     const days = diffDays(tk.due_date, t);
-    return days <= 1; // 오늘·내일·이미 지난 것
+    return days <= reqThreshold; // 오늘·내일·이미 지난 것
   });
   if (dueSoon.length > 0) {
     out.push({

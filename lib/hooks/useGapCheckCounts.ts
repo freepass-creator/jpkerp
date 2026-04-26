@@ -10,6 +10,7 @@
 
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { type GapCheckCounts, getCategoryCounts, runGapCheck } from '@/lib/gap-check';
+import { useAlarmSettings } from '@/lib/hooks/useAlarmSettings';
 import type { RtdbAsset, RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { useMemo } from 'react';
 
@@ -43,6 +44,7 @@ export function useGapCheckCounts(): GapCheckCounts {
   const events = useRtdbCollection<RtdbEvent>('events');
   const insurances = useRtdbCollection<InsuranceRow>('insurances');
   const tasks = useRtdbCollection<TaskRow>('tasks');
+  const { settings: alarm } = useAlarmSettings();
 
   return useMemo(() => {
     const anyLoading =
@@ -63,6 +65,7 @@ export function useGapCheckCounts(): GapCheckCounts {
         insurances: insurances.data,
         tasks: tasks.data,
       },
+      alarm,
     });
     return getCategoryCounts(items);
   }, [
@@ -78,5 +81,6 @@ export function useGapCheckCounts(): GapCheckCounts {
     insurances.loading,
     tasks.data,
     tasks.loading,
+    alarm,
   ]);
 }
