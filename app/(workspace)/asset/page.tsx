@@ -1,7 +1,6 @@
 'use client';
 
 import type { JpkGridApi } from '@/components/shared/jpk-grid';
-import { AssetDetailPanel } from '@/components/v3/AssetDetailPanel';
 import {
   AlertsPanel,
   ErrorBox,
@@ -100,7 +99,6 @@ export default function AssetPage() {
 
   const gridRef = useRef<JpkGridApi<AssetRow> | null>(null);
   const [active, setActive] = useState<SubpageId>(initialTab);
-  const [detailRow, setDetailRow] = useState<AssetRow | null>(null);
   const assets = useRtdbCollection<AssetRow>('assets');
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: tabParam만 추적
@@ -155,7 +153,6 @@ export default function AssetPage() {
           alerts={alerts}
           stats={stats}
           gridRef={gridRef}
-          onRowClick={setDetailRow}
         />
       ) : active === 'asset-insurance' ? (
         <InsuranceSubpage />
@@ -172,8 +169,6 @@ export default function AssetPage() {
       ) : (
         <PlaceholderSubpage label={activeTab.label} filter={filterParam || undefined} />
       )}
-
-      <AssetDetailPanel asset={detailRow} onClose={() => setDetailRow(null)} />
     </>
   );
 }
@@ -185,14 +180,12 @@ function AssetListSubpage({
   alerts,
   stats,
   gridRef,
-  onRowClick,
 }: {
   loading: boolean;
   error: Error | null;
   alerts: AlertItem[];
   stats: AssetStats;
   gridRef: React.RefObject<JpkGridApi<AssetRow> | null>;
-  onRowClick: (row: AssetRow) => void;
 }) {
   const totalAlerts = alerts.reduce((sum, a) => sum + a.count, 0);
 
@@ -212,15 +205,12 @@ function AssetListSubpage({
           <ErrorBox error={error} />
         ) : (
           <div className="v3-grid-host">
-            <AssetsGrid
-              gridRef={gridRef}
-              onRowClick={(row) => onRowClick(row as unknown as AssetRow)}
-            />
+            <AssetsGrid gridRef={gridRef} />
           </div>
         )}
       </div>
 
-      <TableFoot trailing="행 클릭 시 차량 프로필">
+      <TableFoot>
         총 {stats.total}대
         <StatSep />
         <StatDot variant="active" />

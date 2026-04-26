@@ -2,7 +2,6 @@
 
 import { EditDialog } from '@/components/shared/edit-dialog';
 import type { JpkGridApi } from '@/components/shared/jpk-grid';
-import { ContractDetailPanel } from '@/components/v3/ContractDetailPanel';
 import { PenaltyBatchTool } from '@/components/v3/PenaltyBatchTool';
 import {
   AlertCard,
@@ -95,7 +94,6 @@ export default function ContractPage() {
 
   const gridRef = useRef<JpkGridApi<ContractRow> | null>(null);
   const [active, setActive] = useState<SubpageId>(initialTab);
-  const [detailRow, setDetailRow] = useState<ContractRow | null>(null);
   const [count, setCount] = useState(0);
 
   const contracts = useRtdbCollection<RtdbContract>('contracts');
@@ -195,7 +193,6 @@ export default function ContractPage() {
           stats={stats}
           gridRef={gridRef}
           onCountChange={setCount}
-          onRowClick={setDetailRow}
           count={count}
         />
       ) : active === 'contract-idle' ? (
@@ -209,8 +206,6 @@ export default function ContractPage() {
       ) : (
         <PlaceholderSubpage label={activeTab.label} />
       )}
-
-      <ContractDetailPanel contract={detailRow} onClose={() => setDetailRow(null)} />
     </>
   );
 }
@@ -223,7 +218,6 @@ function ContractListSubpage({
   stats,
   gridRef,
   onCountChange,
-  onRowClick,
   count,
 }: {
   loading: boolean;
@@ -232,7 +226,6 @@ function ContractListSubpage({
   stats: ContractStats;
   gridRef: React.RefObject<JpkGridApi<ContractRow> | null>;
   onCountChange: (n: number) => void;
-  onRowClick: (r: ContractRow) => void;
   count: number;
 }) {
   return (
@@ -246,16 +239,12 @@ function ContractListSubpage({
           <ErrorBox error={error} />
         ) : (
           <div className="v3-grid-host">
-            <ContractClient
-              gridRef={gridRef}
-              onCountChange={onCountChange}
-              onRowClick={onRowClick}
-            />
+            <ContractClient gridRef={gridRef} onCountChange={onCountChange} />
           </div>
         )}
       </div>
 
-      <TableFoot trailing="행 클릭 시 계약 편집">
+      <TableFoot>
         총 {count || stats.total}건
         <StatSep />
         <StatDot variant="active" />
