@@ -3,6 +3,7 @@
 import { EditDialog } from '@/components/shared/edit-dialog';
 import type { JpkGridApi } from '@/components/shared/jpk-grid';
 import { PenaltyBatchTool } from '@/components/v3/PenaltyBatchTool';
+import { AlimtalkSendDialog, type AlimtalkTarget } from '@/components/v3/alimtalk-send-dialog';
 import {
   AlertCard,
   AlertsPanel,
@@ -508,6 +509,7 @@ function OverdueSubpage({
 }) {
   // filter='locked' → 시동제어 카드 강조 hint (현재는 표시만, 미래 행 필터에 활용)
   void filter;
+  const [atTarget, setAtTarget] = useState<AlimtalkTarget | null>(null);
   const overdueAlertItems = useMemo<AlertItem[]>(() => {
     const out: AlertItem[] = [];
     if (alerts.severeCount > 0) {
@@ -577,6 +579,7 @@ function OverdueSubpage({
                 <th style={{ ...cellTh(96), textAlign: 'right' }}>청구액</th>
                 <th style={{ ...cellTh(96), textAlign: 'right' }}>미수액</th>
                 <th style={cellTh(72)}>경과</th>
+                <th style={cellTh(86)}>조치</th>
               </tr>
             </thead>
             <tbody>
@@ -605,6 +608,42 @@ function OverdueSubpage({
                   >
                     D+{r.daysOver}
                   </td>
+                  <td style={{ ...cellTd(), padding: '4px 6px' }}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAtTarget({
+                          contract_code: r.contract_code,
+                          car_number: r.car_number,
+                          contractor_name: r.contractor_name,
+                          contractor_phone: r.contractor_phone,
+                          unpaid_total: r.outstanding,
+                          bill_count: r.bill_count,
+                          max_days: r.daysOver,
+                        })
+                      }
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        border: '1px solid var(--c-border)',
+                        background: 'var(--c-surface)',
+                        color: 'var(--c-text)',
+                        borderRadius: 2,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                      }}
+                      title={
+                        r.contractor_phone
+                          ? `${r.contractor_name ?? ''} ${r.contractor_phone}`
+                          : '알림톡 발송'
+                      }
+                    >
+                      <i className="ph ph-chat-text" />
+                      알림톡
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -621,6 +660,12 @@ function OverdueSubpage({
         <StatSep />
         시동제어 {alerts.lockedCount}
       </TableFoot>
+
+      <AlimtalkSendDialog
+        open={atTarget !== null}
+        target={atTarget}
+        onClose={() => setAtTarget(null)}
+      />
     </div>
   );
 }
@@ -956,6 +1001,8 @@ interface OverdueRow {
   contract_code: string;
   bill_count?: number;
   car_number?: string;
+  contractor_name?: string;
+  contractor_phone?: string;
   due_date: string;
   amount: number;
   outstanding: number;
@@ -977,17 +1024,24 @@ function deriveOverdueAlerts(
   contracts: readonly RtdbContract[],
 ): OverdueAlertGroup {
   const tStr = todayStr();
+  const contractByCode = new Map<string, RtdbContract>();
+  for (const c of contracts) {
+    if (c.contract_code) contractByCode.set(c.contract_code, c);
+  }
   const rows: OverdueRow[] = [];
   for (const b of billings) {
     const amount = Number(b.amount ?? 0);
     const paid = Number(b.paid_total ?? 0);
     if (amount <= 0 || paid >= amount) continue;
     if (!b.due_date || b.due_date >= tStr) continue;
+    const c = b.contract_code ? contractByCode.get(b.contract_code) : undefined;
     rows.push({
       key: b._key ?? `${b.contract_code}-${b.bill_count}`,
       contract_code: b.contract_code ?? '—',
       bill_count: b.bill_count,
-      car_number: b.car_number,
+      car_number: b.car_number ?? c?.car_number,
+      contractor_name: c?.contractor_name,
+      contractor_phone: c?.contractor_phone,
       due_date: b.due_date,
       amount,
       outstanding: amount - paid,

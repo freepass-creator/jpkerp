@@ -14,6 +14,7 @@
 import { useAuth } from '@/lib/auth/context';
 import { useGapCheckCounts } from '@/lib/hooks/useGapCheckCounts';
 import { MENU_V3, type MenuV3Item } from '@/lib/menu-v3';
+import { MOBILE_ENTRY_HREF } from '@/lib/menu-v3-mobile';
 import { useMenuCounts } from '@/lib/stores/menu-counts';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -74,6 +75,13 @@ export function Sidebar() {
             </Fragment>
           );
         })}
+        {/* 모바일 진입점 — 개발도구 아래 */}
+        <div className="sb-divider" />
+        <SidebarItem
+          item={{ href: MOBILE_ENTRY_HREF, label: '모바일', icon: 'ph-device-mobile' }}
+          active={pathname.startsWith('/m')}
+          count={0}
+        />
       </nav>
 
       <div className="sb-foot">

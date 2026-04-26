@@ -2565,11 +2565,14 @@ i.ph {
 .app > .topbar .search input {
   width: 100%;
   padding-left: 28px;
+  padding-right: 44px;
   background: var(--c-bg);
   height: var(--ctrl-h);
   border: 1px solid var(--c-border);
   border-radius: var(--ctrl-r);
+  cursor: pointer;
 }
+.app > .topbar .search input:hover { border-color: var(--c-border-strong, var(--c-accent)); }
 .app > .topbar .search input:focus { background: var(--c-surface); border-color: var(--c-accent); }
 .app > .topbar .search::before {
   content: '';
