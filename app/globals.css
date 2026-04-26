@@ -2841,6 +2841,15 @@ i.ph {
   gap: 4px;
 }
 .v3-tabs .action button:hover { background: var(--c-accent-hover); border-color: var(--c-accent-hover); }
+.v3-tabs .action button.is-secondary {
+  background: var(--c-surface);
+  color: var(--c-text);
+  border-color: var(--c-border);
+}
+.v3-tabs .action button.is-secondary:hover {
+  background: var(--c-bg-hover);
+  border-color: var(--c-border-strong);
+}
 
 /* ── PANEL 통일 (alerts · table-wrap) ── */
 .v3-alerts,
@@ -3425,6 +3434,16 @@ i.ph {
   background: rgba(0, 0, 0, 0.28);
   z-index: 90;
   animation: detailFade 160ms ease-out;
+  /* button reset */
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.detail-panel-backdrop:focus { outline: none; }
+
+.detail-info-grid dd.is-danger {
+  color: var(--c-err);
+  font-weight: 600;
 }
 
 .detail-panel {
@@ -3767,3 +3786,93 @@ i.ph {
   padding-top: 6px;
   border-top: 1px solid var(--c-border-soft);
 }
+.penalty-actions .ml-auto { margin-left: auto; }
+
+/* 입력 hidden */
+.visually-hidden {
+  display: none;
+}
+
+/* 빈 상태 (업로드 전) */
+.penalty-empty {
+  padding: 32px;
+  color: var(--c-text-muted);
+  text-align: center;
+}
+.penalty-empty i.ph {
+  font-size: var(--icon-xl);
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* 결과 테이블 */
+.penalty-table { width: 100%; border-collapse: collapse; font-size: var(--fs); }
+.penalty-table thead tr {
+  background: var(--c-bg-sub);
+  border-bottom: 1px solid var(--c-border);
+}
+.penalty-table th {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text-sub);
+  text-align: center;
+}
+.penalty-table th.left { text-align: left; }
+.penalty-table th.right { text-align: right; }
+.penalty-table tbody tr { border-bottom: 1px solid var(--c-border); }
+.penalty-table td { padding: 6px 8px; text-align: center; color: var(--c-text); }
+.penalty-table td.left { text-align: left; }
+.penalty-table td.right { text-align: right; }
+.penalty-table .file-name { margin-left: 6px; }
+.penalty-table .matched-code { font-weight: 600; }
+.penalty-table .matched-name { color: var(--c-text-muted); }
+.penalty-table .matched-empty { color: var(--c-text-muted); }
+.penalty-table .pdf-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 3px;
+  background: var(--c-border);
+}
+.penalty-table .pdf-dot.is-done { background: var(--c-ok); }
+.penalty-table .row-del {
+  background: transparent;
+  border: none;
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+
+/* 상태 점 */
+.penalty-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  vertical-align: middle;
+}
+.penalty-status-dot.ok { background: var(--c-ok); }
+.penalty-status-dot.fail { background: var(--c-err); }
+.penalty-status-dot.pending { background: var(--c-border); }
+.penalty-status-spin { color: var(--c-info); font-size: 12px; }
+
+.v3-table-foot .err { color: var(--c-err); }
+.v3-table-foot .muted-note { color: var(--c-text-muted); }
+
+/* ═══ v3 공통 유틸리티 (page들 인라인 스타일 통합) ══════════════════════════ */
+.v3-loading,
+.v3-error-box,
+.v3-empty-cell {
+  padding: 24px;
+  color: var(--c-text-muted);
+  text-align: center;
+}
+.v3-error-box .head {
+  font-weight: 600;
+  color: var(--c-err);
+  margin-bottom: 4px;
+}
+.v3-error-box .msg { color: var(--c-text-sub); }
+
+.v3-stat-pos { color: var(--c-emerald); font-weight: 600; }
+.v3-stat-neg { color: var(--c-err); font-weight: 600; }
+.v3-stat-mut { color: var(--c-text-muted); }

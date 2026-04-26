@@ -1,20 +1,15 @@
 'use client';
 
-import Link from 'next/link';
-import { useMemo, useRef, useState } from 'react';
-import { useRtdbCollection } from '@/lib/collections/rtdb';
 import type { JpkGridApi } from '@/components/shared/jpk-grid';
-import type {
-  RtdbAsset,
-  RtdbBilling,
-  RtdbContract,
-  RtdbEvent,
-} from '@/lib/types/rtdb-entities';
-import { computeContractEnd, today as todayStr } from '@/lib/date-utils';
-import { fmt } from '@/lib/utils';
-import { ContractClient, type ContractRow } from './contract-client';
 import { ContractDetailPanel } from '@/components/v3/ContractDetailPanel';
 import { PenaltyBatchTool } from '@/components/v3/PenaltyBatchTool';
+import { useRtdbCollection } from '@/lib/collections/rtdb';
+import { computeContractEnd, today as todayStr } from '@/lib/date-utils';
+import type { RtdbAsset, RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
+import { fmt } from '@/lib/utils';
+import Link from 'next/link';
+import { useMemo, useRef, useState } from 'react';
+import { ContractClient, type ContractRow } from './contract-client';
 
 type SubpageId =
   | 'contract-list'
@@ -30,29 +25,29 @@ interface TabSpec {
   id: SubpageId;
   label: string;
   action: string; // empty string => 버튼 숨김
-  href?: string;  // 신규 경로 (있으면 Link)
+  href?: string; // 신규 경로 (있으면 Link)
 }
 
 const TABS: TabSpec[] = [
-  { id: 'contract-list',           label: '계약목록', action: '+ 계약 신규',     href: '/input?type=contract' },
-  { id: 'contract-idle',           label: '휴차풀',   action: '+ 휴차 처리' },
-  { id: 'contract-overdue',        label: '미납관리', action: '+ 독촉 기록' },
+  { id: 'contract-list', label: '계약목록', action: '+ 계약 신규', href: '/input?type=contract' },
+  { id: 'contract-idle', label: '휴차풀', action: '+ 휴차 처리' },
+  { id: 'contract-overdue', label: '미납관리', action: '+ 독촉 기록' },
   { id: 'contract-release-return', label: '출고·반납', action: '+ 출고/반납 등록' },
-  { id: 'contract-accident',       label: '사고관리', action: '+ 사고 접수' },
-  { id: 'contract-consultation',   label: '고객응대', action: '+ 응대 기록' },
-  { id: 'contract-fine',           label: '과태료',   action: '+ 과태료 일괄' },
-  { id: 'contract-terminated',     label: '해지리스트', action: '' },
+  { id: 'contract-accident', label: '사고관리', action: '+ 사고 접수' },
+  { id: 'contract-consultation', label: '고객응대', action: '+ 응대 기록' },
+  { id: 'contract-fine', label: '과태료', action: '+ 과태료 일괄' },
+  { id: 'contract-terminated', label: '해지리스트', action: '' },
 ];
 
 const TAB_CRUMB: Record<SubpageId, string> = {
-  'contract-list':           '계약목록',
-  'contract-idle':           '휴차풀',
-  'contract-overdue':        '미납관리',
+  'contract-list': '계약목록',
+  'contract-idle': '휴차풀',
+  'contract-overdue': '미납관리',
   'contract-release-return': '출고·반납',
-  'contract-accident':       '사고관리',
-  'contract-consultation':   '고객응대',
-  'contract-fine':           '과태료',
-  'contract-terminated':     '해지리스트',
+  'contract-accident': '사고관리',
+  'contract-consultation': '고객응대',
+  'contract-fine': '과태료',
+  'contract-terminated': '해지리스트',
 };
 
 export default function ContractPage() {
@@ -141,16 +136,9 @@ export default function ContractPage() {
           count={count}
         />
       ) : active === 'contract-idle' ? (
-        <IdleSubpage
-          loading={assets.loading}
-          rows={assets.data}
-          alerts={idleAlerts}
-        />
+        <IdleSubpage loading={assets.loading} rows={assets.data} alerts={idleAlerts} />
       ) : active === 'contract-overdue' ? (
-        <OverdueSubpage
-          loading={billings.loading}
-          alerts={overdueAlerts}
-        />
+        <OverdueSubpage loading={billings.loading} alerts={overdueAlerts} />
       ) : active === 'contract-fine' ? (
         <div className="v3-subpage is-active">
           <PenaltyBatchTool />
@@ -193,9 +181,7 @@ function ContractListSubpage({
         <div className="v3-alerts-head">
           <span className="dot" />
           <span className="title">{isClear ? '계약 미결 없음' : '계약 미결'}</span>
-          <span className="count">
-            {isClear ? '· 0건' : `· ${totalAlerts}건`}
-          </span>
+          <span className="count">{isClear ? '· 0건' : `· ${totalAlerts}건`}</span>
         </div>
         {!isClear && (
           <div className="v3-alerts-grid">
@@ -209,7 +195,9 @@ function ContractListSubpage({
                   <div className="head">{a.head}</div>
                   <div className="desc">{a.desc}</div>
                 </div>
-                <button type="button" className="alert-btn">{a.actionLabel}</button>
+                <button type="button" className="alert-btn">
+                  {a.actionLabel}
+                </button>
               </div>
             ))}
           </div>
@@ -241,19 +229,20 @@ function ContractListSubpage({
 
       <div className="v3-table-foot">
         <div>
-          총 {count || stats.total}건
+          총 {count || stats.total}건<span className="sep">│</span>
+          <span className="stat-dot active" />
+          대여중 {stats.active}
           <span className="sep">│</span>
-          <span className="stat-dot active" />대여중 {stats.active}
+          <span className="stat-dot repair" />
+          시동제어 {stats.engineLock}
           <span className="sep">│</span>
-          <span className="stat-dot repair" />시동제어 {stats.engineLock}
+          <span className="stat-dot sale" />
+          미납·반납지연 {stats.overdueOrLate}
           <span className="sep">│</span>
-          <span className="stat-dot sale" />미납·반납지연 {stats.overdueOrLate}
-          <span className="sep">│</span>
-          <span className="stat-dot idle" />출고대기 {stats.waitingRelease}
+          <span className="stat-dot idle" />
+          출고대기 {stats.waitingRelease}
         </div>
-        <div style={{ color: 'var(--c-text-muted)' }}>
-          행 클릭 시 계약 편집
-        </div>
+        <div style={{ color: 'var(--c-text-muted)' }}>행 클릭 시 계약 편집</div>
       </div>
     </div>
   );
@@ -289,7 +278,9 @@ function IdleSubpage({
               <div className="head">상품화중 [{alerts.preparing}]</div>
               <div className="desc">재임대 준비 작업 진행 (정비·청소·촬영)</div>
             </div>
-            <button type="button" className="alert-btn">목록</button>
+            <button type="button" className="alert-btn">
+              목록
+            </button>
           </div>
           <div className="v3-alert-card">
             <i className="ph ph-bed ico" />
@@ -297,7 +288,9 @@ function IdleSubpage({
               <div className="head">차고지 대기 [{alerts.waiting}]</div>
               <div className="desc">반납 후 결정 미정</div>
             </div>
-            <button type="button" className="alert-btn">결정</button>
+            <button type="button" className="alert-btn">
+              결정
+            </button>
           </div>
           <div className="v3-alert-card is-info">
             <i className="ph ph-check-circle ico" />
@@ -305,7 +298,9 @@ function IdleSubpage({
               <div className="head">상품완료 [{alerts.ready}]</div>
               <div className="desc">freepass-v2 노출 중 — 영업 대기</div>
             </div>
-            <button type="button" className="alert-btn">노출</button>
+            <button type="button" className="alert-btn">
+              노출
+            </button>
           </div>
           <div className="v3-alert-card is-danger">
             <i className="ph ph-currency-krw ico" />
@@ -313,7 +308,9 @@ function IdleSubpage({
               <div className="head">매각 대기 [{alerts.disposal}]</div>
               <div className="desc">처분 진행 필요</div>
             </div>
-            <button type="button" className="alert-btn">매각</button>
+            <button type="button" className="alert-btn">
+              매각
+            </button>
           </div>
         </div>
       </div>
@@ -330,7 +327,12 @@ function IdleSubpage({
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ background: 'var(--c-bg-soft)', borderBottom: '1px solid var(--c-border)' }}>
+              <tr
+                style={{
+                  background: 'var(--c-bg-soft)',
+                  borderBottom: '1px solid var(--c-border)',
+                }}
+              >
                 <th style={cellTh(64)}>차량번호</th>
                 <th style={{ ...cellTh(), textAlign: 'left' }}>차종</th>
                 <th style={cellTh(60)}>회원사</th>
@@ -359,8 +361,7 @@ function IdleSubpage({
 
       <div className="v3-table-foot">
         <div>
-          총 {idleRows.length}대
-          <span className="sep">│</span>
+          총 {idleRows.length}대<span className="sep">│</span>
           상품화중 {alerts.preparing}
           <span className="sep">│</span>
           차고지대기 {alerts.waiting}
@@ -392,9 +393,7 @@ function OverdueSubpage({
           <span className="dot" />
           <span className="title">{isClear ? '미납 없음' : '미납관리'}</span>
           <span className="count">
-            {isClear
-              ? '· 0건'
-              : `· ${total}건 미납 + ${alerts.lockedCount}건 시동제어`}
+            {isClear ? '· 0건' : `· ${total}건 미납 + ${alerts.lockedCount}건 시동제어`}
           </span>
         </div>
         {!isClear && (
@@ -403,11 +402,11 @@ function OverdueSubpage({
               <i className="ph ph-warning ico" />
               <div className="body">
                 <div className="head">D+30 초과 [{alerts.severeCount}]</div>
-                <div className="desc">
-                  {alerts.severeDesc || '해당 없음'}
-                </div>
+                <div className="desc">{alerts.severeDesc || '해당 없음'}</div>
               </div>
-              <button type="button" className="alert-btn">독촉</button>
+              <button type="button" className="alert-btn">
+                독촉
+              </button>
             </div>
             <div className="v3-alert-card">
               <i className="ph ph-clock ico" />
@@ -415,7 +414,9 @@ function OverdueSubpage({
                 <div className="head">D+7~30 [{alerts.midCount}]</div>
                 <div className="desc">{alerts.midDesc || '해당 없음'}</div>
               </div>
-              <button type="button" className="alert-btn">독촉</button>
+              <button type="button" className="alert-btn">
+                독촉
+              </button>
             </div>
             <div className="v3-alert-card is-danger">
               <i className="ph ph-lock ico" />
@@ -423,7 +424,9 @@ function OverdueSubpage({
                 <div className="head">시동제어 중 [{alerts.lockedCount}]</div>
                 <div className="desc">{alerts.lockedDesc || '해당 없음'}</div>
               </div>
-              <button type="button" className="alert-btn">확인</button>
+              <button type="button" className="alert-btn">
+                확인
+              </button>
             </div>
           </div>
         )}
@@ -441,7 +444,12 @@ function OverdueSubpage({
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ background: 'var(--c-bg-soft)', borderBottom: '1px solid var(--c-border)' }}>
+              <tr
+                style={{
+                  background: 'var(--c-bg-soft)',
+                  borderBottom: '1px solid var(--c-border)',
+                }}
+              >
                 <th style={cellTh(96)}>계약코드</th>
                 <th style={cellTh(72)}>회차</th>
                 <th style={cellTh(96)}>차량번호</th>
@@ -452,17 +460,29 @@ function OverdueSubpage({
               </tr>
             </thead>
             <tbody>
-              {alerts.rows.slice(0, 100).map((r, i) => (
-                <tr key={r.key + i} style={{ borderBottom: '1px solid var(--c-border)' }}>
+              {alerts.rows.slice(0, 100).map((r) => (
+                <tr key={r.key} style={{ borderBottom: '1px solid var(--c-border)' }}>
                   <td style={cellTd()}>{r.contract_code}</td>
                   <td style={cellTd()}>{r.bill_count ?? '—'}</td>
                   <td style={cellTd()}>{r.car_number ?? '—'}</td>
                   <td style={cellTd()}>{r.due_date}</td>
                   <td style={{ ...cellTd(), textAlign: 'right' }}>{fmt(r.amount)}</td>
-                  <td style={{ ...cellTd(), textAlign: 'right', color: 'var(--c-err)', fontWeight: 600 }}>
+                  <td
+                    style={{
+                      ...cellTd(),
+                      textAlign: 'right',
+                      color: 'var(--c-err)',
+                      fontWeight: 600,
+                    }}
+                  >
                     {fmt(r.outstanding)}
                   </td>
-                  <td style={{ ...cellTd(), color: r.daysOver > 30 ? 'var(--c-err)' : 'var(--c-warn)' }}>
+                  <td
+                    style={{
+                      ...cellTd(),
+                      color: r.daysOver > 30 ? 'var(--c-err)' : 'var(--c-warn)',
+                    }}
+                  >
                     D+{r.daysOver}
                   </td>
                 </tr>
@@ -474,8 +494,7 @@ function OverdueSubpage({
 
       <div className="v3-table-foot">
         <div>
-          총 {alerts.rows.length}건
-          <span className="sep">│</span>
+          총 {alerts.rows.length}건<span className="sep">│</span>
           D+30 초과 {alerts.severeCount}
           <span className="sep">│</span>
           D+7~30 {alerts.midCount}
@@ -551,8 +570,8 @@ function deriveContractAlerts(
   }
 
   // 2) 시동제어 중 (action_status === '시동제어')
-  const engineLocked = contracts.filter(
-    (c) => (c.action_status ?? '').toString().includes('시동제어'),
+  const engineLocked = contracts.filter((c) =>
+    (c.action_status ?? '').toString().includes('시동제어'),
   );
   if (engineLocked.length > 0) {
     out.push({
@@ -564,8 +583,7 @@ function deriveContractAlerts(
         engineLocked
           .slice(0, 3)
           .map((c) => c.car_number ?? c.contract_code ?? '—')
-          .join(' · ') +
-        (engineLocked.length > 3 ? ` 외 ${engineLocked.length - 3}건` : ''),
+          .join(' · ') + (engineLocked.length > 3 ? ` 외 ${engineLocked.length - 3}건` : ''),
       actionLabel: '확인',
       count: engineLocked.length,
     });
@@ -598,8 +616,7 @@ function deriveContractAlerts(
             const end = computeContractEnd(c);
             return `${c.car_number ?? c.contract_code} D+${daysAfter(end)}`;
           })
-          .join(' · ') +
-        (lateReturn.length > 3 ? ` 외 ${lateReturn.length - 3}건` : ''),
+          .join(' · ') + (lateReturn.length > 3 ? ` 외 ${lateReturn.length - 3}건` : ''),
       actionLabel: '처리',
       count: lateReturn.length,
     });
@@ -631,8 +648,7 @@ function deriveContractAlerts(
         pendingRelease
           .slice(0, 3)
           .map((c) => `${c.contract_code} ${c.contractor_name ?? ''}`.trim())
-          .join(' · ') +
-        (pendingRelease.length > 3 ? ` 외 ${pendingRelease.length - 3}건` : ''),
+          .join(' · ') + (pendingRelease.length > 3 ? ` 외 ${pendingRelease.length - 3}건` : ''),
       actionLabel: '출고',
       count: pendingRelease.length,
     });
@@ -758,9 +774,7 @@ function deriveOverdueAlerts(
 
   const severe = rows.filter((r) => r.daysOver > 30);
   const mid = rows.filter((r) => r.daysOver >= 7 && r.daysOver <= 30);
-  const locked = contracts.filter((c) =>
-    (c.action_status ?? '').toString().includes('시동제어'),
-  );
+  const locked = contracts.filter((c) => (c.action_status ?? '').toString().includes('시동제어'));
 
   return {
     severeCount: severe.length,
@@ -794,7 +808,11 @@ function isReturnEvent(t: unknown): boolean {
 
 function isReleaseEvent(t: unknown): boolean {
   const s = (t ?? '').toString();
-  return s.includes('출고') || s.toLowerCase().includes('release') || s.toLowerCase().includes('delivery');
+  return (
+    s.includes('출고') ||
+    s.toLowerCase().includes('release') ||
+    s.toLowerCase().includes('delivery')
+  );
 }
 
 function isTerminatedStatus(v: unknown): boolean {

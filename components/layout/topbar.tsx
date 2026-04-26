@@ -7,8 +7,8 @@
  * - 통합검색 · 우측 알림 · 사용자 드롭다운
  */
 
-import { useCallback, useState } from 'react';
 import { useAuth } from '@/lib/auth/context';
+import { useCallback, useState } from 'react';
 
 export function Topbar() {
   const { user, signOut } = useAuth();

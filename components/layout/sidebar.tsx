@@ -7,12 +7,12 @@
  * - 7-menu 평면 구조 (lib/menu-v3.ts)
  */
 
+import { useAuth } from '@/lib/auth/context';
+import { MENU_V3, type MenuV3Item } from '@/lib/menu-v3';
+import { useMenuCounts } from '@/lib/stores/menu-counts';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Fragment } from 'react';
-import { MENU_V3, type MenuV3Item } from '@/lib/menu-v3';
-import { useMenuCounts } from '@/lib/stores/menu-counts';
-import { useAuth } from '@/lib/auth/context';
 
 function isActive(pathname: string, href: string): boolean {
   if (pathname === href) return true;
@@ -34,23 +34,28 @@ export function Sidebar() {
       </div>
 
       <nav className="sb-menu">
-        {MENU_V3.map((section, sIdx) => (
-          <Fragment key={sIdx}>
-            {section.divider && <div className="sb-divider" />}
-            {section.items.map((item) => (
-              <SidebarItem
-                key={item.href}
-                item={item}
-                active={isActive(pathname, item.href)}
-                count={item.countKey ? counts[item.countKey] : 0}
-              />
-            ))}
-          </Fragment>
-        ))}
+        {MENU_V3.map((section) => {
+          const sectionKey = section.items[0]?.href ?? 'section';
+          return (
+            <Fragment key={sectionKey}>
+              {section.divider && <div className="sb-divider" />}
+              {section.items.map((item) => (
+                <SidebarItem
+                  key={item.href}
+                  item={item}
+                  active={isActive(pathname, item.href)}
+                  count={item.countKey ? counts[item.countKey] : 0}
+                />
+              ))}
+            </Fragment>
+          );
+        })}
       </nav>
 
       <div className="sb-foot">
-        <span className="name" title={displayName}>{displayName}</span>
+        <span className="name" title={displayName}>
+          {displayName}
+        </span>
         <button
           type="button"
           className="logout"

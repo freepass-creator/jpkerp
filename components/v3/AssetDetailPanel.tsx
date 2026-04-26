@@ -7,11 +7,11 @@
  * - 카테고리 필터 칩 (수납·정비·사고·응대·출고/반납·매각)
  */
 
-import { useEffect, useMemo, useState } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
-import type { RtdbEvent } from '@/lib/types/rtdb-entities';
 import { metaFor } from '@/lib/event-meta';
+import type { RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt, fmtDate } from '@/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
 
 interface AssetSummary {
   _key?: string;
@@ -80,7 +80,12 @@ export function AssetDetailPanel({ asset, onClose }: Props) {
   const counts = useMemo(() => {
     const out: Record<CategoryKey, number> = {
       all: carEvents.length,
-      pay: 0, maint: 0, accident: 0, contact: 0, flow: 0, dispose: 0,
+      pay: 0,
+      maint: 0,
+      accident: 0,
+      contact: 0,
+      flow: 0,
+      dispose: 0,
     };
     for (const e of carEvents) {
       const t = (e.type ?? '').toString();
@@ -95,12 +100,18 @@ export function AssetDetailPanel({ asset, onClose }: Props) {
   if (!asset) return null;
 
   const status = asset.asset_status ?? asset.status ?? '—';
-  const carName = [asset.manufacturer, asset.car_model, asset.detail_model].filter(Boolean).join(' ') || '—';
+  const carName =
+    [asset.manufacturer, asset.car_model, asset.detail_model].filter(Boolean).join(' ') || '—';
 
   return (
     <>
-      <div className="detail-panel-backdrop" onClick={onClose} />
-      <aside className="detail-panel" role="dialog" aria-label={`${asset.car_number ?? ''} 상세`}>
+      <button type="button" className="detail-panel-backdrop" onClick={onClose} aria-label="닫기" />
+      <aside
+        className="detail-panel"
+        // biome-ignore lint/a11y/useSemanticElements: <dialog>는 슬라이드 애니메이션과 layered z-index 호환성 문제로 <aside role="dialog"> 사용
+        role="dialog"
+        aria-label={`${asset.car_number ?? ''} 상세`}
+      >
         <div className="detail-panel-head">
           <div className="ident">
             <div className="car">{asset.car_number ?? '—'}</div>
@@ -117,14 +128,42 @@ export function AssetDetailPanel({ asset, onClose }: Props) {
           <section className="detail-info">
             <div className="detail-info-head">차량 기본정보</div>
             <dl className="detail-info-grid">
-              <div><dt>회원사</dt><dd>{asset.partner_code ?? '—'}</dd></div>
-              <div><dt>VIN</dt><dd className="num">{asset.vin ?? '—'}</dd></div>
-              <div><dt>연식</dt><dd>{asset.car_year ?? '—'}</dd></div>
-              <div><dt>연료</dt><dd>{asset.fuel_type ?? '—'}</dd></div>
-              <div><dt>외장색</dt><dd>{asset.ext_color ?? '—'}</dd></div>
-              <div><dt>주행거리</dt><dd className="num">{asset.current_mileage ? `${fmt(Number(asset.current_mileage))} km` : '—'}</dd></div>
-              <div><dt>매입형태</dt><dd>{asset.buy_type ?? '—'}</dd></div>
-              <div><dt>취득원가</dt><dd className="num">{asset.acquisition_cost ? `${fmt(Number(asset.acquisition_cost))}원` : '—'}</dd></div>
+              <div>
+                <dt>회원사</dt>
+                <dd>{asset.partner_code ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>VIN</dt>
+                <dd className="num">{asset.vin ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>연식</dt>
+                <dd>{asset.car_year ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>연료</dt>
+                <dd>{asset.fuel_type ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>외장색</dt>
+                <dd>{asset.ext_color ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>주행거리</dt>
+                <dd className="num">
+                  {asset.current_mileage ? `${fmt(Number(asset.current_mileage))} km` : '—'}
+                </dd>
+              </div>
+              <div>
+                <dt>매입형태</dt>
+                <dd>{asset.buy_type ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>취득원가</dt>
+                <dd className="num">
+                  {asset.acquisition_cost ? `${fmt(Number(asset.acquisition_cost))}원` : '—'}
+                </dd>
+              </div>
             </dl>
           </section>
 
@@ -155,7 +194,9 @@ export function AssetDetailPanel({ asset, onClose }: Props) {
               </div>
             ) : filtered.length === 0 ? (
               <div className="timeline-empty">
-                {carEvents.length === 0 ? '이 차량의 이벤트가 없습니다' : '해당 카테고리 이벤트 없음'}
+                {carEvents.length === 0
+                  ? '이 차량의 이벤트가 없습니다'
+                  : '해당 카테고리 이벤트 없음'}
               </div>
             ) : (
               <div className="timeline-list">
@@ -165,7 +206,9 @@ export function AssetDetailPanel({ asset, onClose }: Props) {
                     <div key={e._key ?? i} className="timeline-row">
                       <div className="t-date num">{fmtDate(e.date) || '—'}</div>
                       <i className={`ph ${meta.icon} t-icon`} style={{ color: meta.color }} />
-                      <div className="t-tag" style={{ color: meta.color }}>{meta.label}</div>
+                      <div className="t-tag" style={{ color: meta.color }}>
+                        {meta.label}
+                      </div>
                       <div className="t-body">
                         <div className="t-title">
                           {e.title || meta.label}

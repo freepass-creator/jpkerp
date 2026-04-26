@@ -1,9 +1,9 @@
+import { AuthGuard } from '@/components/layout/auth-guard';
+import { CommandPalette } from '@/components/layout/command-palette';
+import { MenuCountsSync } from '@/components/layout/menu-counts-sync';
+import { RouteGuard } from '@/components/layout/route-guard';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
-import { CommandPalette } from '@/components/layout/command-palette';
-import { AuthGuard } from '@/components/layout/auth-guard';
-import { RouteGuard } from '@/components/layout/route-guard';
-import { MenuCountsSync } from '@/components/layout/menu-counts-sync';
 
 /**
  * WorkspaceLayout — JPK ERP v3 shell

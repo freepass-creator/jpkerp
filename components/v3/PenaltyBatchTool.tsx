@@ -10,11 +10,11 @@
  * 디자인은 v3 placeholder UI로 그대로 동작 가능.
  */
 
-import { useMemo, useRef, useState } from 'react';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
-import type { RtdbContract } from '@/lib/types/rtdb-entities';
 import { computeContractEnd } from '@/lib/date-utils';
+import type { RtdbContract } from '@/lib/types/rtdb-entities';
 import { fmt } from '@/lib/utils';
+import { useMemo, useRef, useState } from 'react';
 
 type ProcStatus = 'pending' | 'ocring' | 'ok' | 'fail';
 type DocKind = 'notice' | 'confirm' | 'change';
@@ -99,12 +99,13 @@ export function PenaltyBatchTool() {
   const onMatch = () => {
     setItems((prev) =>
       prev.map((p) => {
-        if (!p.car_number || !p.violate_date) return p;
+        const violateDate = p.violate_date;
+        if (!p.car_number || !violateDate) return p;
         const candidates = contracts.data.filter((c) => c.car_number === p.car_number);
         const hit = candidates.find((c) => {
           if (!c.start_date) return false;
           const end = computeContractEnd(c) ?? '9999-12-31';
-          return c.start_date <= p.violate_date! && p.violate_date! <= end;
+          return c.start_date <= violateDate && violateDate <= end;
         });
         if (!hit) return { ...p, matched_contract: undefined, matched_contractor: undefined };
         return {
@@ -120,19 +121,20 @@ export function PenaltyBatchTool() {
   const onGenerate = (kind: DocKind) => {
     setItems((prev) =>
       prev.map((p) =>
-        p.matched_contract
-          ? { ...p, generated: { ...(p.generated ?? {}), [kind]: true } }
-          : p,
+        p.matched_contract ? { ...p, generated: { ...(p.generated ?? {}), [kind]: true } } : p,
       ),
     );
     // STUB: 실제로는 /api/penalty/pdf 호출 → blob → window.open
-    console.info(`[stub] ${DOC_LABELS[kind]} ${items.filter((i) => i.matched_contract).length}건 생성`);
+    console.info(
+      `[stub] ${DOC_LABELS[kind]} ${items.filter((i) => i.matched_contract).length}건 생성`,
+    );
   };
 
   const onClear = () => setItems([]);
   const onRemove = (id: string) => setItems((prev) => prev.filter((p) => p.id !== id));
 
-  const allMatched = items.length > 0 && items.every((i) => i.status === 'ok' && i.matched_contract);
+  const allMatched =
+    items.length > 0 && items.every((i) => i.status === 'ok' && i.matched_contract);
   const hasAny = items.length > 0;
 
   return (
@@ -151,11 +153,11 @@ export function PenaltyBatchTool() {
           type="file"
           accept="image/*,application/pdf"
           multiple
+          className="visually-hidden"
           onChange={(e) => {
             void onFiles(e.target.files);
             if (fileRef.current) fileRef.current.value = '';
           }}
-          style={{ display: 'none' }}
         />
         <button type="button" className="penalty-pick" onClick={onPick} disabled={busy}>
           <i className="ph ph-upload-simple" />
@@ -168,87 +170,113 @@ export function PenaltyBatchTool() {
           <button type="button" className="m-btn" onClick={onMatch} disabled={!hasAny || busy}>
             <i className="ph ph-link" /> 계약 매칭
           </button>
-          <button type="button" className="m-btn" onClick={() => onGenerate('notice')} disabled={!allMatched || busy}>
+          <button
+            type="button"
+            className="m-btn"
+            onClick={() => onGenerate('notice')}
+            disabled={!allMatched || busy}
+          >
             <i className="ph ph-file-text" /> 고지서 사본
           </button>
-          <button type="button" className="m-btn" onClick={() => onGenerate('confirm')} disabled={!allMatched || busy}>
+          <button
+            type="button"
+            className="m-btn"
+            onClick={() => onGenerate('confirm')}
+            disabled={!allMatched || busy}
+          >
             <i className="ph ph-clipboard-text" /> 계약사실확인서
           </button>
-          <button type="button" className="m-btn" onClick={() => onGenerate('change')} disabled={!allMatched || busy}>
+          <button
+            type="button"
+            className="m-btn"
+            onClick={() => onGenerate('change')}
+            disabled={!allMatched || busy}
+          >
             <i className="ph ph-paper-plane-tilt" /> 변경요청공문
           </button>
-          <button type="button" className="m-btn" onClick={onClear} disabled={!hasAny || busy} style={{ marginLeft: 'auto' }}>
+          <button
+            type="button"
+            className="m-btn ml-auto"
+            onClick={onClear}
+            disabled={!hasAny || busy}
+          >
             <i className="ph ph-trash" /> 전체 삭제
           </button>
         </div>
       </div>
 
       {/* 결과 테이블 */}
-      <div className="v3-table-wrap" style={{ marginTop: 0 }}>
+      <div className="v3-table-wrap">
         {items.length === 0 ? (
-          <div style={{ padding: 32, color: 'var(--c-text-muted)', textAlign: 'center' }}>
-            <i className="ph ph-image-square" style={{ fontSize: 32, display: 'block', marginBottom: 8 }} />
+          <div className="penalty-empty">
+            <i className="ph ph-image-square" />
             업로드된 고지서가 없습니다. 위 버튼으로 사진을 추가하세요.
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <table className="penalty-table">
+            <colgroup>
+              <col style={{ width: 28 }} />
+              <col />
+              <col style={{ width: 96 }} />
+              <col style={{ width: 112 }} />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 100 }} />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 180 }} />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 40 }} />
+            </colgroup>
             <thead>
-              <tr style={{ background: 'var(--c-bg-sub)', borderBottom: '1px solid var(--c-border)' }}>
-                <th style={th(28)}>#</th>
-                <th style={{ ...th(), textAlign: 'left' }}>파일</th>
-                <th style={th(96)}>차량번호</th>
-                <th style={th(112)}>위반일자</th>
-                <th style={th(120)}>위반</th>
-                <th style={{ ...th(100), textAlign: 'right' }}>금액</th>
-                <th style={th(120)}>통지번호</th>
-                <th style={{ ...th(180), textAlign: 'left' }}>매칭계약</th>
-                <th style={th(120)}>PDF</th>
-                <th style={th(40)}></th>
+              <tr>
+                <th>#</th>
+                <th className="left">파일</th>
+                <th>차량번호</th>
+                <th>위반일자</th>
+                <th>위반</th>
+                <th className="right">금액</th>
+                <th>통지번호</th>
+                <th className="left">매칭계약</th>
+                <th>PDF</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {items.map((p, i) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid var(--c-border)' }}>
-                  <td style={td()}>{i + 1}</td>
-                  <td style={{ ...td(), textAlign: 'left' }}>
+                <tr key={p.id}>
+                  <td>{i + 1}</td>
+                  <td className="left">
                     <StatusDot s={p.status} />
-                    <span style={{ marginLeft: 6 }}>{p.fileName}</span>
+                    <span className="file-name">{p.fileName}</span>
                   </td>
-                  <td style={td()}>{p.car_number ?? '—'}</td>
-                  <td style={td()}>{p.violate_date ?? '—'}</td>
-                  <td style={td()}>{p.violate_type ?? '—'}</td>
-                  <td style={{ ...td(), textAlign: 'right' }}>{p.amount ? fmt(p.amount) : '—'}</td>
-                  <td style={td()}>{p.notice_no ?? '—'}</td>
-                  <td style={{ ...td(), textAlign: 'left' }}>
+                  <td>{p.car_number ?? '—'}</td>
+                  <td>{p.violate_date ?? '—'}</td>
+                  <td>{p.violate_type ?? '—'}</td>
+                  <td className="right">{p.amount ? fmt(p.amount) : '—'}</td>
+                  <td>{p.notice_no ?? '—'}</td>
+                  <td className="left">
                     {p.matched_contract ? (
                       <>
-                        <span style={{ fontWeight: 600 }}>{p.matched_contract}</span>{' '}
-                        <span style={{ color: 'var(--c-text-muted)' }}>{p.matched_contractor ?? ''}</span>
+                        <span className="matched-code">{p.matched_contract}</span>{' '}
+                        <span className="matched-name">{p.matched_contractor ?? ''}</span>
                       </>
                     ) : (
-                      <span style={{ color: 'var(--c-text-muted)' }}>매칭 전</span>
+                      <span className="matched-empty">매칭 전</span>
                     )}
                   </td>
-                  <td style={td()}>
+                  <td>
                     {(['notice', 'confirm', 'change'] as DocKind[]).map((k) => (
                       <span
                         key={k}
                         title={DOC_LABELS[k]}
-                        style={{
-                          display: 'inline-block',
-                          width: 12,
-                          height: 12,
-                          marginRight: 3,
-                          background: p.generated?.[k] ? 'var(--c-ok)' : 'var(--c-border)',
-                        }}
+                        className={`pdf-dot${p.generated?.[k] ? ' is-done' : ''}`}
                       />
                     ))}
                   </td>
-                  <td style={td()}>
+                  <td>
                     <button
                       type="button"
+                      className="row-del"
                       onClick={() => onRemove(p.id)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--c-text-muted)', cursor: 'pointer' }}
                       aria-label="삭제"
                     >
                       <i className="ph ph-x" />
@@ -263,13 +291,12 @@ export function PenaltyBatchTool() {
 
       <div className="v3-table-foot">
         <div>
-          총 {summary.total}건
-          <span className="sep">│</span>
+          총 {summary.total}건<span className="sep">│</span>
           OCR 성공 {summary.ok}
           {summary.fail > 0 && (
             <>
               <span className="sep">│</span>
-              <span style={{ color: 'var(--c-err)' }}>실패 {summary.fail}</span>
+              <span className="err">실패 {summary.fail}</span>
             </>
           )}
           <span className="sep">│</span>
@@ -277,9 +304,7 @@ export function PenaltyBatchTool() {
           <span className="sep">│</span>
           금액 {fmt(summary.sumAmount)}원
         </div>
-        <div style={{ color: 'var(--c-text-muted)' }}>
-          OCR·PDF 호출은 현재 stub입니다 (서버 엔드포인트 연결 예정)
-        </div>
+        <div className="muted-note">OCR·PDF 호출은 현재 stub입니다 (서버 엔드포인트 연결 예정)</div>
       </div>
     </div>
   );
@@ -287,7 +312,12 @@ export function PenaltyBatchTool() {
 
 /* ── helpers ── */
 
-function Step({ n, label, active, done }: { n: number; label: string; active: boolean; done: boolean }) {
+function Step({
+  n,
+  label,
+  active,
+  done,
+}: { n: number; label: string; active: boolean; done: boolean }) {
   return (
     <div className={`penalty-step ${active ? 'is-active' : ''} ${done ? 'is-done' : ''}`}>
       <span className="n">{done ? <i className="ph ph-check" /> : n}</span>
@@ -297,42 +327,9 @@ function Step({ n, label, active, done }: { n: number; label: string; active: bo
 }
 
 function StatusDot({ s }: { s: ProcStatus }) {
-  const color =
-    s === 'ok' ? 'var(--c-ok)' :
-    s === 'ocring' ? 'var(--c-info)' :
-    s === 'fail' ? 'var(--c-err)' :
-    'var(--c-border)';
-  if (s === 'ocring') return <i className="ph ph-spinner spin" style={{ color, fontSize: 12 }} />;
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        width: 8,
-        height: 8,
-        background: color,
-        verticalAlign: 'middle',
-      }}
-    />
-  );
-}
-
-function th(width?: number): React.CSSProperties {
-  return {
-    padding: '6px 8px',
-    fontSize: 11,
-    fontWeight: 600,
-    color: 'var(--c-text-sub)',
-    textAlign: 'center',
-    width,
-  };
-}
-
-function td(): React.CSSProperties {
-  return {
-    padding: '6px 8px',
-    textAlign: 'center',
-    color: 'var(--c-text)',
-  };
+  if (s === 'ocring') return <i className="ph ph-spinner spin penalty-status-spin" />;
+  const cls = s === 'ok' ? 'ok' : s === 'fail' ? 'fail' : 'pending';
+  return <span className={`penalty-status-dot ${cls}`} />;
 }
 
 /**
@@ -348,7 +345,7 @@ function mockPenaltyResult(fileName: string): Partial<PenaltyItem> | null {
   const types = ['속도위반', '주정차위반', '신호위반', '전용차로위반'];
   const amounts = [40000, 60000, 70000, 80000];
   return {
-    car_number: car ?? `12가${(1000 + (seed * 31) % 9000).toString().slice(0, 4)}`,
+    car_number: car ?? `12가${(1000 + ((seed * 31) % 9000)).toString().slice(0, 4)}`,
     violate_date: date ?? new Date(Date.now() - seed * 86400000).toISOString().slice(0, 10),
     violate_type: types[seed % types.length],
     amount: amounts[seed % amounts.length],

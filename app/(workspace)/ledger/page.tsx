@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
-import { useRtdbCollection } from '@/lib/collections/rtdb';
 import type { JpkGridApi } from '@/components/shared/jpk-grid';
-import type { RtdbBilling, RtdbEvent } from '@/lib/types/rtdb-entities';
+import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { today as todayStr } from '@/lib/date-utils';
+import type { RtdbBilling, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt } from '@/lib/utils';
+import { useMemo, useRef, useState } from 'react';
 import { LedgerClient } from './ledger-client';
 
 type SubpageId = 'finance-list' | 'finance-daily' | 'finance-tax-invoice';
@@ -18,14 +18,19 @@ interface TabSpec {
 }
 
 const TABS: TabSpec[] = [
-  { id: 'finance-list',        label: '입출금내역', primaryAction: '+ 거래 입력', secondaryAction: '+ 수기 입력' },
-  { id: 'finance-daily',       label: '자금일보',   primaryAction: '+ 자금일보 작성' },
+  {
+    id: 'finance-list',
+    label: '입출금내역',
+    primaryAction: '+ 거래 입력',
+    secondaryAction: '+ 수기 입력',
+  },
+  { id: 'finance-daily', label: '자금일보', primaryAction: '+ 자금일보 작성' },
   { id: 'finance-tax-invoice', label: '세금계산서', primaryAction: '+ 계산서 발행' },
 ];
 
 const TAB_CRUMB: Record<SubpageId, string> = {
-  'finance-list':        '입출금내역',
-  'finance-daily':       '자금일보',
+  'finance-list': '입출금내역',
+  'finance-daily': '자금일보',
   'finance-tax-invoice': '세금계산서',
 };
 
@@ -68,17 +73,11 @@ export default function FinancePage() {
           ))}
         </div>
         <div className="action">
-          <button type="button" disabled>{activeTab.primaryAction}</button>
+          <button type="button" disabled>
+            {activeTab.primaryAction}
+          </button>
           {activeTab.secondaryAction && (
-            <button
-              type="button"
-              disabled
-              style={{
-                background: 'var(--c-surface)',
-                color: 'var(--c-text)',
-                border: '1px solid var(--c-border)',
-              }}
-            >
+            <button type="button" className="is-secondary" disabled>
               {activeTab.secondaryAction}
             </button>
           )}
@@ -132,9 +131,7 @@ function FinanceListSubpage({
         <div className="v3-alerts-head">
           <span className="dot" />
           <span className="title">{isClear ? '재무 미결 없음' : '재무 미결'}</span>
-          <span className="count">
-            {isClear ? '· 0건' : `· ${totalAlerts}건`}
-          </span>
+          <span className="count">{isClear ? '· 0건' : `· ${totalAlerts}건`}</span>
         </div>
         {!isClear && (
           <div className="v3-alerts-grid">
@@ -148,7 +145,9 @@ function FinanceListSubpage({
                   <div className="head">{a.head}</div>
                   <div className="desc">{a.desc}</div>
                 </div>
-                <button type="button" className="alert-btn">{a.actionLabel}</button>
+                <button type="button" className="alert-btn">
+                  {a.actionLabel}
+                </button>
               </div>
             ))}
           </div>
@@ -158,15 +157,13 @@ function FinanceListSubpage({
       {/* AG Grid (LedgerClient wrap) */}
       <div className="v3-table-wrap">
         {loading ? (
-          <div style={{ padding: 24, color: 'var(--c-text-muted)', textAlign: 'center' }}>
+          <div className="v3-loading">
             <i className="ph ph-spinner spin" /> 입출금 데이터 로드 중...
           </div>
         ) : error ? (
-          <div style={{ padding: 24 }}>
-            <div style={{ fontWeight: 600, color: 'var(--c-err)', marginBottom: 4 }}>
-              데이터 로드 실패
-            </div>
-            <div style={{ color: 'var(--c-text-sub)' }}>{error.message}</div>
+          <div className="v3-error-box">
+            <div className="head">데이터 로드 실패</div>
+            <div className="msg">{error.message}</div>
           </div>
         ) : (
           <div className="v3-grid-host">
@@ -178,17 +175,14 @@ function FinanceListSubpage({
       {/* table-foot: 수입·지출·예수금 합계 */}
       <div className="v3-table-foot">
         <div>
-          총 {count || stats.total}건
+          총 {count || stats.total}건<span className="sep">│</span>
+          수입 <span className="v3-stat-pos">+{fmt(stats.inflow)}</span>
           <span className="sep">│</span>
-          수입 <span style={{ color: 'var(--c-emerald)', fontWeight: 600 }}>+{fmt(stats.inflow)}</span>
+          지출 <span className="v3-stat-neg">-{fmt(stats.outflow)}</span>
           <span className="sep">│</span>
-          지출 <span style={{ color: 'var(--c-err)', fontWeight: 600 }}>-{fmt(stats.outflow)}</span>
-          <span className="sep">│</span>
-          <span style={{ color: 'var(--c-text-muted)' }}>미매칭 {stats.unmatched}건</span>
+          <span className="v3-stat-mut">미매칭 {stats.unmatched}건</span>
         </div>
-        <div style={{ color: 'var(--c-text-muted)' }}>
-          행 클릭 시 거래 매칭
-        </div>
+        <div className="v3-stat-mut">행 클릭 시 거래 매칭</div>
       </div>
     </div>
   );
@@ -225,11 +219,11 @@ function DailyReportSubpage({
               <i className="ph ph-coins ico" />
               <div className="body">
                 <div className="head">오늘 자금일보 미작성</div>
-                <div className="desc">
-                  거래 입력 후 자금일보 작성 → 일자별 수입·지출 마감
-                </div>
+                <div className="desc">거래 입력 후 자금일보 작성 → 일자별 수입·지출 마감</div>
               </div>
-              <button type="button" className="alert-btn">작성</button>
+              <button type="button" className="alert-btn">
+                작성
+              </button>
             </div>
           </div>
         )}
@@ -237,17 +231,20 @@ function DailyReportSubpage({
 
       <div className="v3-table-wrap">
         {loading ? (
-          <div style={{ padding: 24, color: 'var(--c-text-muted)', textAlign: 'center' }}>
+          <div className="v3-loading">
             <i className="ph ph-spinner spin" /> 자금일보 데이터 로드 중...
           </div>
         ) : rows.length === 0 ? (
-          <div style={{ padding: 24, color: 'var(--c-text-muted)', textAlign: 'center' }}>
-            거래 데이터가 없습니다.
-          </div>
+          <div className="v3-loading">거래 데이터가 없습니다.</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ background: 'var(--c-bg-soft)', borderBottom: '1px solid var(--c-border)' }}>
+              <tr
+                style={{
+                  background: 'var(--c-bg-soft)',
+                  borderBottom: '1px solid var(--c-border)',
+                }}
+              >
                 <th style={cellTh(96)}>일자</th>
                 <th style={{ ...cellTh(96), textAlign: 'right' }}>수입</th>
                 <th style={{ ...cellTh(96), textAlign: 'right' }}>지출</th>
@@ -260,10 +257,24 @@ function DailyReportSubpage({
               {rows.slice(0, 60).map((r) => (
                 <tr key={r.date} style={{ borderBottom: '1px solid var(--c-border)' }}>
                   <td style={cellTd()}>{r.date}</td>
-                  <td style={{ ...cellTd(), textAlign: 'right', color: 'var(--c-emerald)', fontWeight: 600 }}>
+                  <td
+                    style={{
+                      ...cellTd(),
+                      textAlign: 'right',
+                      color: 'var(--c-emerald)',
+                      fontWeight: 600,
+                    }}
+                  >
                     +{fmt(r.inflow)}
                   </td>
-                  <td style={{ ...cellTd(), textAlign: 'right', color: 'var(--c-err)', fontWeight: 600 }}>
+                  <td
+                    style={{
+                      ...cellTd(),
+                      textAlign: 'right',
+                      color: 'var(--c-err)',
+                      fontWeight: 600,
+                    }}
+                  >
                     -{fmt(r.outflow)}
                   </td>
                   <td style={{ ...cellTd(), textAlign: 'right', fontWeight: 600 }}>
@@ -271,7 +282,12 @@ function DailyReportSubpage({
                     {fmt(r.inflow - r.outflow)}
                   </td>
                   <td style={cellTd()}>{r.count}</td>
-                  <td style={{ ...cellTd(), color: r.unmatched > 0 ? 'var(--c-warn)' : 'var(--c-text-muted)' }}>
+                  <td
+                    style={{
+                      ...cellTd(),
+                      color: r.unmatched > 0 ? 'var(--c-warn)' : 'var(--c-text-muted)',
+                    }}
+                  >
                     {r.unmatched}
                   </td>
                 </tr>
@@ -285,9 +301,7 @@ function DailyReportSubpage({
         <div>
           최근 {Math.min(rows.length, 60)}일 일자별 거래 자동 집계
           <span className="sep">│</span>
-          <span style={{ color: 'var(--c-text-muted)' }}>
-            (자금일보 events 도입 전 — 거래 데이터 자동 derive)
-          </span>
+          <span className="v3-stat-mut">(자금일보 events 도입 전 — 거래 데이터 자동 derive)</span>
         </div>
       </div>
     </div>
@@ -330,9 +344,7 @@ function deriveFinanceAlerts(
   const tStr = todayStr();
 
   // 1) 자금일보 미작성 — 오늘 daily_finance_report 이벤트 없으면
-  const todayReport = events.some(
-    (e) => e.date === tStr && isDailyFinanceReport(e.type),
-  );
+  const todayReport = events.some((e) => e.date === tStr && isDailyFinanceReport(e.type));
   if (!todayReport) {
     out.push({
       key: 'no-daily-report',
@@ -365,10 +377,7 @@ function deriveFinanceAlerts(
       severity: 'warn',
       icon: 'ph-link',
       head: `예수금 매칭 [${unmatchedDeposit.length}]`,
-      desc:
-        desc +
-        (unmatchedDeposit.length > 3 ? ` 외 ${unmatchedDeposit.length - 3}건` : '') +
-        ' — 신한 입금 중 미매칭',
+      desc: `${desc}${unmatchedDeposit.length > 3 ? ` 외 ${unmatchedDeposit.length - 3}건` : ''} — 신한 입금 중 미매칭`,
       actionLabel: '매칭',
       count: unmatchedDeposit.length,
     });
@@ -377,9 +386,7 @@ function deriveFinanceAlerts(
   // 3) 과태료 미처리 — type='penalty' AND status pending
   const pendingPenalty = events.filter(
     (e) =>
-      e.type === 'penalty' &&
-      e.status !== 'deleted' &&
-      isPendingStatus(e.work_status ?? e.status),
+      e.type === 'penalty' && e.status !== 'deleted' && isPendingStatus(e.work_status ?? e.status),
   );
   if (pendingPenalty.length > 0) {
     out.push({
@@ -387,13 +394,12 @@ function deriveFinanceAlerts(
       severity: 'info',
       icon: 'ph-file-text',
       head: `과태료 미처리 [${pendingPenalty.length}]`,
-      desc:
-        pendingPenalty
-          .slice(0, 4)
-          .map((e) => e.car_number ?? '—')
-          .join(' · ') +
-        (pendingPenalty.length > 4 ? ` 외 ${pendingPenalty.length - 4}건` : '') +
-        ' (스캔 후 변경부과 대기)',
+      desc: `${pendingPenalty
+        .slice(0, 4)
+        .map((e) => e.car_number ?? '—')
+        .join(' · ')}${
+        pendingPenalty.length > 4 ? ` 외 ${pendingPenalty.length - 4}건` : ''
+      } (스캔 후 변경부과 대기)`,
       actionLabel: '처리',
       count: pendingPenalty.length,
     });
@@ -429,13 +435,12 @@ function deriveFinanceAlerts(
       severity: 'info',
       icon: 'ph-receipt',
       head: `세금계산서 미발행 [${unissued.length}]`,
-      desc:
-        unissued
-          .slice(0, 4)
-          .map((p) => `${p} ${thisMonth} 분`)
-          .join(' · ') +
-        (unissued.length > 4 ? ` 외 ${unissued.length - 4}건` : '') +
-        ` — 마감 ${monthEnd(thisMonth)}`,
+      desc: `${unissued
+        .slice(0, 4)
+        .map((p) => `${p} ${thisMonth} 분`)
+        .join(
+          ' · ',
+        )}${unissued.length > 4 ? ` 외 ${unissued.length - 4}건` : ''} — 마감 ${monthEnd(thisMonth)}`,
       actionLabel: '발행',
       count: unissued.length,
     });
@@ -504,12 +509,7 @@ function isDailyFinanceReport(t: unknown): boolean {
 function isPendingStatus(v: unknown): boolean {
   if (!nonEmpty(v)) return true; // 상태 비어있으면 미처리로 간주
   const s = String(v).toLowerCase();
-  return (
-    s.includes('pending') ||
-    s.includes('대기') ||
-    s.includes('미처리') ||
-    s.includes('진행')
-  );
+  return s.includes('pending') || s.includes('대기') || s.includes('미처리') || s.includes('진행');
 }
 
 function nonEmpty(v: unknown): boolean {
@@ -518,7 +518,7 @@ function nonEmpty(v: unknown): boolean {
 }
 
 function monthEnd(yyyymm: string): string {
-  const [y, m] = yyyymm.split('-').map((s) => parseInt(s, 10));
+  const [y, m] = yyyymm.split('-').map((s) => Number.parseInt(s, 10));
   if (!y || !m) return yyyymm;
   const last = new Date(y, m, 0).getDate();
   return `${yyyymm}-${String(last).padStart(2, '0')}`;

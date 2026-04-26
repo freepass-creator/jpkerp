@@ -13,16 +13,16 @@
  * 디자인은 jpkerp-v3/prototype.html `data-page="general"` 기준.
  */
 
-import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ref, get, set } from 'firebase/database';
+import { get, ref, set } from 'firebase/database';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { getRtdb } from '@/lib/firebase/rtdb';
-import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { EditableField } from '@/components/shared/editable-field';
 import { JpkGrid, type JpkGridApi } from '@/components/shared/jpk-grid';
-import { typedColumn, rowNumColumn } from '@/lib/grid/typed-column';
+import { useRtdbCollection } from '@/lib/collections/rtdb';
+import { getRtdb } from '@/lib/firebase/rtdb';
+import { rowNumColumn, typedColumn } from '@/lib/grid/typed-column';
 import type { ColDef } from 'ag-grid-community';
 
 type SubpageId =
@@ -40,17 +40,17 @@ interface TabSpec {
 
 const TABS: TabSpec[] = [
   { id: 'general-company', label: '회사관리', action: '+ 회사 정보 수정' },
-  { id: 'general-staff',   label: '직원관리', action: '+ 직원 등록' },
-  { id: 'general-dept',    label: '부서·팀',  action: '+ 부서 등록' },
-  { id: 'general-policy',  label: '정책·규정', action: '+ 정책 등록' },
+  { id: 'general-staff', label: '직원관리', action: '+ 직원 등록' },
+  { id: 'general-dept', label: '부서·팀', action: '+ 부서 등록' },
+  { id: 'general-policy', label: '정책·규정', action: '+ 정책 등록' },
   { id: 'general-expense', label: '일반비용', action: '+ 비용 등록' },
 ];
 
 const TAB_CRUMB: Record<SubpageId, string> = {
   'general-company': '회사관리',
-  'general-staff':   '직원관리',
-  'general-dept':    '부서·팀',
-  'general-policy':  '정책·규정',
+  'general-staff': '직원관리',
+  'general-dept': '부서·팀',
+  'general-policy': '정책·규정',
   'general-expense': '일반비용',
 };
 
@@ -106,18 +106,18 @@ export default function GeneralAdminPage() {
 /* ── 회사관리 ── */
 
 const COMPANY_FIELDS: Array<{ k: string; l: string; span?: number }> = [
-  { k: 'biz_name',     l: '회사명' },
-  { k: 'biz_no',       l: '사업자번호' },
-  { k: 'ceo',          l: '대표자' },
-  { k: 'phone',        l: '대표 전화' },
-  { k: 'biz_type',     l: '업태' },
-  { k: 'biz_item',     l: '종목' },
-  { k: 'address',      l: '주소', span: 2 },
-  { k: 'reg_no',       l: '사업용 등록' },
-  { k: 'hometax_id',   l: '홈택스 ID' },
-  { k: 'bank_name',    l: '입금은행' },
+  { k: 'biz_name', l: '회사명' },
+  { k: 'biz_no', l: '사업자번호' },
+  { k: 'ceo', l: '대표자' },
+  { k: 'phone', l: '대표 전화' },
+  { k: 'biz_type', l: '업태' },
+  { k: 'biz_item', l: '종목' },
+  { k: 'address', l: '주소', span: 2 },
+  { k: 'reg_no', l: '사업용 등록' },
+  { k: 'hometax_id', l: '홈택스 ID' },
+  { k: 'bank_name', l: '입금은행' },
   { k: 'bank_account', l: '입금계좌' },
-  { k: 'bank_holder',  l: '예금주' },
+  { k: 'bank_holder', l: '예금주' },
 ];
 
 const COMPANY_QK = ['settings', 'company'];
@@ -151,9 +151,7 @@ function CompanySubpage() {
         <div className="v3-alerts-head">
           <i className="ph ph-buildings ico" />
           <span className="title">회사 기본정보</span>
-          <span className="count">
-            · {data.biz_name || '회사명 미입력'}
-          </span>
+          <span className="count">· {data.biz_name || '회사명 미입력'}</span>
         </div>
       </div>
 
@@ -164,20 +162,10 @@ function CompanySubpage() {
           </div>
         ) : (
           <div style={{ padding: 16, maxWidth: 800 }}>
-            <div
-              className="grid gap-4"
-              style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}
-            >
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
               {COMPANY_FIELDS.map((f) => (
-                <div
-                  key={f.k}
-                  style={{ gridColumn: f.span ? `span ${f.span}` : undefined }}
-                >
-                  <EditableField
-                    label={f.l}
-                    value={data[f.k] ?? ''}
-                    onSave={save(f.k)}
-                  />
+                <div key={f.k} style={{ gridColumn: f.span ? `span ${f.span}` : undefined }}>
+                  <EditableField label={f.l} value={data[f.k] ?? ''} onSave={save(f.k)} />
                 </div>
               ))}
             </div>
@@ -186,9 +174,7 @@ function CompanySubpage() {
       </div>
 
       <div className="v3-table-foot">
-        <div style={{ color: 'var(--c-text-muted)' }}>
-          필드 클릭 → 자동 저장 (저장 버튼 없음)
-        </div>
+        <div style={{ color: 'var(--c-text-muted)' }}>필드 클릭 → 자동 저장 (저장 버튼 없음)</div>
       </div>
     </div>
   );
@@ -211,9 +197,9 @@ interface StaffRow {
 
 const ROLE_META: Record<string, { label: string; color: string }> = {
   superadmin: { label: '최고관리자', color: 'var(--c-err)' },
-  admin:      { label: '관리자',     color: 'var(--c-accent)' },
-  staff:      { label: '직원',       color: 'var(--c-text)' },
-  pending:    { label: '승인대기',   color: 'var(--c-warn)' },
+  admin: { label: '관리자', color: 'var(--c-accent)' },
+  staff: { label: '직원', color: 'var(--c-text)' },
+  pending: { label: '승인대기', color: 'var(--c-warn)' },
 };
 
 function StaffSubpage() {
@@ -233,27 +219,34 @@ function StaffSubpage() {
     return { total: users.data.length, active, leave, resigned };
   }, [users.data]);
 
-  const cols = useMemo<ColDef<StaffRow>[]>(() => [
-    rowNumColumn<StaffRow>(),
-    typedColumn('text',   { headerName: '이름', field: 'name', width: 100, cellStyle: { fontWeight: '600' } }),
-    typedColumn('text',   { headerName: '이메일', field: 'email', width: 200 }),
-    typedColumn('text',   { headerName: '연락처', field: 'phone', width: 120 }),
-    typedColumn('select', {
-      headerName: '권한',
-      field: 'role',
-      width: 100,
-      cellStyle: (p: { value: unknown }) => ({
-        color: ROLE_META[p.value as string]?.color ?? 'var(--c-text)',
-        fontWeight: '600',
+  const cols = useMemo<ColDef<StaffRow>[]>(
+    () => [
+      rowNumColumn<StaffRow>(),
+      typedColumn('text', {
+        headerName: '이름',
+        field: 'name',
+        width: 100,
+        cellStyle: { fontWeight: '600' },
       }),
-      valueFormatter: (p) =>
-        ROLE_META[p.value as string]?.label ?? (p.value as string) ?? '-',
-    }),
-    typedColumn('select', { headerName: '부서', field: 'department', width: 100 }),
-    typedColumn('select', { headerName: '직책', field: 'position', width: 90 }),
-    typedColumn('date',   { headerName: '입사일', field: 'join_date', width: 100 }),
-    typedColumn('select', { headerName: '상태', field: 'status', width: 80 }),
-  ], []);
+      typedColumn('text', { headerName: '이메일', field: 'email', width: 200 }),
+      typedColumn('text', { headerName: '연락처', field: 'phone', width: 120 }),
+      typedColumn('select', {
+        headerName: '권한',
+        field: 'role',
+        width: 100,
+        cellStyle: (p: { value: unknown }) => ({
+          color: ROLE_META[p.value as string]?.color ?? 'var(--c-text)',
+          fontWeight: '600',
+        }),
+        valueFormatter: (p) => ROLE_META[p.value as string]?.label ?? (p.value as string) ?? '-',
+      }),
+      typedColumn('select', { headerName: '부서', field: 'department', width: 100 }),
+      typedColumn('select', { headerName: '직책', field: 'position', width: 90 }),
+      typedColumn('date', { headerName: '입사일', field: 'join_date', width: 100 }),
+      typedColumn('select', { headerName: '상태', field: 'status', width: 80 }),
+    ],
+    [],
+  );
 
   return (
     <div className="v3-subpage is-active">
@@ -294,8 +287,7 @@ function StaffSubpage() {
 
       <div className="v3-table-foot">
         <div>
-          총 {stats.total}명
-          <span className="sep">│</span>
+          총 {stats.total}명<span className="sep">│</span>
           재직 {stats.active}
           <span className="sep">│</span>
           휴직 {stats.leave}
@@ -357,7 +349,12 @@ function DeptSubpage() {
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ background: 'var(--c-bg-soft)', borderBottom: '1px solid var(--c-border)' }}>
+              <tr
+                style={{
+                  background: 'var(--c-bg-soft)',
+                  borderBottom: '1px solid var(--c-border)',
+                }}
+              >
                 <th style={cellTh(40)}>#</th>
                 <th style={{ ...cellTh(), textAlign: 'left' }}>부서명</th>
                 <th style={cellTh(120)}>대표자(추정)</th>
@@ -380,8 +377,7 @@ function DeptSubpage() {
 
       <div className="v3-table-foot">
         <div>
-          {rows.length}개 부서 · 총 {users.data.length}명
-          <span className="sep">│</span>
+          {rows.length}개 부서 · 총 {users.data.length}명<span className="sep">│</span>
           <span style={{ color: 'var(--c-text-muted)' }}>
             (직원 department 필드 자동 집계 — 부서 마스터 미구현)
           </span>

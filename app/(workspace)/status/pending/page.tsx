@@ -14,23 +14,18 @@
  * Empty state: 모든 미결 0건 → 큰 ✓ 메시지
  */
 
-import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { useRtdbCollection } from '@/lib/collections/rtdb';
 import {
-  type RtdbAsset,
-  type RtdbBilling,
-  type RtdbContract,
-  type RtdbEvent,
-} from '@/lib/types/rtdb-entities';
-import {
-  runGapCheck,
-  groupByCategory,
-  gotoRoute,
   CATEGORY_META,
   type PendingCategory,
   type PendingItem,
+  gotoRoute,
+  groupByCategory,
+  runGapCheck,
 } from '@/lib/gap-check';
+import type { RtdbAsset, RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 
 interface InsuranceRow {
   car_number?: string;
@@ -152,6 +147,7 @@ export default function PendingPage() {
                         handleRowClick(item);
                       }
                     }}
+                    // biome-ignore lint/a11y/useSemanticElements: 행 내부에 별도 액션 <button>이 있어 button nested 불가
                     role="button"
                     tabIndex={0}
                   >

@@ -17,13 +17,15 @@
  * 디자인은 jpkerp-v3/prototype.html `data-page="devtools"` 기준.
  */
 
-import { useMemo, useState } from 'react';
-import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { JpkGrid } from '@/components/shared/jpk-grid';
-import { typedColumn, rowNumColumn, MONO_CELL_STYLE, MONO_CELL_STYLE_BOLD } from '@/lib/grid/typed-column';
-import { fmt } from '@/lib/utils';
+import { useRtdbCollection } from '@/lib/collections/rtdb';
 import { computeTotalDue } from '@/lib/date-utils';
-import type { ColDef } from 'ag-grid-community';
+import {
+  MONO_CELL_STYLE,
+  MONO_CELL_STYLE_BOLD,
+  rowNumColumn,
+  typedColumn,
+} from '@/lib/grid/typed-column';
 import type {
   RtdbAsset,
   RtdbBilling,
@@ -32,6 +34,9 @@ import type {
   RtdbCustomer,
   RtdbEvent,
 } from '@/lib/types/rtdb-entities';
+import { fmt } from '@/lib/utils';
+import type { ColDef } from 'ag-grid-community';
+import { useMemo, useState } from 'react';
 
 type SubpageId =
   | 'dev-models'
@@ -51,27 +56,27 @@ interface TabSpec {
 }
 
 const TABS: TabSpec[] = [
-  { id: 'dev-models',    label: '차종 마스터',  action: '+ 차종 등록' },
-  { id: 'dev-partners',  label: '회원사',       action: '+ 회원사 등록' },
-  { id: 'dev-customers', label: '고객',         action: '+ 고객 등록' },
-  { id: 'dev-vendors',   label: '거래처',       action: '+ 거래처 등록' },
-  { id: 'dev-orphan',    label: '데이터 저장소', action: '' },
+  { id: 'dev-models', label: '차종 마스터', action: '+ 차종 등록' },
+  { id: 'dev-partners', label: '회원사', action: '+ 회원사 등록' },
+  { id: 'dev-customers', label: '고객', action: '+ 고객 등록' },
+  { id: 'dev-vendors', label: '거래처', action: '+ 거래처 등록' },
+  { id: 'dev-orphan', label: '데이터 저장소', action: '' },
   { id: 'dev-integrity', label: '데이터 정합성', action: '+ 검증 실행' },
-  { id: 'dev-settings',  label: '시스템 설정',  action: '' },
-  { id: 'dev-backup',    label: '백업·내보내기', action: '' },
-  { id: 'dev-audit',     label: '감사 로그',    action: '' },
+  { id: 'dev-settings', label: '시스템 설정', action: '' },
+  { id: 'dev-backup', label: '백업·내보내기', action: '' },
+  { id: 'dev-audit', label: '감사 로그', action: '' },
 ];
 
 const TAB_CRUMB: Record<SubpageId, string> = {
-  'dev-models':    '차종 마스터',
-  'dev-partners':  '회원사',
+  'dev-models': '차종 마스터',
+  'dev-partners': '회원사',
   'dev-customers': '고객',
-  'dev-vendors':   '거래처',
-  'dev-orphan':    '데이터 저장소',
+  'dev-vendors': '거래처',
+  'dev-orphan': '데이터 저장소',
   'dev-integrity': '데이터 정합성',
-  'dev-settings':  '시스템 설정',
-  'dev-backup':    '백업·내보내기',
-  'dev-audit':     '감사 로그',
+  'dev-settings': '시스템 설정',
+  'dev-backup': '백업·내보내기',
+  'dev-audit': '감사 로그',
 };
 
 export default function DevToolsPage() {
@@ -101,7 +106,9 @@ export default function DevToolsPage() {
         </div>
         {activeTab.action && (
           <div className="action">
-            <button type="button" disabled>{activeTab.action}</button>
+            <button type="button" disabled>
+              {activeTab.action}
+            </button>
           </div>
         )}
       </div>
@@ -119,11 +126,23 @@ export default function DevToolsPage() {
       ) : active === 'dev-integrity' ? (
         <IntegritySubpage />
       ) : active === 'dev-settings' ? (
-        <PlaceholderSubpage label="시스템 설정" icon="ph-gear-six" desc="이관 기준일 · 자동이체일 · 미수 알림 기준 · 외부 연동" />
+        <PlaceholderSubpage
+          label="시스템 설정"
+          icon="ph-gear-six"
+          desc="이관 기준일 · 자동이체일 · 미수 알림 기준 · 외부 연동"
+        />
       ) : active === 'dev-backup' ? (
-        <PlaceholderSubpage label="백업·내보내기" icon="ph-cloud-arrow-down" desc="자동 백업 · 수동 내보내기 · CSV/XLSX export" />
+        <PlaceholderSubpage
+          label="백업·내보내기"
+          icon="ph-cloud-arrow-down"
+          desc="자동 백업 · 수동 내보내기 · CSV/XLSX export"
+        />
       ) : (
-        <PlaceholderSubpage label="감사 로그" icon="ph-clipboard-text" desc="로그인·등록·수정·삭제·권한변경 추적" />
+        <PlaceholderSubpage
+          label="감사 로그"
+          icon="ph-clipboard-text"
+          desc="로그인·등록·수정·삭제·권한변경 추적"
+        />
       )}
     </>
   );
@@ -165,26 +184,39 @@ function CarModelsSubpage() {
     };
   }, [rows]);
 
-  const cols = useMemo<ColDef<RtdbCarModel & { _key: string; asset_count: number }>[]>(() => [
-    rowNumColumn(),
-    typedColumn('select', { headerName: '제조사', field: 'maker', width: 90, cellStyle: { fontWeight: '600' } }),
-    typedColumn('text',   { headerName: '모델', field: 'model', width: 120 }),
-    typedColumn('text',   { headerName: '세부모델', field: 'sub', flex: 1, minWidth: 200 }),
-    typedColumn('text',   { headerName: '코드', field: 'code', width: 96, cellStyle: MONO_CELL_STYLE }),
-    typedColumn('text',   { headerName: '연식', field: 'year_start', width: 80 }),
-    typedColumn('select', { headerName: '동력', field: 'powertrain', width: 80 }),
-    typedColumn('select', { headerName: '차급', field: 'category', width: 90 }),
-    typedColumn('number', {
-      headerName: '보유',
-      field: 'asset_count',
-      width: 70,
-      valueFormatter: (p) => fmt(Number(p.value)),
-      cellStyle: (p: { value: unknown }) =>
-        Number(p.value) > 0
-          ? { color: 'var(--c-accent)', fontWeight: '600' }
-          : { color: 'var(--c-text-muted)' },
-    }),
-  ], []);
+  const cols = useMemo<ColDef<RtdbCarModel & { _key: string; asset_count: number }>[]>(
+    () => [
+      rowNumColumn(),
+      typedColumn('select', {
+        headerName: '제조사',
+        field: 'maker',
+        width: 90,
+        cellStyle: { fontWeight: '600' },
+      }),
+      typedColumn('text', { headerName: '모델', field: 'model', width: 120 }),
+      typedColumn('text', { headerName: '세부모델', field: 'sub', flex: 1, minWidth: 200 }),
+      typedColumn('text', {
+        headerName: '코드',
+        field: 'code',
+        width: 96,
+        cellStyle: MONO_CELL_STYLE,
+      }),
+      typedColumn('text', { headerName: '연식', field: 'year_start', width: 80 }),
+      typedColumn('select', { headerName: '동력', field: 'powertrain', width: 80 }),
+      typedColumn('select', { headerName: '차급', field: 'category', width: 90 }),
+      typedColumn('number', {
+        headerName: '보유',
+        field: 'asset_count',
+        width: 70,
+        valueFormatter: (p) => fmt(Number(p.value)),
+        cellStyle: (p: { value: unknown }) =>
+          Number(p.value) > 0
+            ? { color: 'var(--c-accent)', fontWeight: '600' }
+            : { color: 'var(--c-text-muted)' },
+      }),
+    ],
+    [],
+  );
 
   return (
     <div className="v3-subpage is-active">
@@ -192,9 +224,7 @@ function CarModelsSubpage() {
         <div className="v3-alerts-head">
           <i className="ph ph-car-profile ico" />
           <span className="title">차종 마스터</span>
-          <span className="count">
-            · {stats.total}종 (freepass-v2 공유)
-          </span>
+          <span className="count">· {stats.total}종 (freepass-v2 공유)</span>
         </div>
       </div>
 
@@ -267,8 +297,8 @@ function PartnersSubpage() {
       .filter((p) => p.status !== 'deleted')
       .map((p) => ({
         ...p,
-        car_count: p.partner_code ? carCount.get(p.partner_code) ?? 0 : 0,
-        contract_count: p.partner_code ? contractCount.get(p.partner_code) ?? 0 : 0,
+        car_count: p.partner_code ? (carCount.get(p.partner_code) ?? 0) : 0,
+        contract_count: p.partner_code ? (contractCount.get(p.partner_code) ?? 0) : 0,
       }));
   }, [partners.data, assets.data, contracts.data]);
 
@@ -283,27 +313,40 @@ function PartnersSubpage() {
     return { total: rows.length, active, dormant };
   }, [rows]);
 
-  const cols = useMemo<ColDef<PartnerRow & { car_count: number; contract_count: number }>[]>(() => [
-    rowNumColumn(),
-    typedColumn('text',   { headerName: '코드', field: 'partner_code', width: 80, cellStyle: MONO_CELL_STYLE_BOLD }),
-    typedColumn('text',   { headerName: '회원사명', field: 'partner_name', flex: 1, minWidth: 160 }),
-    typedColumn('text',   { headerName: '사업자번호', field: 'biz_no', width: 130 }),
-    typedColumn('text',   { headerName: '대표자', field: 'ceo', width: 90 }),
-    typedColumn('text',   { headerName: '연락처', field: 'phone', width: 120 }),
-    typedColumn('number', {
-      headerName: '차량수',
-      field: 'car_count',
-      width: 80,
-      valueFormatter: (p) => `${p.value}`,
-    }),
-    typedColumn('number', {
-      headerName: '계약수',
-      field: 'contract_count',
-      width: 80,
-      valueFormatter: (p) => `${p.value}`,
-    }),
-    typedColumn('select', { headerName: '상태', field: 'status', width: 80 }),
-  ], []);
+  const cols = useMemo<ColDef<PartnerRow & { car_count: number; contract_count: number }>[]>(
+    () => [
+      rowNumColumn(),
+      typedColumn('text', {
+        headerName: '코드',
+        field: 'partner_code',
+        width: 80,
+        cellStyle: MONO_CELL_STYLE_BOLD,
+      }),
+      typedColumn('text', {
+        headerName: '회원사명',
+        field: 'partner_name',
+        flex: 1,
+        minWidth: 160,
+      }),
+      typedColumn('text', { headerName: '사업자번호', field: 'biz_no', width: 130 }),
+      typedColumn('text', { headerName: '대표자', field: 'ceo', width: 90 }),
+      typedColumn('text', { headerName: '연락처', field: 'phone', width: 120 }),
+      typedColumn('number', {
+        headerName: '차량수',
+        field: 'car_count',
+        width: 80,
+        valueFormatter: (p) => `${p.value}`,
+      }),
+      typedColumn('number', {
+        headerName: '계약수',
+        field: 'contract_count',
+        width: 80,
+        valueFormatter: (p) => `${p.value}`,
+      }),
+      typedColumn('select', { headerName: '상태', field: 'status', width: 80 }),
+    ],
+    [],
+  );
 
   return (
     <div className="v3-subpage is-active">
@@ -334,8 +377,7 @@ function PartnersSubpage() {
 
       <div className="v3-table-foot">
         <div>
-          총 {stats.total}개
-          <span className="sep">│</span>
+          총 {stats.total}개<span className="sep">│</span>
           활성 {stats.active}
           <span className="sep">│</span>
           휴면 {stats.dormant}
@@ -361,7 +403,7 @@ function CustomersSubpage() {
       .filter((c) => c.status !== 'deleted')
       .map((c) => ({
         ...c,
-        contract_count: c.customer_code ? ctById.get(c.customer_code) ?? 0 : 0,
+        contract_count: c.customer_code ? (ctById.get(c.customer_code) ?? 0) : 0,
       }));
   }, [customers.data, contracts.data]);
 
@@ -376,23 +418,41 @@ function CustomersSubpage() {
     return { total: rows.length, personal, corp };
   }, [rows]);
 
-  const cols = useMemo<ColDef<RtdbCustomer & { contract_count: number }>[]>(() => [
-    rowNumColumn(),
-    typedColumn('text',   { headerName: '고객코드', field: 'customer_code', width: 110, cellStyle: MONO_CELL_STYLE_BOLD }),
-    typedColumn('text',   { headerName: '이름', field: 'name', width: 120, cellStyle: { fontWeight: '600' } }),
-    typedColumn('select', { headerName: '구분', field: 'customer_type', width: 80 }),
-    typedColumn('text',   { headerName: '연락처', field: 'phone', width: 120 }),
-    typedColumn('text',   { headerName: '생년/사업자', field: 'birth', width: 110 }),
-    typedColumn('text',   { headerName: '회원사', field: 'partner_code', width: 80, cellStyle: MONO_CELL_STYLE }),
-    typedColumn('text',   { headerName: '주소', field: 'address', flex: 1, minWidth: 180 }),
-    typedColumn('number', {
-      headerName: '계약',
-      field: 'contract_count',
-      width: 70,
-      valueFormatter: (p) => `${p.value}`,
-    }),
-    typedColumn('select', { headerName: '상태', field: 'status', width: 80 }),
-  ], []);
+  const cols = useMemo<ColDef<RtdbCustomer & { contract_count: number }>[]>(
+    () => [
+      rowNumColumn(),
+      typedColumn('text', {
+        headerName: '고객코드',
+        field: 'customer_code',
+        width: 110,
+        cellStyle: MONO_CELL_STYLE_BOLD,
+      }),
+      typedColumn('text', {
+        headerName: '이름',
+        field: 'name',
+        width: 120,
+        cellStyle: { fontWeight: '600' },
+      }),
+      typedColumn('select', { headerName: '구분', field: 'customer_type', width: 80 }),
+      typedColumn('text', { headerName: '연락처', field: 'phone', width: 120 }),
+      typedColumn('text', { headerName: '생년/사업자', field: 'birth', width: 110 }),
+      typedColumn('text', {
+        headerName: '회원사',
+        field: 'partner_code',
+        width: 80,
+        cellStyle: MONO_CELL_STYLE,
+      }),
+      typedColumn('text', { headerName: '주소', field: 'address', flex: 1, minWidth: 180 }),
+      typedColumn('number', {
+        headerName: '계약',
+        field: 'contract_count',
+        width: 70,
+        valueFormatter: (p) => `${p.value}`,
+      }),
+      typedColumn('select', { headerName: '상태', field: 'status', width: 80 }),
+    ],
+    [],
+  );
 
   return (
     <div className="v3-subpage is-active">
@@ -423,8 +483,7 @@ function CustomersSubpage() {
 
       <div className="v3-table-foot">
         <div>
-          총 {stats.total}명
-          <span className="sep">│</span>
+          총 {stats.total}명<span className="sep">│</span>
           개인 {stats.personal}
           <span className="sep">│</span>
           법인 {stats.corp}
@@ -453,10 +512,7 @@ interface VendorRow {
 function VendorsSubpage() {
   const vendors = useRtdbCollection<VendorRow>('vendors');
 
-  const rows = useMemo(
-    () => vendors.data.filter((v) => v.status !== 'deleted'),
-    [vendors.data],
-  );
+  const rows = useMemo(() => vendors.data.filter((v) => v.status !== 'deleted'), [vendors.data]);
 
   const stats = useMemo(() => {
     const byType = new Map<string, number>();
@@ -470,17 +526,25 @@ function VendorsSubpage() {
     };
   }, [rows]);
 
-  const cols = useMemo<ColDef<VendorRow>[]>(() => [
-    rowNumColumn<VendorRow>(),
-    typedColumn('text',   { headerName: '거래처명', field: 'vendor_name', width: 160, cellStyle: { fontWeight: '600' } }),
-    typedColumn('select', { headerName: '업종', field: 'vendor_type', width: 100 }),
-    typedColumn('text',   { headerName: '담당자', field: 'contact_name', width: 100 }),
-    typedColumn('text',   { headerName: '연락처', field: 'phone', width: 120 }),
-    typedColumn('text',   { headerName: '사업자번호', field: 'biz_no', width: 130 }),
-    typedColumn('text',   { headerName: '주소', field: 'address', flex: 1, minWidth: 180 }),
-    typedColumn('text',   { headerName: '계좌', field: 'bank_account', width: 140 }),
-    typedColumn('text',   { headerName: '비고', field: 'note', width: 160 }),
-  ], []);
+  const cols = useMemo<ColDef<VendorRow>[]>(
+    () => [
+      rowNumColumn<VendorRow>(),
+      typedColumn('text', {
+        headerName: '거래처명',
+        field: 'vendor_name',
+        width: 160,
+        cellStyle: { fontWeight: '600' },
+      }),
+      typedColumn('select', { headerName: '업종', field: 'vendor_type', width: 100 }),
+      typedColumn('text', { headerName: '담당자', field: 'contact_name', width: 100 }),
+      typedColumn('text', { headerName: '연락처', field: 'phone', width: 120 }),
+      typedColumn('text', { headerName: '사업자번호', field: 'biz_no', width: 130 }),
+      typedColumn('text', { headerName: '주소', field: 'address', flex: 1, minWidth: 180 }),
+      typedColumn('text', { headerName: '계좌', field: 'bank_account', width: 140 }),
+      typedColumn('text', { headerName: '비고', field: 'note', width: 160 }),
+    ],
+    [],
+  );
 
   return (
     <div className="v3-subpage is-active">
@@ -564,11 +628,10 @@ function OrphanSubpage() {
             kind: 'transaction',
             source: e.type === 'bank_tx' ? '신한 CSV' : '카드',
             identifier: `${e.title ?? '—'} · ${fmt(Number(e.amount ?? 0))}`,
-            candidate: e.contract_code
-              ? `계약 ${e.contract_code} 미존재`
-              : '—',
+            candidate: e.contract_code ? `계약 ${e.contract_code} 미존재` : '—',
             uploader: (e.handler as string) ?? '—',
-            status: e.match_status === 'matched' ? '매칭완료' : (e.match_status as string) ?? '미매칭',
+            status:
+              e.match_status === 'matched' ? '매칭완료' : ((e.match_status as string) ?? '미매칭'),
           });
         }
         continue;
@@ -629,9 +692,7 @@ function OrphanSubpage() {
       <div className={`v3-alerts ${isClear ? 'is-clear' : ''}`}>
         <div className="v3-alerts-head">
           <span className="dot" />
-          <span className="title">
-            {isClear ? '매칭 미결 없음' : '매칭 안 된 데이터'}
-          </span>
+          <span className="title">{isClear ? '매칭 미결 없음' : '매칭 안 된 데이터'}</span>
           <span className="count">
             {isClear
               ? '· 0건'
@@ -645,9 +706,13 @@ function OrphanSubpage() {
                 <i className="ph ph-image ico" />
                 <div className="body">
                   <div className="head">사진 미매칭 [{stats.photo}]</div>
-                  <div className="desc">차량번호 인식 실패 또는 등록 안 된 차량 — 모바일 업로드</div>
+                  <div className="desc">
+                    차량번호 인식 실패 또는 등록 안 된 차량 — 모바일 업로드
+                  </div>
                 </div>
-                <button type="button" className="alert-btn">매칭</button>
+                <button type="button" className="alert-btn">
+                  매칭
+                </button>
               </div>
             )}
             {stats.tx > 0 && (
@@ -657,7 +722,9 @@ function OrphanSubpage() {
                   <div className="head">거래 미매칭 [{stats.tx}]</div>
                   <div className="desc">계약자/계약코드 매칭 실패 — 예수금 처리됨</div>
                 </div>
-                <button type="button" className="alert-btn">매칭</button>
+                <button type="button" className="alert-btn">
+                  매칭
+                </button>
               </div>
             )}
             {stats.file > 0 && (
@@ -667,7 +734,9 @@ function OrphanSubpage() {
                   <div className="head">파일 미매칭 [{stats.file}]</div>
                   <div className="desc">업로드 후 분류 안 된 PDF·이미지</div>
                 </div>
-                <button type="button" className="alert-btn">분류</button>
+                <button type="button" className="alert-btn">
+                  분류
+                </button>
               </div>
             )}
             {stats.evt > 0 && (
@@ -677,7 +746,9 @@ function OrphanSubpage() {
                   <div className="head">고아 이벤트 [{stats.evt}]</div>
                   <div className="desc">contract_code 존재하나 계약 없음 — 정리 필요</div>
                 </div>
-                <button type="button" className="alert-btn">정리</button>
+                <button type="button" className="alert-btn">
+                  정리
+                </button>
               </div>
             )}
           </div>
@@ -696,7 +767,12 @@ function OrphanSubpage() {
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ background: 'var(--c-bg-soft)', borderBottom: '1px solid var(--c-border)' }}>
+              <tr
+                style={{
+                  background: 'var(--c-bg-soft)',
+                  borderBottom: '1px solid var(--c-border)',
+                }}
+              >
                 <th style={cellTh(40)}>#</th>
                 <th style={cellTh(140)}>일시</th>
                 <th style={cellTh(70)}>유형</th>
@@ -731,8 +807,7 @@ function OrphanSubpage() {
 
       <div className="v3-table-foot">
         <div>
-          총 {stats.total}건
-          <span className="sep">│</span>
+          총 {stats.total}건<span className="sep">│</span>
           사진 {stats.photo}
           <span className="sep">│</span>
           거래 {stats.tx}
@@ -741,9 +816,7 @@ function OrphanSubpage() {
           <span className="sep">│</span>
           이벤트 {stats.evt}
         </div>
-        <div style={{ color: 'var(--c-text-muted)' }}>
-          보존기간 90일 (자동 만료)
-        </div>
+        <div style={{ color: 'var(--c-text-muted)' }}>보존기간 90일 (자동 만료)</div>
       </div>
     </div>
   );
@@ -772,9 +845,10 @@ function IntegritySubpage() {
     const detectedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
     // 1) 청구 vs 입금 불일치 — cutover 로직 재사용
-    const byCode = new Map(
-      contracts.data.filter((c) => c.contract_code).map((c) => [c.contract_code!, c]),
-    );
+    const byCode = new Map<string, RtdbContract>();
+    for (const c of contracts.data) {
+      if (c.contract_code) byCode.set(c.contract_code, c);
+    }
     const billAgg = new Map<string, { paid: number; due: number }>();
     for (const b of billings.data) {
       if (b.status === 'deleted' || !b.contract_code) continue;
@@ -865,8 +939,7 @@ function IntegritySubpage() {
     return { total: rows.length, critical, warn };
   }, [rows]);
 
-  const loading =
-    billings.loading || contracts.loading || events.loading || assets.loading;
+  const loading = billings.loading || contracts.loading || events.loading || assets.loading;
   const isClear = !loading && rows.length === 0;
 
   // 상위 그룹
@@ -880,9 +953,7 @@ function IntegritySubpage() {
         <div className="v3-alerts-head">
           <span className="dot" />
           <span className="title">{isClear ? '데이터 정합성 정상' : '데이터 정합성'}</span>
-          <span className="count">
-            {isClear ? '· 0건' : `· 검증 결과 ${stats.total}건 불일치`}
-          </span>
+          <span className="count">{isClear ? '· 0건' : `· 검증 결과 ${stats.total}건 불일치`}</span>
         </div>
         {!isClear && (
           <div className="v3-alerts-grid">
@@ -895,11 +966,12 @@ function IntegritySubpage() {
                     {mismatch
                       .slice(0, 3)
                       .map((r) => r.target)
-                      .join(' · ') +
-                      (mismatch.length > 3 ? ` 외 ${mismatch.length - 3}건` : '')}
+                      .join(' · ') + (mismatch.length > 3 ? ` 외 ${mismatch.length - 3}건` : '')}
                   </div>
                 </div>
-                <button type="button" className="alert-btn">확인</button>
+                <button type="button" className="alert-btn">
+                  확인
+                </button>
               </div>
             )}
             {orphan.length > 0 && (
@@ -909,7 +981,9 @@ function IntegritySubpage() {
                   <div className="head">고아 이벤트 [{orphan.length}]</div>
                   <div className="desc">contract_code 존재하나 계약 없음 — 정리 필요</div>
                 </div>
-                <button type="button" className="alert-btn">정리</button>
+                <button type="button" className="alert-btn">
+                  정리
+                </button>
               </div>
             )}
             {dup.length > 0 && (
@@ -918,10 +992,15 @@ function IntegritySubpage() {
                 <div className="body">
                   <div className="head">중복 차량번호 [{dup.length}]</div>
                   <div className="desc">
-                    {dup.map((r) => r.target).slice(0, 3).join(' · ')}
+                    {dup
+                      .map((r) => r.target)
+                      .slice(0, 3)
+                      .join(' · ')}
                   </div>
                 </div>
-                <button type="button" className="alert-btn">병합</button>
+                <button type="button" className="alert-btn">
+                  병합
+                </button>
               </div>
             )}
           </div>
@@ -940,7 +1019,12 @@ function IntegritySubpage() {
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ background: 'var(--c-bg-soft)', borderBottom: '1px solid var(--c-border)' }}>
+              <tr
+                style={{
+                  background: 'var(--c-bg-soft)',
+                  borderBottom: '1px solid var(--c-border)',
+                }}
+              >
                 <th style={cellTh(40)}>#</th>
                 <th style={cellTh(140)}>검출일시</th>
                 <th style={{ ...cellTh(), textAlign: 'left' }}>구분</th>
@@ -1025,19 +1109,23 @@ function PlaceholderSubpage({
 
 function kindLabel(k: OrphanRow['kind']): string {
   switch (k) {
-    case 'photo': return '사진';
-    case 'transaction': return '거래';
-    case 'file': return '파일';
-    case 'event': return '이벤트';
+    case 'photo':
+      return '사진';
+    case 'transaction':
+      return '거래';
+    case 'file':
+      return '파일';
+    case 'event':
+      return '이벤트';
   }
 }
 
 function kindBadgeStyle(k: OrphanRow['kind']): React.CSSProperties {
   const colors: Record<OrphanRow['kind'], { bg: string; fg: string }> = {
-    photo:       { bg: 'var(--c-bg-soft)', fg: 'var(--c-info)' },
+    photo: { bg: 'var(--c-bg-soft)', fg: 'var(--c-info)' },
     transaction: { bg: 'var(--c-bg-soft)', fg: 'var(--c-text)' },
-    file:        { bg: 'var(--c-bg-soft)', fg: 'var(--c-info)' },
-    event:       { bg: 'var(--c-bg-soft)', fg: 'var(--c-warn)' },
+    file: { bg: 'var(--c-bg-soft)', fg: 'var(--c-info)' },
+    event: { bg: 'var(--c-bg-soft)', fg: 'var(--c-warn)' },
   };
   const c = colors[k];
   return {

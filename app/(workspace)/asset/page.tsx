@@ -1,11 +1,11 @@
 'use client';
 
+import type { JpkGridApi } from '@/components/shared/jpk-grid';
+import { AssetDetailPanel } from '@/components/v3/AssetDetailPanel';
+import { useRtdbCollection } from '@/lib/collections/rtdb';
 import Link from 'next/link';
 import { useMemo, useRef, useState } from 'react';
-import { useRtdbCollection } from '@/lib/collections/rtdb';
-import type { JpkGridApi } from '@/components/shared/jpk-grid';
 import { AssetsGrid } from './assets-grid';
-import { AssetDetailPanel } from '@/components/v3/AssetDetailPanel';
 
 type AssetRow = {
   _key?: string;
@@ -161,9 +161,7 @@ function AssetListSubpage({
         <div className="v3-alerts-head">
           <span className="dot" />
           <span className="title">{isClear ? '자산 데이터 정상' : '자산 데이터 미결'}</span>
-          <span className="count">
-            {isClear ? '· 0건' : `· ${totalAlerts}건 (입력 미완성)`}
-          </span>
+          <span className="count">{isClear ? '· 0건' : `· ${totalAlerts}건 (입력 미완성)`}</span>
         </div>
         {!isClear && (
           <div className="v3-alerts-grid">
@@ -177,7 +175,9 @@ function AssetListSubpage({
                   <div className="head">{a.head}</div>
                   <div className="desc">{a.desc}</div>
                 </div>
-                <button type="button" className="alert-btn">{a.actionLabel}</button>
+                <button type="button" className="alert-btn">
+                  {a.actionLabel}
+                </button>
               </div>
             ))}
           </div>
@@ -210,19 +210,20 @@ function AssetListSubpage({
       {/* table-foot: 총 N대 + 상태별 카운트 */}
       <div className="v3-table-foot">
         <div>
-          총 {stats.total}대
+          총 {stats.total}대<span className="sep">│</span>
+          <span className="stat-dot active" />
+          대여중 {stats.active}
           <span className="sep">│</span>
-          <span className="stat-dot active" />대여중 {stats.active}
+          <span className="stat-dot idle" />
+          휴차 {stats.idle}
           <span className="sep">│</span>
-          <span className="stat-dot idle" />휴차 {stats.idle}
+          <span className="stat-dot repair" />
+          수선중 {stats.repair}
           <span className="sep">│</span>
-          <span className="stat-dot repair" />수선중 {stats.repair}
-          <span className="sep">│</span>
-          <span className="stat-dot sale" />매각예정 {stats.sale}
+          <span className="stat-dot sale" />
+          매각예정 {stats.sale}
         </div>
-        <div style={{ color: 'var(--c-text-muted)' }}>
-          행 클릭 시 차량 프로필
-        </div>
+        <div style={{ color: 'var(--c-text-muted)' }}>행 클릭 시 차량 프로필</div>
       </div>
     </div>
   );
@@ -258,19 +259,18 @@ function deriveAlerts(rows: readonly AssetRow[]): AlertItem[] {
   const out: AlertItem[] = [];
 
   // 1) 차종 매칭 안 됨 (제조사 OR 차종 모델 미입력)
-  const noModel = rows.filter(
-    (r) => !nonEmpty(r.manufacturer) || !nonEmpty(r.car_model),
-  );
+  const noModel = rows.filter((r) => !nonEmpty(r.manufacturer) || !nonEmpty(r.car_model));
   if (noModel.length > 0) {
     out.push({
       key: 'no-model',
       severity: 'danger',
       icon: 'ph-car-profile',
       head: `차종 매칭 안 됨 ${noModel.length}대`,
-      desc: noModel
-        .slice(0, 3)
-        .map((r) => r.car_number ?? '(번호없음)')
-        .join(' · ') + (noModel.length > 3 ? ` 외 ${noModel.length - 3}대` : ''),
+      desc:
+        noModel
+          .slice(0, 3)
+          .map((r) => r.car_number ?? '(번호없음)')
+          .join(' · ') + (noModel.length > 3 ? ` 외 ${noModel.length - 3}대` : ''),
       actionLabel: '보완',
       count: noModel.length,
     });
@@ -284,19 +284,18 @@ function deriveAlerts(rows: readonly AssetRow[]): AlertItem[] {
       severity: 'danger',
       icon: 'ph-hash',
       head: `VIN 미입력 ${noVin.length}대`,
-      desc: noVin
-        .slice(0, 3)
-        .map((r) => r.car_number ?? '(번호없음)')
-        .join(' · ') + (noVin.length > 3 ? ` 외 ${noVin.length - 3}대` : ''),
+      desc:
+        noVin
+          .slice(0, 3)
+          .map((r) => r.car_number ?? '(번호없음)')
+          .join(' · ') + (noVin.length > 3 ? ` 외 ${noVin.length - 3}대` : ''),
       actionLabel: '입력',
       count: noVin.length,
     });
   }
 
   // 3) 보험 미등록
-  const noIns = rows.filter(
-    (r) => !nonEmpty(r.insurance_id) && !nonEmpty(r.insurance_no),
-  );
+  const noIns = rows.filter((r) => !nonEmpty(r.insurance_id) && !nonEmpty(r.insurance_no));
   if (noIns.length > 0) {
     out.push({
       key: 'no-insurance',
@@ -310,19 +309,17 @@ function deriveAlerts(rows: readonly AssetRow[]): AlertItem[] {
   }
 
   // 4) 할부 매입 차량인데 스케줄 없음
-  const loanMissing = rows.filter(
-    (r) => isLoanBuy(r.buy_type) && !nonEmpty(r.loan_id),
-  );
+  const loanMissing = rows.filter((r) => isLoanBuy(r.buy_type) && !nonEmpty(r.loan_id));
   if (loanMissing.length > 0) {
     out.push({
       key: 'no-loan',
       severity: 'warn',
       icon: 'ph-chart-bar',
       head: `할부 정보 미등록 ${loanMissing.length}대`,
-      desc: loanMissing
+      desc: `${loanMissing
         .slice(0, 2)
         .map((r) => r.car_number ?? '(번호없음)')
-        .join(' · ') + ' (할부 매입인데 스케줄 없음)',
+        .join(' · ')} (할부 매입인데 스케줄 없음)`,
       actionLabel: '등록',
       count: loanMissing.length,
     });
@@ -336,10 +333,11 @@ function deriveAlerts(rows: readonly AssetRow[]): AlertItem[] {
       severity: 'info',
       icon: 'ph-file-text',
       head: `등록증 사진 없음 ${noReg.length}대`,
-      desc: noReg
-        .slice(0, 3)
-        .map((r) => r.car_number ?? '(번호없음)')
-        .join(' · ') + (noReg.length > 3 ? ` 외 ${noReg.length - 3}대` : ''),
+      desc:
+        noReg
+          .slice(0, 3)
+          .map((r) => r.car_number ?? '(번호없음)')
+          .join(' · ') + (noReg.length > 3 ? ` 외 ${noReg.length - 3}대` : ''),
       actionLabel: '업로드',
       count: noReg.length,
     });

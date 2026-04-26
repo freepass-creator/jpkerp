@@ -1,3 +1,4 @@
+import { computeContractEnd, today as todayStr } from '@/lib/date-utils';
 /**
  * gap-check 엔진 — 4 카테고리(재무·계약·자산·업무) 미결 룰을 데이터에서 derive.
  *
@@ -8,13 +9,7 @@
  *  - 카운트 0인 룰은 결과에서 제외
  *  - description은 대상 차번/계약자 요약 (최대 3~4건 + "외 N건")
  */
-import type {
-  RtdbAsset,
-  RtdbBilling,
-  RtdbContract,
-  RtdbEvent,
-} from '@/lib/types/rtdb-entities';
-import { computeContractEnd, today as todayStr } from '@/lib/date-utils';
+import type { RtdbAsset, RtdbBilling, RtdbContract, RtdbEvent } from '@/lib/types/rtdb-entities';
 import { fmt } from '@/lib/utils';
 
 export type PendingCategory = '재무' | '계약' | '자산' | '업무';
@@ -142,8 +137,7 @@ function pushFinance(out: PendingItem[], { events, billings }: GapCheckInput, t:
         unmatched
           .slice(0, 3)
           .map((e) => `${e.title ?? '—'} ${fmt(Number(e.amount ?? 0))}`)
-          .join(' · ') +
-        (unmatched.length > 3 ? ` 외 ${unmatched.length - 3}건` : ''),
+          .join(' · ') + (unmatched.length > 3 ? ` 외 ${unmatched.length - 3}건` : ''),
       priority: 'warn',
       action: '매칭',
       gotoMenu: 'finance',
@@ -154,9 +148,7 @@ function pushFinance(out: PendingItem[], { events, billings }: GapCheckInput, t:
   // 3) 과태료 미처리 [N] (penalty events 진행 중)
   const penaltyPending = events.filter(
     (e) =>
-      e.type === 'penalty' &&
-      e.status !== 'deleted' &&
-      isPendingStatus(e.work_status ?? e.status),
+      e.type === 'penalty' && e.status !== 'deleted' && isPendingStatus(e.work_status ?? e.status),
   );
   if (penaltyPending.length > 0) {
     out.push({
@@ -164,13 +156,12 @@ function pushFinance(out: PendingItem[], { events, billings }: GapCheckInput, t:
       category: '재무',
       label: `과태료 미처리 [${penaltyPending.length}]`,
       count: penaltyPending.length,
-      description:
-        penaltyPending
-          .slice(0, 4)
-          .map((e) => e.car_number ?? '—')
-          .join(' · ') +
-        (penaltyPending.length > 4 ? ` 외 ${penaltyPending.length - 4}건` : '') +
-        ' (스캔 후 변경부과 대기)',
+      description: `${penaltyPending
+        .slice(0, 4)
+        .map((e) => e.car_number ?? '—')
+        .join(' · ')}${
+        penaltyPending.length > 4 ? ` 외 ${penaltyPending.length - 4}건` : ''
+      } (스캔 후 변경부과 대기)`,
       priority: 'normal',
       action: '처리',
       gotoMenu: 'contract',
@@ -204,13 +195,12 @@ function pushFinance(out: PendingItem[], { events, billings }: GapCheckInput, t:
       category: '재무',
       label: `세금계산서 미발행 [${unissued.length}]`,
       count: unissued.length,
-      description:
-        unissued
-          .slice(0, 4)
-          .map((p) => `${p} ${thisMonth} 분`)
-          .join(' · ') +
-        (unissued.length > 4 ? ` 외 ${unissued.length - 4}건` : '') +
-        ` — 마감 ${monthEnd(thisMonth)}`,
+      description: `${unissued
+        .slice(0, 4)
+        .map((p) => `${p} ${thisMonth} 분`)
+        .join(
+          ' · ',
+        )}${unissued.length > 4 ? ` 외 ${unissued.length - 4}건` : ''} — 마감 ${monthEnd(thisMonth)}`,
       priority: 'normal',
       action: '발행',
       gotoMenu: 'finance',
@@ -247,8 +237,7 @@ function pushContract(
             const remain = Number(b.amount ?? 0) - Number(b.paid_total ?? 0);
             return `${b.contract_code ?? '—'} D+${days} ${fmt(remain)}`;
           })
-          .join(' · ') +
-        (overdueBills.length > 3 ? ` 외 ${overdueBills.length - 3}건` : ''),
+          .join(' · ') + (overdueBills.length > 3 ? ` 외 ${overdueBills.length - 3}건` : ''),
       priority: 'urgent',
       action: '독촉',
       gotoMenu: 'journal',
@@ -270,8 +259,7 @@ function pushContract(
         engineLocked
           .slice(0, 4)
           .map((c) => c.car_number ?? c.contract_code ?? '—')
-          .join(' · ') +
-        (engineLocked.length > 4 ? ` 외 ${engineLocked.length - 4}건` : ''),
+          .join(' · ') + (engineLocked.length > 4 ? ` 외 ${engineLocked.length - 4}건` : ''),
       priority: 'warn',
       action: '확인',
       gotoMenu: 'contract',
@@ -307,8 +295,7 @@ function pushContract(
             const end = computeContractEnd(c);
             return `${c.car_number ?? c.contract_code} D+${daysAfter(end, t)}`;
           })
-          .join(' · ') +
-        (lateReturn.length > 3 ? ` 외 ${lateReturn.length - 3}건` : ''),
+          .join(' · ') + (lateReturn.length > 3 ? ` 외 ${lateReturn.length - 3}건` : ''),
       priority: 'urgent',
       action: '처리',
       gotoMenu: 'contract',
@@ -343,8 +330,7 @@ function pushContract(
         pendingRelease
           .slice(0, 3)
           .map((c) => `${c.contract_code} ${c.contractor_name ?? ''}`.trim())
-          .join(' · ') +
-        (pendingRelease.length > 3 ? ` 외 ${pendingRelease.length - 3}건` : ''),
+          .join(' · ') + (pendingRelease.length > 3 ? ` 외 ${pendingRelease.length - 3}건` : ''),
       priority: 'normal',
       action: '출고',
       gotoMenu: 'contract',
@@ -354,11 +340,7 @@ function pushContract(
 }
 
 /* ═════════ 자산 ═════════ */
-function pushAsset(
-  out: PendingItem[],
-  { assets, events, extra }: GapCheckInput,
-  t: string,
-): void {
+function pushAsset(out: PendingItem[], { assets, events, extra }: GapCheckInput, t: string): void {
   // 1) 보험 만료 임박 [N] (insurance end_date ≤ today+7)
   const insurances = extra?.insurances ?? [];
   const inSoon = insurances.filter((i) => {
@@ -377,8 +359,7 @@ function pushAsset(
         inSoon
           .slice(0, 4)
           .map((i) => `${i.car_number ?? '—'} D-${diffDays(i.end_date ?? '', t)}`)
-          .join(' · ') +
-        (inSoon.length > 4 ? ` 외 ${inSoon.length - 4}건` : ''),
+          .join(' · ') + (inSoon.length > 4 ? ` 외 ${inSoon.length - 4}건` : ''),
       priority: 'urgent',
       action: '갱신',
       gotoMenu: 'asset',
@@ -406,8 +387,7 @@ function pushAsset(
             const days = diffDays(a.inspection_valid_until ?? '', t);
             return `${a.car_number ?? '—'} ${days >= 0 ? `D-${days}` : `D+${-days}`}`;
           })
-          .join(' · ') +
-        (inspectionDue.length > 4 ? ` 외 ${inspectionDue.length - 4}건` : ''),
+          .join(' · ') + (inspectionDue.length > 4 ? ` 외 ${inspectionDue.length - 4}건` : ''),
       priority: 'warn',
       action: '예약',
       gotoMenu: 'asset',
@@ -448,8 +428,7 @@ function pushAsset(
             const since = idleSince.get(a.car_number ?? '') ?? '';
             return `${a.car_number ?? '—'} D+${diffDays(t, since)}`;
           })
-          .join(' · ') +
-        (longIdle.length > 4 ? ` 외 ${longIdle.length - 4}건` : ''),
+          .join(' · ') + (longIdle.length > 4 ? ` 외 ${longIdle.length - 4}건` : ''),
       priority: 'warn',
       action: '활용',
       gotoMenu: 'contract',
@@ -483,8 +462,7 @@ function pushTask(out: PendingItem[], { events, extra }: GapCheckInput, t: strin
             const tag = days >= 0 ? `D-${days}` : `D+${-days}`;
             return `${tk.title ?? '(제목없음)'} ${tag}`;
           })
-          .join(' · ') +
-        (dueSoon.length > 3 ? ` 외 ${dueSoon.length - 3}건` : ''),
+          .join(' · ') + (dueSoon.length > 3 ? ` 외 ${dueSoon.length - 3}건` : ''),
       priority: 'urgent',
       action: '처리',
       gotoMenu: 'journal',
@@ -510,8 +488,7 @@ function pushTask(out: PendingItem[], { events, extra }: GapCheckInput, t: strin
         accidentOpen
           .slice(0, 3)
           .map((e) => `${e.car_number ?? '—'} ${e.accident_status ?? '진행'}`)
-          .join(' · ') +
-        (accidentOpen.length > 3 ? ` 외 ${accidentOpen.length - 3}건` : ''),
+          .join(' · ') + (accidentOpen.length > 3 ? ` 외 ${accidentOpen.length - 3}건` : ''),
       priority: 'normal',
       action: '확인',
       gotoMenu: 'journal',
@@ -535,12 +512,7 @@ function isDailyFinanceReport(t: unknown): boolean {
 function isPendingStatus(v: unknown): boolean {
   if (!nonEmpty(v)) return true;
   const s = String(v).toLowerCase();
-  return (
-    s.includes('pending') ||
-    s.includes('대기') ||
-    s.includes('미처리') ||
-    s.includes('진행')
-  );
+  return s.includes('pending') || s.includes('대기') || s.includes('미처리') || s.includes('진행');
 }
 
 function isReturnEvent(t: unknown): boolean {
@@ -576,7 +548,7 @@ function diffDays(a: string, b: string): number {
 }
 
 function monthEnd(yyyymm: string): string {
-  const [y, m] = yyyymm.split('-').map((s) => parseInt(s, 10));
+  const [y, m] = yyyymm.split('-').map((s) => Number.parseInt(s, 10));
   if (!y || !m) return yyyymm;
   const last = new Date(y, m, 0).getDate();
   return `${yyyymm}-${String(last).padStart(2, '0')}`;
@@ -587,8 +559,8 @@ export const CATEGORY_META: Record<
   PendingCategory,
   { icon: string; gotoLabel: string; gotoMenu: GotoMenu }
 > = {
-  재무: { icon: 'ph-coins',          gotoLabel: '재무관리로 →', gotoMenu: 'finance' },
+  재무: { icon: 'ph-coins', gotoLabel: '재무관리로 →', gotoMenu: 'finance' },
   계약: { icon: 'ph-clipboard-text', gotoLabel: '계약관리로 →', gotoMenu: 'contract' },
-  자산: { icon: 'ph-car-simple',     gotoLabel: '자산관리로 →', gotoMenu: 'asset' },
-  업무: { icon: 'ph-notebook',       gotoLabel: '업무일지로 →', gotoMenu: 'journal' },
+  자산: { icon: 'ph-car-simple', gotoLabel: '자산관리로 →', gotoMenu: 'asset' },
+  업무: { icon: 'ph-notebook', gotoLabel: '업무일지로 →', gotoMenu: 'journal' },
 };
